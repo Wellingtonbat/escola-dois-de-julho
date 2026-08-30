@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <!-- Atualize esta versão a cada publicação. Ela aparece no rodapé da aplicação (Web) e se aplica a todos os projetos da solução. -->
     <Version>1.0.0</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
