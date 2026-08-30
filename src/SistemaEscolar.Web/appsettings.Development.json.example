@@ -1,0 +1,20 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": ""
+  },
+  "SeedUser": {
+    "Diretor": {
+      "Cpf": "000.000.000-00",
+      "Password": "TrocarSenha@123",
+      "FullName": "Diretor Inicial",
+      "Email": "diretor@sistemaescolar.local"
+    }
+  },
+  "DetailedErrors": true,
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}

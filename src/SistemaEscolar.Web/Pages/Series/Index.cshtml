@@ -1,0 +1,222 @@
+@page
+@model SistemaEscolar.Web.Pages.Series.IndexModel
+@{
+    ViewData["Title"] = "Séries";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Séries" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Gestão de Séries</h1>
+            <p class="text-muted mb-0">Cadastro de séries para vínculo de alunos, disciplinas e professores.</p>
+        </div>
+        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        {
+            <a asp-page="/Series/Create" class="btn btn-primary btn-sm">Nova Série</a>
+        }
+    </div>
+
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-8">
+                <input asp-for="Busca" class="form-control" placeholder="Buscar por nome da série" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="ativas">Apenas ativas</option>
+                    <option value="inativas">Apenas inativas</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            <div class="col-12">
+                <a asp-page="/Series/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Ordem</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Series.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Nenhuma série encontrada.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var serie in Model.Series)
+                        {
+                            <tr>
+                                <td>@serie.Nome</td>
+                                <td>@serie.Ordem</td>
+                                <td>
+                                    <span class="status-pill @(serie.IsAtiva ? "status-open" : "status-warn")">
+                                        @(serie.IsAtiva ? "Ativa" : "Inativa")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
+                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-serie"
+                                                data-bs-toggle="modal" data-bs-target="#editSerieModal" data-id="@serie.Id"
+                                                data-nome="@serie.Nome" data-ordem="@serie.Ordem" data-ativa="@serie.IsAtiva">
+                                            Editar
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@serie.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja @(serie.IsAtiva ? "desativar" : "ativar") esta série?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(serie.IsAtiva ? "btn-outline-warning" : "btn-outline-success")">
+                                                @(serie.IsAtiva ? "Desativar" : "Ativar")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@serie.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja excluir esta série?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Somente consulta</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Series.Count de @Model.TotalCount série(s) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de séries">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Series/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Series/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Series/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+{
+    <div class="modal fade" id="editSerieModal" tabindex="-1" aria-labelledby="editSerieModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M1 13h2v2H1v-2Zm4-4h2v6H5V9Zm4-3h2v9H9V6Zm4-4h2v13h-2V2Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="editSerieModalLabel">Editar Série</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Edit"
+                      data-confirm-message="Confirmar atualização dos dados da série?">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-serie-id" name="id" />
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="mb-3">
+                            <label for="edit-serie-nome" class="form-label">Nome</label>
+                            <input type="text" id="edit-serie-nome" name="nome" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-serie-ordem" class="form-label">Ordem</label>
+                            <input type="number" id="edit-serie-ordem" name="ordem" class="form-control" min="1" max="100"
+                                   required />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-serie-ativa" name="isAtiva"
+                                   value="true" />
+                            <input type="hidden" name="isAtiva" value="false" />
+                            <label class="form-check-label" for="edit-serie-ativa">Série ativa</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const editModal = document.getElementById("editSerieModal");
+                if (!editModal) {
+                    return;
+                }
+
+                const idInput = document.getElementById("edit-serie-id");
+                const nomeInput = document.getElementById("edit-serie-nome");
+                const ordemInput = document.getElementById("edit-serie-ordem");
+                const ativaInput = document.getElementById("edit-serie-ativa");
+
+                document.querySelectorAll(".btn-edit-serie").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        idInput.value = button.dataset.id || "";
+                        nomeInput.value = button.dataset.nome || "";
+                        ordemInput.value = button.dataset.ordem || "1";
+                        ativaInput.checked = (button.dataset.ativa || "").toLowerCase() === "true";
+                    });
+                });
+            })();
+        </script>
+    }
+}

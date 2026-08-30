@@ -1,0 +1,285 @@
+@page
+@model SistemaEscolar.Web.Pages.Periodos.IndexModel
+@{
+    ViewData["Title"] = "Períodos";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Períodos" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Períodos de Lançamento</h1>
+            <p class="text-muted mb-0">Controle de abertura e fechamento dos períodos para lançamento de notas.</p>
+        </div>
+        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                    data-bs-target="#createPeriodoModal">
+                Novo Período
+            </button>
+        }
+    </div>
+
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <div class="col-12 col-md-2">
+                <input asp-for="AnoLetivo" type="number" class="form-control" placeholder="Ano" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Trimestre" class="form-select">
+                    <option value="">Todos trimestres</option>
+                    <option value="1">1o Trimestre</option>
+                    <option value="2">2o Trimestre</option>
+                    <option value="3">3o Trimestre</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="abertos">Abertos</option>
+                    <option value="fechados">Fechados</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-8 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a asp-page="/Periodos/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Ano</th>
+                        <th>Trimestre</th>
+                        <th>Descrição</th>
+                        <th>Início</th>
+                        <th>Fim</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Periodos.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Nenhum período encontrado.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var periodo in Model.Periodos)
+                        {
+                            <tr>
+                                <td>@periodo.AnoLetivo</td>
+                                <td>@periodo.Trimestre</td>
+                                <td>@periodo.Descricao</td>
+                                <td>@periodo.DataInicial.ToString("dd/MM/yyyy")</td>
+                                <td>@periodo.DataFinal.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <span class="status-pill @(periodo.IsAberto ? "status-open" : "status-warn")">
+                                        @(periodo.IsAberto ? "Aberto" : "Fechado")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
+                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-periodo"
+                                                data-bs-toggle="modal" data-bs-target="#editPeriodoModal" data-id="@periodo.Id"
+                                                data-ano="@periodo.AnoLetivo" data-trimestre="@periodo.Trimestre"
+                                                data-descricao="@periodo.Descricao"
+                                                data-inicio="@periodo.DataInicial.ToString("yyyy-MM-dd")"
+                                                data-fim="@periodo.DataFinal.ToString("yyyy-MM-dd")" data-aberto="@periodo.IsAberto">
+                                            Editar
+                                        </button>
+                                        @if (User.IsInRole("Diretor"))
+                                        {
+                                            <form method="post" asp-page-handler="@(periodo.IsAberto ? "Fechar" : "Abrir")"
+                                                  asp-route-id="@periodo.Id" class="m-0"
+                                                  data-confirm-message="Tem certeza que deseja @(periodo.IsAberto ? "fechar" : "abrir") este período?">
+                                                <button type="submit"
+                                                        class="btn btn-sm @(periodo.IsAberto ? "btn-outline-warning" : "btn-outline-success")">
+                                                    @(periodo.IsAberto ? "Fechar" : "Abrir")
+                                                </button>
+                                            </form>
+                                        }
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@periodo.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja excluir este período?">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Somente consulta</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+{
+    <div class="modal fade" id="createPeriodoModal" tabindex="-1" aria-labelledby="createPeriodoModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5ZM1 4h14v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="createPeriodoModalLabel">Novo Período</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Create" data-confirm-message="Confirmar cadastro deste período?">
+                    <div class="modal-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="create-periodo-ano" class="form-label">Ano Letivo</label>
+                                <input type="number" id="create-periodo-ano" name="anoLetivo" class="form-control"
+                                       min="2000" max="2100" value="2026" required />
+                            </div>
+                            <div class="col-6">
+                                <label for="create-periodo-trimestre" class="form-label">Trimestre</label>
+                                <select id="create-periodo-trimestre" name="trimestre" class="form-select" required>
+                                    <option value="1">1o</option>
+                                    <option value="2">2o</option>
+                                    <option value="3">3o</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="create-periodo-descricao" class="form-label">Descrição</label>
+                            <input type="text" id="create-periodo-descricao" name="descricao" class="form-control"
+                                   required />
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="create-periodo-inicio" class="form-label">Data Inicial</label>
+                                <input type="date" id="create-periodo-inicio" name="dataInicial" class="form-control"
+                                       required />
+                            </div>
+                            <div class="col-6">
+                                <label for="create-periodo-fim" class="form-label">Data Final</label>
+                                <input type="date" id="create-periodo-fim" name="dataFinal" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="create-periodo-aberto" name="isAberto"
+                                   value="true" />
+                            <input type="hidden" name="isAberto" value="false" />
+                            <label class="form-check-label" for="create-periodo-aberto">Período aberto</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar período</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editPeriodoModal" tabindex="-1" aria-labelledby="editPeriodoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5ZM1 4h14v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="editPeriodoModalLabel">Editar Período</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Edit" data-confirm-message="Confirmar atualização deste período?">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-periodo-id" name="id" />
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="edit-periodo-ano" class="form-label">Ano Letivo</label>
+                                <input type="number" id="edit-periodo-ano" name="anoLetivo" class="form-control" min="2000"
+                                       max="2100" required />
+                            </div>
+                            <div class="col-6">
+                                <label for="edit-periodo-trimestre" class="form-label">Trimestre</label>
+                                <select id="edit-periodo-trimestre" name="trimestre" class="form-select" required>
+                                    <option value="1">1o</option>
+                                    <option value="2">2o</option>
+                                    <option value="3">3o</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="edit-periodo-descricao" class="form-label">Descrição</label>
+                            <input type="text" id="edit-periodo-descricao" name="descricao" class="form-control" required />
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="edit-periodo-inicio" class="form-label">Data Inicial</label>
+                                <input type="date" id="edit-periodo-inicio" name="dataInicial" class="form-control"
+                                       required />
+                            </div>
+                            <div class="col-6">
+                                <label for="edit-periodo-fim" class="form-label">Data Final</label>
+                                <input type="date" id="edit-periodo-fim" name="dataFinal" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="edit-periodo-aberto" name="isAberto"
+                                   value="true" />
+                            <input type="hidden" name="isAberto" value="false" />
+                            <label class="form-check-label" for="edit-periodo-aberto">Período aberto</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const editModal = document.getElementById("editPeriodoModal");
+                if (!editModal) {
+                    return;
+                }
+
+                const idInput = document.getElementById("edit-periodo-id");
+                const anoInput = document.getElementById("edit-periodo-ano");
+                const trimestreInput = document.getElementById("edit-periodo-trimestre");
+                const descricaoInput = document.getElementById("edit-periodo-descricao");
+                const inicioInput = document.getElementById("edit-periodo-inicio");
+                const fimInput = document.getElementById("edit-periodo-fim");
+                const abertoInput = document.getElementById("edit-periodo-aberto");
+
+                document.querySelectorAll(".btn-edit-periodo").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        idInput.value = button.dataset.id || "";
+                        anoInput.value = button.dataset.ano || "";
+                        trimestreInput.value = button.dataset.trimestre || "";
+                        descricaoInput.value = button.dataset.descricao || "";
+                        inicioInput.value = button.dataset.inicio || "";
+                        fimInput.value = button.dataset.fim || "";
+                        abertoInput.checked = (button.dataset.aberto || "").toLowerCase() === "true";
+                    });
+                });
+            })();
+        </script>
+    }
+}

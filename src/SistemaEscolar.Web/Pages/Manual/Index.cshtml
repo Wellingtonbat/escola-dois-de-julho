@@ -1,0 +1,23 @@
+@page
+@model SistemaEscolar.Web.Pages.Manual.IndexModel
+@{
+    ViewData["Title"] = "Manual";
+    ViewData["Breadcrumb"] = new[] { "Ajuda", "Manual" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Manual da Aplicação</h1>
+            <p class="text-muted mb-0">Baixe o manual de utilização em PDF.</p>
+        </div>
+        <a asp-page-handler="DownloadPdf" class="btn btn-primary btn-sm">Baixar PDF</a>
+    </div>
+
+    <div class="panel-body">
+        <p class="mb-0">
+            Este manual contém orientações de acesso, cadastro, lançamento de notas, regras de negócio e exportação de
+            relatórios.
+        </p>
+    </div>
+</section>

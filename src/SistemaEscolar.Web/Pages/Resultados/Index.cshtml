@@ -1,0 +1,197 @@
+@page
+@model SistemaEscolar.Web.Pages.Resultados.IndexModel
+@{
+    ViewData["Title"] = "Resultados";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Resultados" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Aprovação e Reprovação</h1>
+            <p class="text-muted mb-0">Consolidação do resultado final por aluno no ano letivo selecionado.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="/Resultados/Index" asp-page-handler="ExportCsv" asp-route-Busca="@Model.Busca"
+               asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-Turma="@Model.Turma" asp-route-Serie="@Model.Serie"
+               asp-route-Situacao="@Model.Situacao" asp-route-Ordenacao="@Model.Ordenacao"
+               asp-route-Direcao="@Model.Direcao" class="btn btn-outline-primary btn-sm">
+                Exportar CSV
+            </a>
+            <a asp-page="/Resultados/Index" asp-page-handler="ExportExcel" asp-route-Busca="@Model.Busca"
+               asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-Turma="@Model.Turma" asp-route-Serie="@Model.Serie"
+               asp-route-Situacao="@Model.Situacao" asp-route-Ordenacao="@Model.Ordenacao"
+               asp-route-Direcao="@Model.Direcao" class="btn btn-outline-success btn-sm">
+                Exportar Excel
+            </a>
+            <a asp-page="/Resultados/Index" asp-page-handler="ExportPdf" asp-route-Busca="@Model.Busca"
+               asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-Turma="@Model.Turma" asp-route-Serie="@Model.Serie"
+               asp-route-Situacao="@Model.Situacao" asp-route-Ordenacao="@Model.Ordenacao"
+               asp-route-Direcao="@Model.Direcao" class="btn btn-outline-danger btn-sm">
+                Exportar PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-3">
+                <input asp-for="Busca" class="form-control"
+                       placeholder="Buscar por aluno, disciplina, turma ou série" />
+            </div>
+            <div class="col-12 col-md-2">
+                <input asp-for="AnoLetivo" type="number" class="form-control" placeholder="Ano" />
+            </div>
+            <div class="col-12 col-md-2">
+                <input asp-for="Turma" class="form-control" placeholder="Turma" />
+            </div>
+            <div class="col-12 col-md-2">
+                <input asp-for="Serie" class="form-control" placeholder="Série" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Situacao" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="Aprovado">Aprovados</option>
+                    <option value="Reprovado">Reprovados</option>
+                    <option value="Pendente">Pendentes</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Ordenacao" class="form-select">
+                    <option value="aluno">Ordenar por aluno</option>
+                    <option value="disciplina">Ordenar por disciplina</option>
+                    <option value="turma">Ordenar por turma</option>
+                    <option value="media">Ordenar por média</option>
+                    <option value="situacao">Ordenar por situação</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-1">
+                <select asp-for="Direcao" class="form-select" title="Direção">
+                    <option value="asc">ASC</option>
+                    <option value="desc">DESC</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            <div class="col-12">
+                <a asp-page="/Resultados/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-md-4">
+                <div class="alert alert-success py-2 mb-0">Aprovados: <strong>@Model.TotalAprovados</strong></div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="alert alert-danger py-2 mb-0">Reprovados: <strong>@Model.TotalReprovados</strong></div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="alert alert-warning py-2 mb-0">Pendentes: <strong>@Model.TotalPendentes</strong></div>
+            </div>
+        </div>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Disciplina</th>
+                        <th>Aluno</th>
+                        <th>Turma</th>
+                        <th>Série</th>
+                        <th>Ano</th>
+                        <th>Média Final</th>
+                        <th>Situação</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Resultados.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">Nenhum resultado encontrado.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var gruposDisciplina = Model.Resultados
+                            .GroupBy(x => x.Disciplina)
+                            .OrderBy(x => x.Key);
+
+                        foreach (var grupo in gruposDisciplina)
+                        {
+                            <tr class="table-light">
+                                <td colspan="8" class="fw-semibold">Disciplina: @grupo.Key</td>
+                            </tr>
+
+                            @foreach (var item in grupo)
+                            {
+                                <tr>
+                                    <td>@item.Disciplina</td>
+                                    <td>@item.AlunoNome</td>
+                                    <td>@item.Turma</td>
+                                    <td>@item.Serie</td>
+                                    <td>@item.AnoLetivo</td>
+                                    <td>@item.MediaFinal.ToString("0.00")</td>
+                                    <td>
+                                        <span
+                                            class="status-pill @(item.Situacao == "Aprovado" ? "status-open" : item.Situacao == "Reprovado" ? "status-warn" : "status-pending")">
+                                            @item.Situacao
+                                        </span>
+                                    </td>
+                                    <td>@item.Motivo</td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Resultados.Count de @Model.TotalCount resultado(s) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de resultados">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Resultados/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-Turma="@Model.Turma"
+                               asp-route-Serie="@Model.Serie" asp-route-Situacao="@Model.Situacao"
+                               asp-route-Ordenacao="@Model.Ordenacao" asp-route-Direcao="@Model.Direcao"
+                               asp-route-PageSize="@Model.PageSize" asp-route-PageNumber="@(Model.PageNumber - 1)">
+                                Anterior
+                            </a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Resultados/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-Turma="@Model.Turma"
+                                   asp-route-Serie="@Model.Serie" asp-route-Situacao="@Model.Situacao"
+                                   asp-route-Ordenacao="@Model.Ordenacao" asp-route-Direcao="@Model.Direcao"
+                                   asp-route-PageSize="@Model.PageSize" asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Resultados/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-Turma="@Model.Turma"
+                               asp-route-Serie="@Model.Serie" asp-route-Situacao="@Model.Situacao"
+                               asp-route-Ordenacao="@Model.Ordenacao" asp-route-Direcao="@Model.Direcao"
+                               asp-route-PageSize="@Model.PageSize" asp-route-PageNumber="@(Model.PageNumber + 1)">
+                                Próxima
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>

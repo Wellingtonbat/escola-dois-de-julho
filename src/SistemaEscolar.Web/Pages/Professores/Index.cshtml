@@ -1,0 +1,741 @@
+@page
+@model SistemaEscolar.Web.Pages.Professores.IndexModel
+@{
+    ViewData["Title"] = "Professores";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Professores" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Gestão de Professores</h1>
+            <p class="text-muted mb-0">Cadastro e manutenção de professores, vínculos e status.</p>
+        </div>
+        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createProfessorModal">
+                Novo Professor
+            </button>
+        }
+    </div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-8">
+                <input asp-for="Busca" class="form-control"
+                       placeholder="Buscar por nome ou e-mail" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="ativos">Apenas ativos</option>
+                    <option value="inativos">Apenas inativos</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            <div class="col-12">
+                <a asp-page="/Professores/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>CPF Usuário</th>
+                        <th>Disciplinas</th>
+                        <th>Séries</th>
+                        <th>Turmas</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Professores.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">Nenhum professor encontrado.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var professor in Model.Professores)
+                        {
+                            var atribuicoesJson = System.Text.Json.JsonSerializer.Serialize(professor.Atribuicoes.Select(a => new
+                            {
+                                turmaId = a.TurmaId,
+                                turmaNome = a.TurmaNome,
+                                serieNome = a.SerieNome,
+                                disciplinaId = a.DisciplinaId,
+                                disciplinaNome = a.DisciplinaNome
+                            }));
+                            <tr>
+                                <td>@professor.NomeCompleto</td>
+                                <td>@professor.Email</td>
+                                <td>@professor.UsuarioCpf</td>
+                                <td>@professor.DisciplinasResumo</td>
+                                <td>@professor.SeriesResumo</td>
+                                <td>@professor.TurmasResumo</td>
+                                <td>
+                                    <span class="status-pill @(professor.IsAtivo ? "status-open" : "status-warn")">
+                                        @(professor.IsAtivo ? "Ativo" : "Inativo")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
+                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-professor"
+                                                data-bs-toggle="modal" data-bs-target="#editProfessorModal" data-id="@professor.Id"
+                                                data-nome="@professor.NomeCompleto" data-email="@professor.Email"
+                                                data-cpf="@professor.UsuarioCpf" data-atribuicoes="@atribuicoesJson"
+                                                data-ativo="@professor.IsAtivo">
+                                            Editar
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-redefinir-senha-professor"
+                                                data-bs-toggle="modal" data-bs-target="#redefinirSenhaProfessorModal" data-id="@professor.Id"
+                                                data-nome="@professor.NomeCompleto">
+                                            Redefinir senha
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@professor.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja @(professor.IsAtivo ? "desativar" : "ativar") este professor?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(professor.IsAtivo ? "btn-outline-warning" : "btn-outline-success")">
+                                                @(professor.IsAtivo ? "Desativar" : "Ativar")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@professor.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja excluir este professor?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Somente consulta</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Professores.Count de @Model.TotalCount professor(es) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de professores">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Professores/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Professores/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Professores/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+{
+    <div class="modal fade" id="createProfessorModal" tabindex="-1" aria-labelledby="createProfessorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2 1H6a4 4 0 0 0-4 4v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1a4 4 0 0 0-4-4Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="createProfessorModalLabel">Novo Professor</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Create" id="create-professor-form"
+                      data-confirm-message="Confirma o cadastro deste professor?">
+                    <div class="modal-body">
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label for="create-professor-nome" class="form-label">Nome Completo</label>
+                                <input type="text" id="create-professor-nome" name="nomeCompleto" class="form-control" required />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="create-professor-email" class="form-label">E-mail</label>
+                                <input type="email" id="create-professor-email" name="email" class="form-control" required />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="create-professor-cpf" class="form-label">CPF do Usuário</label>
+                                <input type="text" id="create-professor-cpf" name="usuarioCpf" class="form-control"
+                                       placeholder="000.000.000-00" data-cpf-mask required />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="create-professor-senha" class="form-label">Senha Padrão</label>
+                                <div class="input-group">
+                                    <input type="password" id="create-professor-senha" name="senha" class="form-control"
+                                           minlength="8" autocomplete="new-password" required />
+                                    <button type="button" class="btn btn-outline-secondary password-toggle-btn"
+                                            data-password-toggle="create-professor-senha" aria-label="Mostrar senha">
+                                        <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                            <path d="M8 3C4.5 3 1.7 5.2.5 8c1.2 2.8 4 5 7.5 5s6.3-2.2 7.5-5C14.3 5.2 11.5 3 8 3Zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7Z" />
+                                            <circle cx="8" cy="8" r="1.75" />
+                                        </svg>
+                                        <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                            <path d="M2.7 1.3 1.3 2.7l2.2 2.2C1.9 6 .9 7 .5 8c1.2 2.8 4 5 7.5 5 1.3 0 2.5-.3 3.6-.9l2.2 2.2 1.4-1.4L2.7 1.3ZM8 11.5a3.5 3.5 0 0 1-3.4-4.3l1.2 1.2a2 2 0 0 0 2.4 2.4l1.2 1.2A3.5 3.5 0 0 1 8 11.5ZM8 3c3.5 0 6.3 2.2 7.5 5a8.9 8.9 0 0 1-2 2.9l-1.1-1.1c.6-.6 1.1-1.3 1.5-2-1.1-2-3.2-3.6-5.9-3.6-.6 0-1.2.1-1.8.2L5 3.2C5.9 3.1 6.9 3 8 3Z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <ul class="password-rules" data-password-rules="create-professor-senha">
+                                    <li data-rule="length">Mínimo de 8 caracteres</li>
+                                    <li data-rule="letter">Pelo menos 1 letra</li>
+                                    <li data-rule="digit">Pelo menos 1 número</li>
+                                </ul>
+                                <small class="text-muted">O professor será obrigado a trocar essa senha no primeiro
+                                    acesso.</small>
+                            </div>
+                            <div class="col-12 col-md-6 d-flex align-items-end">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="create-professor-ativo" name="isAtivo"
+                                           value="true" checked />
+                                    <input type="hidden" name="isAtivo" value="false" />
+                                    <label class="form-check-label" for="create-professor-ativo">Professor ativo</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <label class="form-label">Turmas e Disciplinas</label>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small text-muted" for="create-professor-serie-filtro">Série</label>
+                                <select id="create-professor-serie-filtro" class="form-select">
+                                    <option value="">Selecione a série...</option>
+                                    @foreach (var serie in Model.Series)
+                                    {
+                                        <option value="@serie.Value">@serie.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small text-muted" for="create-professor-turma-select">Turma</label>
+                                <select id="create-professor-turma-select" class="form-select" disabled>
+                                    <option value="">Selecione a série primeiro</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small text-muted" for="create-professor-disciplina-select">Disciplina</label>
+                                <select id="create-professor-disciplina-select" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    @foreach (var disciplina in Model.Disciplinas)
+                                    {
+                                        <option value="@disciplina.Value">@disciplina.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <button type="button" class="btn btn-primary w-100" id="create-professor-add-btn" title="Adicionar turma e disciplina">
+                                    + Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        <small class="text-danger d-block mt-1" id="create-professor-add-error" style="display:none;"></small>
+
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Série</th>
+                                        <th>Turma</th>
+                                        <th>Disciplina</th>
+                                        <th class="text-end">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="create-professor-atribuicoes-tbody"></tbody>
+                            </table>
+                            <p class="text-muted small mb-0" id="create-professor-empty-msg">Nenhuma turma/disciplina adicionada ainda.</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Professor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editProfessorModal" tabindex="-1" aria-labelledby="editProfessorModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-tall modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2 1H6a4 4 0 0 0-4 4v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1a4 4 0 0 0-4-4Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="editProfessorModalLabel">Editar Professor</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Edit" id="edit-professor-form"
+                      data-confirm-message="Confirmar atualização dos dados do professor?">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-professor-id" name="id" />
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label for="edit-professor-nome" class="form-label">Nome Completo</label>
+                                <input type="text" id="edit-professor-nome" name="nomeCompleto" class="form-control" required />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="edit-professor-email" class="form-label">E-mail</label>
+                                <input type="email" id="edit-professor-email" name="email" class="form-control" required />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="edit-professor-cpf" class="form-label">CPF do Usuário</label>
+                                <input type="text" id="edit-professor-cpf" name="usuarioCpf" class="form-control" data-cpf-mask required />
+                            </div>
+                            <div class="col-12 d-flex align-items-end">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="edit-professor-ativo" name="isAtivo"
+                                           value="true" />
+                                    <input type="hidden" name="isAtivo" value="false" />
+                                    <label class="form-check-label" for="edit-professor-ativo">Professor ativo</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <label class="form-label">Turmas e Disciplinas</label>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small text-muted" for="edit-professor-serie-filtro">Série</label>
+                                <select id="edit-professor-serie-filtro" class="form-select">
+                                    <option value="">Selecione a série...</option>
+                                    @foreach (var serie in Model.Series)
+                                    {
+                                        <option value="@serie.Value">@serie.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small text-muted" for="edit-professor-turma-select">Turma</label>
+                                <select id="edit-professor-turma-select" class="form-select" disabled>
+                                    <option value="">Selecione a série primeiro</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small text-muted" for="edit-professor-disciplina-select">Disciplina</label>
+                                <select id="edit-professor-disciplina-select" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    @foreach (var disciplina in Model.Disciplinas)
+                                    {
+                                        <option value="@disciplina.Value">@disciplina.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <button type="button" class="btn btn-primary w-100" id="edit-professor-add-btn" title="Adicionar turma e disciplina">
+                                    + Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        <small class="text-danger d-block mt-1" id="edit-professor-add-error" style="display:none;"></small>
+
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Série</th>
+                                        <th>Turma</th>
+                                        <th>Disciplina</th>
+                                        <th class="text-end">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="edit-professor-atribuicoes-tbody"></tbody>
+                            </table>
+                            <p class="text-muted small mb-0" id="edit-professor-empty-msg">Nenhuma turma/disciplina adicionada ainda.</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="redefinirSenhaProfessorModal" tabindex="-1" aria-labelledby="redefinirSenhaProfessorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 8a4 4 0 1 1 7.75 1.4l6.925 6.925a.5.5 0 0 1-.707.707l-1.036-1.035-1.06 1.06a.5.5 0 0 1-.708 0l-1.06-1.06-1.06 1.06a.5.5 0 0 1-.611.08l-.244-.145a.5.5 0 0 1-.12-.762L9.6 8.75A4 4 0 0 1 0 8Zm4-2.5a.5.5 0 1 0 0 1 1.5 1.5 0 0 1 1.5 1.5.5.5 0 0 0 1 0 2.5 2.5 0 0 0-2.5-2.5Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="redefinirSenhaProfessorModalLabel">Redefinir Senha</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="RedefinirSenha"
+                      data-confirm-message="Confirma a redefinição da senha deste professor?">
+                    <div class="modal-body">
+                        <input type="hidden" id="redefinir-senha-professor-id" name="id" />
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <p class="mb-3">Definindo uma nova senha padrão para
+                            <strong id="redefinir-senha-professor-nome"></strong>.</p>
+
+                        <div class="mb-2">
+                            <label for="redefinir-senha-professor-senha" class="form-label">Nova Senha Padrão</label>
+                            <div class="input-group">
+                                <input type="password" id="redefinir-senha-professor-senha" name="novaSenha" class="form-control"
+                                       minlength="8" autocomplete="new-password" required />
+                                <button type="button" class="btn btn-outline-secondary password-toggle-btn"
+                                        data-password-toggle="redefinir-senha-professor-senha" aria-label="Mostrar senha">
+                                    <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M8 3C4.5 3 1.7 5.2.5 8c1.2 2.8 4 5 7.5 5s6.3-2.2 7.5-5C14.3 5.2 11.5 3 8 3Zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7Z" />
+                                        <circle cx="8" cy="8" r="1.75" />
+                                    </svg>
+                                    <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M2.7 1.3 1.3 2.7l2.2 2.2C1.9 6 .9 7 .5 8c1.2 2.8 4 5 7.5 5 1.3 0 2.5-.3 3.6-.9l2.2 2.2 1.4-1.4L2.7 1.3ZM8 11.5a3.5 3.5 0 0 1-3.4-4.3l1.2 1.2a2 2 0 0 0 2.4 2.4l1.2 1.2A3.5 3.5 0 0 1 8 11.5ZM8 3c3.5 0 6.3 2.2 7.5 5a8.9 8.9 0 0 1-2 2.9l-1.1-1.1c.6-.6 1.1-1.3 1.5-2-1.1-2-3.2-3.6-5.9-3.6-.6 0-1.2.1-1.8.2L5 3.2C5.9 3.1 6.9 3 8 3Z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul class="password-rules" data-password-rules="redefinir-senha-professor-senha">
+                                <li data-rule="length">Mínimo de 8 caracteres</li>
+                                <li data-rule="letter">Pelo menos 1 letra</li>
+                                <li data-rule="digit">Pelo menos 1 número</li>
+                            </ul>
+                        </div>
+                        <small class="text-muted">O professor será obrigado a trocar essa senha no próximo acesso.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Redefinir Senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const allTurmas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TurmasAtivas.Select(t => new { id = t.Id, nome = t.Nome, serie = t.SerieNome })));
+                const allDisciplinas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Disciplinas.Select(d => new { id = d.Value, nome = d.Text })));
+
+                function setupAtribuicaoBuilder(config) {
+                    const serieSelect = document.getElementById(config.serieId);
+                    const turmaSelect = document.getElementById(config.turmaId);
+                    const disciplinaSelect = document.getElementById(config.disciplinaId);
+                    const addBtn = document.getElementById(config.addBtnId);
+                    const tbody = document.getElementById(config.tbodyId);
+                    const emptyMsg = document.getElementById(config.emptyMsgId);
+                    const errorEl = document.getElementById(config.errorId);
+
+                    let rows = [];
+
+                    function showError(message) {
+                        errorEl.textContent = message;
+                        errorEl.style.display = "block";
+                    }
+
+                    function hideError() {
+                        errorEl.style.display = "none";
+                    }
+
+                    function refreshTurmaOptions(preserveValue) {
+                        const selectedSerie = serieSelect.value;
+                        const previousValue = preserveValue ? turmaSelect.value : "";
+                        turmaSelect.innerHTML = "";
+
+                        const def = document.createElement("option");
+                        def.value = "";
+
+                        if (!selectedSerie) {
+                            def.textContent = "Selecione a série primeiro";
+                            turmaSelect.appendChild(def);
+                            turmaSelect.disabled = true;
+                            return;
+                        }
+
+                        def.textContent = "Selecione...";
+                        turmaSelect.appendChild(def);
+                        turmaSelect.disabled = false;
+
+                        allTurmas
+                            .filter((t) => t.serie === selectedSerie)
+                            .forEach((t) => {
+                                const opt = document.createElement("option");
+                                opt.value = t.id;
+                                opt.textContent = t.nome;
+                                turmaSelect.appendChild(opt);
+                            });
+
+                        if (previousValue && Array.from(turmaSelect.options).some((o) => o.value === previousValue)) {
+                            turmaSelect.value = previousValue;
+                        }
+                    }
+
+                    function renderRows() {
+                        tbody.innerHTML = "";
+                        emptyMsg.style.display = rows.length === 0 ? "block" : "none";
+
+                        rows.forEach((row, index) => {
+                            const tr = document.createElement("tr");
+
+                            const tdSerie = document.createElement("td");
+                            tdSerie.textContent = row.serieNome;
+                            tr.appendChild(tdSerie);
+
+                            const tdTurma = document.createElement("td");
+                            tdTurma.textContent = row.turmaNome;
+                            tr.appendChild(tdTurma);
+
+                            const tdDisciplina = document.createElement("td");
+                            tdDisciplina.textContent = row.disciplinaNome;
+                            tr.appendChild(tdDisciplina);
+
+                            const tdAcao = document.createElement("td");
+                            tdAcao.className = "text-end";
+                            const removeBtn = document.createElement("button");
+                            removeBtn.type = "button";
+                            removeBtn.className = "btn btn-sm btn-outline-danger";
+                            removeBtn.textContent = "Remover";
+                            removeBtn.addEventListener("click", () => {
+                                rows.splice(index, 1);
+                                renderRows();
+                            });
+                            tdAcao.appendChild(removeBtn);
+                            tr.appendChild(tdAcao);
+
+                            const hiddenTurma = document.createElement("input");
+                            hiddenTurma.type = "hidden";
+                            hiddenTurma.name = `atribuicoes[${index}].TurmaId`;
+                            hiddenTurma.value = row.turmaId;
+                            tr.appendChild(hiddenTurma);
+
+                            const hiddenDisciplina = document.createElement("input");
+                            hiddenDisciplina.type = "hidden";
+                            hiddenDisciplina.name = `atribuicoes[${index}].DisciplinaId`;
+                            hiddenDisciplina.value = row.disciplinaId;
+                            tr.appendChild(hiddenDisciplina);
+
+                            tbody.appendChild(tr);
+                        });
+                    }
+
+                    function addRow() {
+                        hideError();
+                        const turmaId = turmaSelect.value;
+                        const disciplinaId = disciplinaSelect.value;
+
+                        if (!turmaId || !disciplinaId) {
+                            showError("Selecione a turma e a disciplina antes de adicionar.");
+                            return;
+                        }
+
+                        if (rows.some((r) => r.turmaId === turmaId && r.disciplinaId === disciplinaId)) {
+                            showError("Essa combinação de turma e disciplina já foi adicionada.");
+                            return;
+                        }
+
+                        const turma = allTurmas.find((t) => t.id === turmaId);
+                        const disciplina = allDisciplinas.find((d) => d.id === disciplinaId);
+
+                        rows.push({
+                            turmaId,
+                            turmaNome: turma ? turma.nome : "",
+                            serieNome: turma ? turma.serie : "",
+                            disciplinaId,
+                            disciplinaNome: disciplina ? disciplina.nome : ""
+                        });
+
+                        renderRows();
+                        disciplinaSelect.value = "";
+                    }
+
+                    addBtn.addEventListener("click", addRow);
+                    serieSelect.addEventListener("change", () => refreshTurmaOptions(false));
+
+                    refreshTurmaOptions(false);
+                    renderRows();
+
+                    return {
+                        reset() {
+                            rows = [];
+                            serieSelect.value = "";
+                            disciplinaSelect.value = "";
+                            hideError();
+                            refreshTurmaOptions(false);
+                            renderRows();
+                        },
+                        setRows(newRows) {
+                            rows = newRows.slice();
+                            hideError();
+                            renderRows();
+                        },
+                        hasRows() {
+                            return rows.length > 0;
+                        }
+                    };
+                }
+
+                const createBuilder = setupAtribuicaoBuilder({
+                    serieId: "create-professor-serie-filtro",
+                    turmaId: "create-professor-turma-select",
+                    disciplinaId: "create-professor-disciplina-select",
+                    addBtnId: "create-professor-add-btn",
+                    tbodyId: "create-professor-atribuicoes-tbody",
+                    emptyMsgId: "create-professor-empty-msg",
+                    errorId: "create-professor-add-error"
+                });
+
+                const editBuilder = setupAtribuicaoBuilder({
+                    serieId: "edit-professor-serie-filtro",
+                    turmaId: "edit-professor-turma-select",
+                    disciplinaId: "edit-professor-disciplina-select",
+                    addBtnId: "edit-professor-add-btn",
+                    tbodyId: "edit-professor-atribuicoes-tbody",
+                    emptyMsgId: "edit-professor-empty-msg",
+                    errorId: "edit-professor-add-error"
+                });
+
+                const createModal = document.getElementById("createProfessorModal");
+                if (createModal) {
+                    createModal.addEventListener("show.bs.modal", () => createBuilder.reset());
+                }
+
+                const createForm = document.getElementById("create-professor-form");
+                if (createForm) {
+                    createForm.addEventListener("submit", (event) => {
+                        if (!createBuilder.hasRows()) {
+                            event.preventDefault();
+                            window.alert("Adicione ao menos uma turma e disciplina para o professor.");
+                        }
+                    });
+                }
+
+                const editModal = document.getElementById("editProfessorModal");
+                if (!editModal) {
+                    return;
+                }
+
+                const idInput = document.getElementById("edit-professor-id");
+                const nomeInput = document.getElementById("edit-professor-nome");
+                const emailInput = document.getElementById("edit-professor-email");
+                const cpfInput = document.getElementById("edit-professor-cpf");
+                const ativoInput = document.getElementById("edit-professor-ativo");
+
+                document.querySelectorAll(".btn-edit-professor").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        idInput.value = button.dataset.id || "";
+                        nomeInput.value = button.dataset.nome || "";
+                        emailInput.value = button.dataset.email || "";
+                        cpfInput.value = button.dataset.cpf || "";
+                        cpfInput.dispatchEvent(new Event("input"));
+                        ativoInput.checked = (button.dataset.ativo || "").toLowerCase() === "true";
+
+                        let atribuicoes = [];
+                        try {
+                            atribuicoes = JSON.parse(button.dataset.atribuicoes || "[]");
+                        } catch (e) {
+                            atribuicoes = [];
+                        }
+
+                        editBuilder.setRows(atribuicoes.map((a) => ({
+                            turmaId: a.turmaId,
+                            turmaNome: a.turmaNome,
+                            serieNome: a.serieNome,
+                            disciplinaId: a.disciplinaId,
+                            disciplinaNome: a.disciplinaNome
+                        })));
+                    });
+                });
+
+                const editForm = document.getElementById("edit-professor-form");
+                if (editForm) {
+                    editForm.addEventListener("submit", (event) => {
+                        if (!editBuilder.hasRows()) {
+                            event.preventDefault();
+                            window.alert("Adicione ao menos uma turma e disciplina para o professor.");
+                        }
+                    });
+                }
+
+                const redefinirSenhaModal = document.getElementById("redefinirSenhaProfessorModal");
+                if (redefinirSenhaModal) {
+                    const redefinirIdInput = document.getElementById("redefinir-senha-professor-id");
+                    const redefinirNomeEl = document.getElementById("redefinir-senha-professor-nome");
+                    const redefinirSenhaInput = document.getElementById("redefinir-senha-professor-senha");
+
+                    document.querySelectorAll(".btn-redefinir-senha-professor").forEach((button) => {
+                        button.addEventListener("click", () => {
+                            redefinirIdInput.value = button.dataset.id || "";
+                            redefinirNomeEl.textContent = button.dataset.nome || "";
+                        });
+                    });
+
+                    redefinirSenhaModal.addEventListener("show.bs.modal", () => {
+                        redefinirSenhaInput.value = "";
+                        redefinirSenhaInput.dispatchEvent(new Event("input"));
+                    });
+                }
+            })();
+        </script>
+    }
+}

@@ -1,0 +1,108 @@
+{
+  "project": "Sistema Escolar",
+  "version": "1.0.0",
+  "description": "Catálogo oficial de agentes do Sistema Escolar",
+  "defaultAgent": "orchestrator",
+  "agents": {
+    "orchestrator": ".escola-agent/01-orchestrator.md",
+
+    "solution-architect": ".escola-agent/architects/solution-architect.md",
+    "software-architect": ".escola-agent/architects/software-architect.md",
+    "database-architect": ".escola-agent/architects/database-architect.md",
+    "security-architect": ".escola-agent/architects/security-architect.md",
+
+    "domain-developer": ".escola-agent/backend/domain-developer.md",
+    "application-developer": ".escola-agent/backend/application-developer.md",
+    "infrastructure-developer": ".escola-agent/backend/infrastructure-developer.md",
+    "repository-specialist": ".escola-agent/backend/repository-specialist.md",
+
+    "razor-pages-developer": ".escola-agent/frontend/razor-pages-developer.md",
+    "ui-developer": ".escola-agent/frontend/ui-developer.md",
+    "ux-reviewer": ".escola-agent/frontend/ux-reviewer.md",
+    "component-specialist": ".escola-agent/frontend/component-specialist.md",
+
+    "efcore-specialist": ".escola-agent/database/efcore-specialist.md",
+    "sqlite-specialist": ".escola-agent/database/sqlite-specialist.md",
+    "migration-specialist": ".escola-agent/database/migration-specialist.md",
+    "audit-specialist": ".escola-agent/database/audit-specialist.md",
+
+    "code-reviewer": ".escola-agent/quality/code-reviewer.md",
+    "security-reviewer": ".escola-agent/quality/security-reviewer.md",
+    "performance-reviewer": ".escola-agent/quality/performance-reviewer.md",
+    "test-engineer": ".escola-agent/quality/test-engineer.md",
+
+    "technical-writer": ".escola-agent/documentation/technical-writer.md",
+    "diagram-generator": ".escola-agent/documentation/diagram-generator.md",
+    "adr-writer": ".escola-agent/documentation/adr-writer.md",
+
+    "build-validator": ".escola-agent/devops/build-validator.md",
+    "release-manager": ".escola-agent/devops/release-manager.md",
+
+    "identity-specialist": ".escola-agent/enterprise/identity-specialist.md",
+    "permission-specialist": ".escola-agent/enterprise/permission-specialist.md",
+    "notification-specialist": ".escola-agent/enterprise/notification-specialist.md",
+    "email-specialist": ".escola-agent/enterprise/email-specialist.md",
+    "file-storage-specialist": ".escola-agent/enterprise/file-storage-specialist.md",
+    "report-engine-specialist": ".escola-agent/enterprise/report-engine-specialist.md",
+    "configuration-specialist": ".escola-agent/enterprise/configuration-specialist.md",
+    "audit-compliance-specialist": ".escola-agent/enterprise/audit-compliance-specialist.md",
+
+    "aluno-specialist": ".escola-agent/school/aluno-specialist.md",
+    "professor-specialist": ".escola-agent/school/professor-specialist.md",
+    "turma-specialist": ".escola-agent/school/turma-specialist.md",
+    "disciplina-specialist": ".escola-agent/school/disciplina-specialist.md",
+    "nota-specialist": ".escola-agent/school/nota-specialist.md",
+    "periodo-lancamento-specialist": ".escola-agent/school/periodo-lancamento-specialist.md",
+    "importacao-excel-specialist": ".escola-agent/school/importacao-excel-specialist.md",
+    "relatorio-specialist": ".escola-agent/school/relatorio-specialist.md",
+    "dashboard-specialist": ".escola-agent/school/dashboard-specialist.md",
+
+    "matricula-workflow-specialist": ".escola-agent/school-workflows/matricula-workflow-specialist.md",
+    "fechamento-bimestre-specialist": ".escola-agent/school-workflows/fechamento-bimestre-specialist.md",
+    "recuperacao-specialist": ".escola-agent/school-workflows/recuperacao-specialist.md",
+    "boletim-specialist": ".escola-agent/school-workflows/boletim-specialist.md",
+    "aprovacao-reprovacao-specialist": ".escola-agent/school-workflows/aprovacao-reprovacao-specialist.md",
+    "historico-escolar-specialist": ".escola-agent/school-workflows/historico-escolar-specialist.md",
+    "frequencia-specialist": ".escola-agent/school-workflows/frequencia-specialist.md",
+    "portal-aluno-specialist": ".escola-agent/school-workflows/portal-aluno-specialist.md",
+    "portal-professor-specialist": ".escola-agent/school-workflows/portal-professor-specialist.md",
+
+    "prompt-engineer": ".escola-agent/ai-specialists/prompt-engineer.md",
+    "copilot-specialist": ".escola-agent/ai-specialists/copilot-specialist.md",
+    "claude-specialist": ".escola-agent/ai-specialists/claude-specialist.md",
+    "architecture-review-agent": ".escola-agent/ai-specialists/architecture-review-agent.md",
+    "requirements-analyst-agent": ".escola-agent/ai-specialists/requirements-analyst-agent.md",
+    "business-analyst-agent": ".escola-agent/ai-specialists/business-analyst-agent.md",
+    "scrum-master-agent": ".escola-agent/ai-specialists/scrum-master-agent.md",
+    "product-owner-agent": ".escola-agent/ai-specialists/product-owner-agent.md"
+  },
+  "workflows": {
+    "new-module": [
+      "requirements-analyst-agent",
+      "solution-architect",
+      "domain-developer",
+      "application-developer",
+      "repository-specialist",
+      "infrastructure-developer",
+      "razor-pages-developer",
+      "code-reviewer",
+      "technical-writer"
+    ],
+    "database-change": [
+      "database-architect",
+      "efcore-specialist",
+      "migration-specialist",
+      "code-reviewer"
+    ],
+    "security-review": [
+      "security-architect",
+      "security-reviewer",
+      "audit-specialist"
+    ],
+    "release": [
+      "build-validator",
+      "test-engineer",
+      "release-manager"
+    ]
+  }
+}

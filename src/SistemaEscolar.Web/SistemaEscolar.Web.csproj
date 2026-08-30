@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.13">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="QuestPDF" Version="2025.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaEscolar.Application\SistemaEscolar.Application.csproj" />
+    <ProjectReference Include="..\SistemaEscolar.Infrastructure\SistemaEscolar.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>7ef94836-b2a9-46fb-b022-c6159ddae277</UserSecretsId>
+    <!-- Atualize esta versão a cada publicação. Ela aparece no rodapé da aplicação. -->
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,439 @@
+@page
+@model SistemaEscolar.Web.Pages.Notas.IndexModel
+@{
+    ViewData["Title"] = "Notas";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Notas" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Lançamento de Notas</h1>
+            <p class="text-muted mb-0">Gestão trimestral com 3 avaliações, recuperação e resultado final da unidade.</p>
+        </div>
+        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") ||
+        User.IsInRole("Professor"))
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createNotaModal">
+                Novo Lançamento
+            </button>
+        }
+    </div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-4">
+                <input asp-for="Busca" class="form-control" placeholder="Buscar por aluno, disciplina ou professor" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="AnoLetivo" class="form-select">
+                    <option value="">Todos os anos</option>
+                    @foreach (var ano in Model.AnosDisponiveis)
+                    {
+                        <option value="@ano">@ano</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Trimestre" class="form-select">
+                    <option value="">Todos trimestres</option>
+                    <option value="1">1° Trimestre</option>
+                    <option value="2">2° Trimestre</option>
+                    <option value="3">3° Trimestre</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="finalizadas">Finalizadas</option>
+                    <option value="pendentes">Pendentes</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            <div class="col-12">
+                <a asp-page="/Notas/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Disciplina</th>
+                        <th>Professor</th>
+                        <th>Período</th>
+                        <th>1a Aval.</th>
+                        <th>2a Aval.</th>
+                        <th>3a Aval.</th>
+                        <th>Res. Unidade</th>
+                        <th>Rec. Paralela</th>
+                        <th>Res. Final Unidade</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Notas.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="12" class="text-center text-muted">Nenhum lançamento encontrado.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var nota in Model.Notas)
+                        {
+                            <tr>
+                                <td>@nota.AlunoNome</td>
+                                <td>@nota.DisciplinaNome</td>
+                                <td>@nota.ProfessorNome</td>
+                                <td>@nota.PeriodoDescricao</td>
+                                <td>@(nota.Avaliacao1?.ToString("0.00") ?? "-")</td>
+                                <td>@(nota.Avaliacao2?.ToString("0.00") ?? "-")</td>
+                                <td>@(nota.Avaliacao3?.ToString("0.00") ?? "-")</td>
+                                <td>@nota.ResultadoUnidade.ToString("0.00")</td>
+                                <td>@(nota.RecuperacaoParalela?.ToString("0.00") ?? "-")</td>
+                                <td>@nota.ResultadoFinalUnidade.ToString("0.00")</td>
+                                <td>
+                                    <span class="status-pill @(nota.IsFinalizada ? "status-open" : "status-warn")">
+                                        @(nota.IsFinalizada ? "Finalizada" : "Pendente")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria")
+                            || User.IsInRole("Professor"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-nota"
+                                                data-bs-toggle="modal" data-bs-target="#editNotaModal" data-id="@nota.Id"
+                                                data-aluno-id="@nota.AlunoId" data-disciplina-id="@nota.DisciplinaId"
+                                                data-professor-id="@nota.ProfessorId" data-periodo-id="@nota.PeriodoLancamentoId"
+                                                data-avaliacao1="@(nota.Avaliacao1?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                data-avaliacao2="@(nota.Avaliacao2?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                data-avaliacao3="@(nota.Avaliacao3?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                data-recuperacao="@(nota.RecuperacaoParalela?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                data-finalizada="@nota.IsFinalizada">
+                                            Editar
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@nota.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja @(nota.IsFinalizada ? "reabrir" : "finalizar") este lançamento?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
+                                            <input type="hidden" name="trimestre" value="@Model.Trimestre" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(nota.IsFinalizada ? "btn-outline-warning" : "btn-outline-success")">
+                                                @(nota.IsFinalizada ? "Reabrir" : "Finalizar")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@nota.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja excluir este lançamento?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
+                                            <input type="hidden" name="trimestre" value="@Model.Trimestre" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Somente consulta</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Notas.Count de @Model.TotalCount lançamento(s) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de notas">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Notas/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-AnoLetivo="@Model.AnoLetivo"
+                               asp-route-Trimestre="@Model.Trimestre" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Notas/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-Status="@Model.Status" asp-route-AnoLetivo="@Model.AnoLetivo"
+                                   asp-route-Trimestre="@Model.Trimestre" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Notas/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-AnoLetivo="@Model.AnoLetivo"
+                               asp-route-Trimestre="@Model.Trimestre" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") ||
+User.IsInRole("Professor"))
+{
+    <div class="modal fade" id="createNotaModal" tabindex="-1" aria-labelledby="createNotaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="createNotaModalLabel">Novo Lançamento</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Create" data-confirm-message="Confirmar lançamento desta nota?">
+                    <div class="modal-body">
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="anoLetivoFilter" value="@Model.AnoLetivo" />
+                        <input type="hidden" name="trimestreFilter" value="@Model.Trimestre" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="mb-3">
+                            <label for="create-aluno-id" class="form-label">Aluno</label>
+                            <select id="create-aluno-id" name="alunoId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var aluno in Model.Alunos)
+                                {
+                                    <option value="@aluno.Value">@aluno.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-disciplina-id" class="form-label">Disciplina</label>
+                            <select id="create-disciplina-id" name="disciplinaId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var disciplina in Model.Disciplinas)
+                                {
+                                    <option value="@disciplina.Value">@disciplina.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-professor-id" class="form-label">Professor</label>
+                            <select id="create-professor-id" name="professorId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var professor in Model.Professores)
+                                {
+                                    <option value="@professor.Value">@professor.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-periodo-id" class="form-label">Período</label>
+                            <select id="create-periodo-id" name="periodoLancamentoId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var periodo in Model.Periodos)
+                                {
+                                    <option value="@periodo.Value">@periodo.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="row g-2 mt-2">
+                            <div class="col-4">
+                                <label for="create-avaliacao1" class="form-label">1a Avaliação</label>
+                                <input type="number" id="create-avaliacao1" name="avaliacao1" class="form-control"
+                                       step="0.01" min="0" max="10" />
+                            </div>
+                            <div class="col-4">
+                                <label for="create-avaliacao2" class="form-label">2a Avaliação</label>
+                                <input type="number" id="create-avaliacao2" name="avaliacao2" class="form-control"
+                                       step="0.01" min="0" max="10" />
+                            </div>
+                            <div class="col-4">
+                                <label for="create-avaliacao3" class="form-label">3a Avaliação</label>
+                                <input type="number" id="create-avaliacao3" name="avaliacao3" class="form-control"
+                                       step="0.01" min="0" max="10" />
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="create-recuperacao" class="form-label">Recuperação Paralela (opcional)</label>
+                            <input type="number" id="create-recuperacao" name="recuperacaoParalela" class="form-control"
+                                   step="0.01" min="0" max="10" />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="create-finalizada" name="isFinalizada"
+                                   value="true" />
+                            <input type="hidden" name="isFinalizada" value="false" />
+                            <label class="form-check-label" for="create-finalizada">Lançamento finalizado</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar lançamento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editNotaModal" tabindex="-1" aria-labelledby="editNotaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="editNotaModalLabel">Editar Lançamento</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Edit" data-confirm-message="Confirmar atualização deste lançamento?">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-nota-id" name="id" />
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="anoLetivoFilter" value="@Model.AnoLetivo" />
+                        <input type="hidden" name="trimestreFilter" value="@Model.Trimestre" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="mb-3">
+                            <label for="edit-aluno-id" class="form-label">Aluno</label>
+                            <select id="edit-aluno-id" name="alunoId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var aluno in Model.Alunos)
+                                {
+                                    <option value="@aluno.Value">@aluno.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-disciplina-id" class="form-label">Disciplina</label>
+                            <select id="edit-disciplina-id" name="disciplinaId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var disciplina in Model.Disciplinas)
+                                {
+                                    <option value="@disciplina.Value">@disciplina.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-professor-id" class="form-label">Professor</label>
+                            <select id="edit-professor-id" name="professorId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var professor in Model.Professores)
+                                {
+                                    <option value="@professor.Value">@professor.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-periodo-id" class="form-label">Período</label>
+                            <select id="edit-periodo-id" name="periodoLancamentoId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var periodo in Model.Periodos)
+                                {
+                                    <option value="@periodo.Value">@periodo.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="row g-2 mt-2">
+                            <div class="col-4">
+                                <label for="edit-avaliacao1" class="form-label">1a Avaliação</label>
+                                <input type="number" id="edit-avaliacao1" name="avaliacao1" class="form-control" step="0.01"
+                                       min="0" max="10" />
+                            </div>
+                            <div class="col-4">
+                                <label for="edit-avaliacao2" class="form-label">2a Avaliação</label>
+                                <input type="number" id="edit-avaliacao2" name="avaliacao2" class="form-control" step="0.01"
+                                       min="0" max="10" />
+                            </div>
+                            <div class="col-4">
+                                <label for="edit-avaliacao3" class="form-label">3a Avaliação</label>
+                                <input type="number" id="edit-avaliacao3" name="avaliacao3" class="form-control" step="0.01"
+                                       min="0" max="10" />
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="edit-recuperacao" class="form-label">Recuperação Paralela (opcional)</label>
+                            <input type="number" id="edit-recuperacao" name="recuperacaoParalela" class="form-control"
+                                   step="0.01" min="0" max="10" />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-finalizada" name="isFinalizada"
+                                   value="true" />
+                            <input type="hidden" name="isFinalizada" value="false" />
+                            <label class="form-check-label" for="edit-finalizada">Lançamento finalizado</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const editModal = document.getElementById("editNotaModal");
+                if (!editModal) {
+                    return;
+                }
+
+                const idInput = document.getElementById("edit-nota-id");
+                const alunoInput = document.getElementById("edit-aluno-id");
+                const disciplinaInput = document.getElementById("edit-disciplina-id");
+                const professorInput = document.getElementById("edit-professor-id");
+                const periodoInput = document.getElementById("edit-periodo-id");
+                const avaliacao1Input = document.getElementById("edit-avaliacao1");
+                const avaliacao2Input = document.getElementById("edit-avaliacao2");
+                const avaliacao3Input = document.getElementById("edit-avaliacao3");
+                const recuperacaoInput = document.getElementById("edit-recuperacao");
+                const finalizadaInput = document.getElementById("edit-finalizada");
+                const toNumberInputValue = (value) => (value || "").replace(",", ".");
+
+                document.querySelectorAll(".btn-edit-nota").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        idInput.value = button.dataset.id || "";
+                        alunoInput.value = button.dataset.alunoId || "";
+                        disciplinaInput.value = button.dataset.disciplinaId || "";
+                        professorInput.value = button.dataset.professorId || "";
+                        periodoInput.value = button.dataset.periodoId || "";
+                        avaliacao1Input.value = toNumberInputValue(button.dataset.avaliacao1);
+                        avaliacao2Input.value = toNumberInputValue(button.dataset.avaliacao2);
+                        avaliacao3Input.value = toNumberInputValue(button.dataset.avaliacao3);
+                        recuperacaoInput.value = toNumberInputValue(button.dataset.recuperacao);
+                        finalizadaInput.checked = (button.dataset.finalizada || "").toLowerCase() === "true";
+                    });
+                });
+            })();
+        </script>
+    }
+}

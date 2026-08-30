@@ -1,0 +1,30 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+
+## Visual Studio / VS Code
+.vs/
+.vscode/*
+!.vscode/extensions.json
+
+## Rider
+.idea/
+
+## Test results
+[Tt]est[Rr]esult*/
+*.trx
+
+## Publish output
+publish/
+*.pubxml
+
+## Configuração local com dados sensíveis (senha do usuário seed, etc.)
+## A connection string do banco já não fica aqui - vive em `dotnet user-secrets`.
+appsettings.Development.json
+appsettings.*.local.json
+
+## OS
+Thumbs.db
+.DS_Store

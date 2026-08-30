@@ -1,0 +1,402 @@
+@page
+@model SistemaEscolar.Web.Pages.Usuarios.IndexModel
+@{
+    ViewData["Title"] = "Usuários";
+    ViewData["Breadcrumb"] = new[] { "Administração", "Usuários" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Gestão de Usuários</h1>
+            <p class="text-muted mb-0">Cadastro de Diretor, Coordenador e Secretária, com as mesmas permissões administrativas.</p>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createUsuarioModal">
+            Novo Usuário
+        </button>
+    </div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-6">
+                <input asp-for="Busca" class="form-control" placeholder="Buscar por nome, e-mail ou CPF" />
+            </div>
+            <div class="col-12 col-md-3">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="ativos">Apenas ativos</option>
+                    <option value="inativos">Apenas inativos</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a asp-page="/Usuarios/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>CPF</th>
+                        <th>Perfil</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Usuarios.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Nenhum usuário encontrado.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var usuario in Model.Usuarios)
+                        {
+                            var perfilExibicao = usuario.Perfil == "Secretaria" ? "Secretária" : usuario.Perfil;
+                            <tr>
+                                <td>@usuario.NomeCompleto</td>
+                                <td>@usuario.Email</td>
+                                <td>@usuario.Cpf</td>
+                                <td>@perfilExibicao</td>
+                                <td>
+                                    <span class="status-pill @(usuario.IsAtivo ? "status-open" : "status-warn")">
+                                        @(usuario.IsAtivo ? "Ativo" : "Inativo")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-usuario"
+                                            data-bs-toggle="modal" data-bs-target="#editUsuarioModal" data-id="@usuario.Id"
+                                            data-nome="@usuario.NomeCompleto" data-email="@usuario.Email"
+                                            data-cpf="@usuario.Cpf" data-perfil="@usuario.Perfil" data-ativo="@usuario.IsAtivo">
+                                        Editar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-redefinir-senha-usuario"
+                                            data-bs-toggle="modal" data-bs-target="#redefinirSenhaUsuarioModal" data-id="@usuario.Id"
+                                            data-nome="@usuario.NomeCompleto">
+                                        Redefinir senha
+                                    </button>
+                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@usuario.Id" class="m-0"
+                                          data-confirm-message="Tem certeza que deseja @(usuario.IsAtivo ? "desativar" : "ativar") este usuário?">
+                                        <input type="hidden" name="busca" value="@Model.Busca" />
+                                        <input type="hidden" name="status" value="@Model.Status" />
+                                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                        <button type="submit"
+                                                class="btn btn-sm @(usuario.IsAtivo ? "btn-outline-warning" : "btn-outline-success")">
+                                            @(usuario.IsAtivo ? "Desativar" : "Ativar")
+                                        </button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@usuario.Id" class="m-0"
+                                          data-confirm-message="Tem certeza que deseja excluir este usuário?">
+                                        <input type="hidden" name="busca" value="@Model.Busca" />
+                                        <input type="hidden" name="status" value="@Model.Status" />
+                                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Usuarios.Count de @Model.TotalCount usuário(s) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de usuários">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Usuarios/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Usuarios/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Usuarios/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="createUsuarioModal" tabindex="-1" aria-labelledby="createUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-tall">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="modal-header-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2 1H6a4 4 0 0 0-4 4v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1a4 4 0 0 0-4-4Z" />
+                            <path d="M13.5 7.5a.5.5 0 0 1 .5.5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1V8a.5.5 0 0 1 .5-.5Z" />
+                        </svg>
+                    </span>
+                    <h5 class="modal-title" id="createUsuarioModalLabel">Novo Usuário</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" asp-page-handler="Create" id="create-usuario-form"
+                  data-confirm-message="Confirma o cadastro deste usuário?">
+                <div class="modal-body">
+                    <input type="hidden" name="busca" value="@Model.Busca" />
+                    <input type="hidden" name="status" value="@Model.Status" />
+                    <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                    <div class="mb-3">
+                        <label for="create-usuario-nome" class="form-label">Nome Completo</label>
+                        <input type="text" id="create-usuario-nome" name="nomeCompleto" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="create-usuario-email" class="form-label">E-mail</label>
+                        <input type="email" id="create-usuario-email" name="email" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="create-usuario-cpf" class="form-label">CPF</label>
+                        <input type="text" id="create-usuario-cpf" name="cpf" class="form-control"
+                               placeholder="000.000.000-00" data-cpf-mask required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="create-usuario-perfil" class="form-label">Perfil</label>
+                        <select id="create-usuario-perfil" name="perfil" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            @foreach (var perfil in Model.Perfis)
+                            {
+                                <option value="@perfil.Value">@perfil.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="create-usuario-senha" class="form-label">Senha Padrão</label>
+                        <div class="input-group">
+                            <input type="password" id="create-usuario-senha" name="senha" class="form-control"
+                                   minlength="8" autocomplete="new-password" required />
+                            <button type="button" class="btn btn-outline-secondary password-toggle-btn"
+                                    data-password-toggle="create-usuario-senha" aria-label="Mostrar senha">
+                                <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M8 3C4.5 3 1.7 5.2.5 8c1.2 2.8 4 5 7.5 5s6.3-2.2 7.5-5C14.3 5.2 11.5 3 8 3Zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7Z" />
+                                    <circle cx="8" cy="8" r="1.75" />
+                                </svg>
+                                <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M2.7 1.3 1.3 2.7l2.2 2.2C1.9 6 .9 7 .5 8c1.2 2.8 4 5 7.5 5 1.3 0 2.5-.3 3.6-.9l2.2 2.2 1.4-1.4L2.7 1.3ZM8 11.5a3.5 3.5 0 0 1-3.4-4.3l1.2 1.2a2 2 0 0 0 2.4 2.4l1.2 1.2A3.5 3.5 0 0 1 8 11.5ZM8 3c3.5 0 6.3 2.2 7.5 5a8.9 8.9 0 0 1-2 2.9l-1.1-1.1c.6-.6 1.1-1.3 1.5-2-1.1-2-3.2-3.6-5.9-3.6-.6 0-1.2.1-1.8.2L5 3.2C5.9 3.1 6.9 3 8 3Z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <ul class="password-rules" data-password-rules="create-usuario-senha">
+                            <li data-rule="length">Mínimo de 8 caracteres</li>
+                            <li data-rule="letter">Pelo menos 1 letra</li>
+                            <li data-rule="digit">Pelo menos 1 número</li>
+                        </ul>
+                        <small class="text-muted">O usuário será obrigado a trocar essa senha no primeiro acesso.</small>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="create-usuario-ativo" name="isAtivo"
+                               value="true" checked />
+                        <input type="hidden" name="isAtivo" value="false" />
+                        <label class="form-check-label" for="create-usuario-ativo">Usuário ativo</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Usuário</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUsuarioModal" tabindex="-1" aria-labelledby="editUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-tall">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="modal-header-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2 1H6a4 4 0 0 0-4 4v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1a4 4 0 0 0-4-4Z" />
+                        </svg>
+                    </span>
+                    <h5 class="modal-title" id="editUsuarioModalLabel">Editar Usuário</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" asp-page-handler="Edit"
+                  data-confirm-message="Confirmar atualização dos dados do usuário?">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-usuario-id" name="id" />
+                    <input type="hidden" name="busca" value="@Model.Busca" />
+                    <input type="hidden" name="status" value="@Model.Status" />
+                    <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                    <div class="mb-3">
+                        <label for="edit-usuario-nome" class="form-label">Nome Completo</label>
+                        <input type="text" id="edit-usuario-nome" name="nomeCompleto" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-usuario-email" class="form-label">E-mail</label>
+                        <input type="email" id="edit-usuario-email" name="email" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-usuario-cpf" class="form-label">CPF</label>
+                        <input type="text" id="edit-usuario-cpf" name="cpf" class="form-control" data-cpf-mask required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-usuario-perfil" class="form-label">Perfil</label>
+                        <select id="edit-usuario-perfil" name="perfil" class="form-select" required>
+                            @foreach (var perfil in Model.Perfis)
+                            {
+                                <option value="@perfil.Value">@perfil.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="edit-usuario-ativo" name="isAtivo"
+                               value="true" />
+                        <input type="hidden" name="isAtivo" value="false" />
+                        <label class="form-check-label" for="edit-usuario-ativo">Usuário ativo</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="redefinirSenhaUsuarioModal" tabindex="-1" aria-labelledby="redefinirSenhaUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="modal-header-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M0 8a4 4 0 1 1 7.75 1.4l6.925 6.925a.5.5 0 0 1-.707.707l-1.036-1.035-1.06 1.06a.5.5 0 0 1-.708 0l-1.06-1.06-1.06 1.06a.5.5 0 0 1-.611.08l-.244-.145a.5.5 0 0 1-.12-.762L9.6 8.75A4 4 0 0 1 0 8Zm4-2.5a.5.5 0 1 0 0 1 1.5 1.5 0 0 1 1.5 1.5.5.5 0 0 0 1 0 2.5 2.5 0 0 0-2.5-2.5Z" />
+                        </svg>
+                    </span>
+                    <h5 class="modal-title" id="redefinirSenhaUsuarioModalLabel">Redefinir Senha</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" asp-page-handler="RedefinirSenha"
+                  data-confirm-message="Confirma a redefinição da senha deste usuário?">
+                <div class="modal-body">
+                    <input type="hidden" id="redefinir-senha-usuario-id" name="id" />
+                    <input type="hidden" name="busca" value="@Model.Busca" />
+                    <input type="hidden" name="status" value="@Model.Status" />
+                    <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                    <p class="mb-3">Definindo uma nova senha padrão para
+                        <strong id="redefinir-senha-usuario-nome"></strong>.</p>
+
+                    <div class="mb-2">
+                        <label for="redefinir-senha-usuario-senha" class="form-label">Nova Senha Padrão</label>
+                        <div class="input-group">
+                            <input type="password" id="redefinir-senha-usuario-senha" name="novaSenha" class="form-control"
+                                   minlength="8" autocomplete="new-password" required />
+                            <button type="button" class="btn btn-outline-secondary password-toggle-btn"
+                                    data-password-toggle="redefinir-senha-usuario-senha" aria-label="Mostrar senha">
+                                <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M8 3C4.5 3 1.7 5.2.5 8c1.2 2.8 4 5 7.5 5s6.3-2.2 7.5-5C14.3 5.2 11.5 3 8 3Zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7Z" />
+                                    <circle cx="8" cy="8" r="1.75" />
+                                </svg>
+                                <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M2.7 1.3 1.3 2.7l2.2 2.2C1.9 6 .9 7 .5 8c1.2 2.8 4 5 7.5 5 1.3 0 2.5-.3 3.6-.9l2.2 2.2 1.4-1.4L2.7 1.3ZM8 11.5a3.5 3.5 0 0 1-3.4-4.3l1.2 1.2a2 2 0 0 0 2.4 2.4l1.2 1.2A3.5 3.5 0 0 1 8 11.5ZM8 3c3.5 0 6.3 2.2 7.5 5a8.9 8.9 0 0 1-2 2.9l-1.1-1.1c.6-.6 1.1-1.3 1.5-2-1.1-2-3.2-3.6-5.9-3.6-.6 0-1.2.1-1.8.2L5 3.2C5.9 3.1 6.9 3 8 3Z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <ul class="password-rules" data-password-rules="redefinir-senha-usuario-senha">
+                            <li data-rule="length">Mínimo de 8 caracteres</li>
+                            <li data-rule="letter">Pelo menos 1 letra</li>
+                            <li data-rule="digit">Pelo menos 1 número</li>
+                        </ul>
+                    </div>
+                    <small class="text-muted">O usuário será obrigado a trocar essa senha no próximo acesso.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Redefinir Senha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const editModal = document.getElementById("editUsuarioModal");
+            if (!editModal) {
+                return;
+            }
+
+            const idInput = document.getElementById("edit-usuario-id");
+            const nomeInput = document.getElementById("edit-usuario-nome");
+            const emailInput = document.getElementById("edit-usuario-email");
+            const cpfInput = document.getElementById("edit-usuario-cpf");
+            const perfilInput = document.getElementById("edit-usuario-perfil");
+            const ativoInput = document.getElementById("edit-usuario-ativo");
+
+            document.querySelectorAll(".btn-edit-usuario").forEach((button) => {
+                button.addEventListener("click", () => {
+                    idInput.value = button.dataset.id || "";
+                    nomeInput.value = button.dataset.nome || "";
+                    emailInput.value = button.dataset.email || "";
+                    cpfInput.value = button.dataset.cpf || "";
+                    cpfInput.dispatchEvent(new Event("input"));
+                    perfilInput.value = button.dataset.perfil || "";
+                    ativoInput.checked = (button.dataset.ativo || "").toLowerCase() === "true";
+                });
+            });
+        })();
+
+        (() => {
+            const redefinirSenhaModal = document.getElementById("redefinirSenhaUsuarioModal");
+            if (!redefinirSenhaModal) {
+                return;
+            }
+
+            const idInput = document.getElementById("redefinir-senha-usuario-id");
+            const nomeEl = document.getElementById("redefinir-senha-usuario-nome");
+            const senhaInput = document.getElementById("redefinir-senha-usuario-senha");
+
+            document.querySelectorAll(".btn-redefinir-senha-usuario").forEach((button) => {
+                button.addEventListener("click", () => {
+                    idInput.value = button.dataset.id || "";
+                    nomeEl.textContent = button.dataset.nome || "";
+                });
+            });
+
+            redefinirSenhaModal.addEventListener("show.bs.modal", () => {
+                senhaInput.value = "";
+                senhaInput.dispatchEvent(new Event("input"));
+            });
+        })();
+    </script>
+}

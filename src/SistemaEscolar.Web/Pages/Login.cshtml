@@ -1,0 +1,61 @@
+@page
+@model SistemaEscolar.Web.Pages.LoginModel
+@{
+    Layout = "/Pages/Shared/_AuthLayout.cshtml";
+    ViewData["Title"] = "Entrar";
+}
+
+<div class="container-xxl">
+    <div class="authentication-wrapper authentication-basic container-p-y">
+        <div class="authentication-inner">
+            <div class="card auth-card-sneat">
+                <div class="card-body">
+                    <div class="app-brand justify-content-center mb-3">
+                        <a asp-page="/Login" class="app-brand-link gap-2 text-decoration-none">
+                            <span class="app-brand-logo demo">
+                                <span class="brand-badge">SE</span>
+                            </span>
+                            <span class="app-brand-text demo text-body fw-bold">Sistema Escolar</span>
+                        </a>
+                    </div>
+
+                    <h4 class="mb-2">Bem-vindo ao Sistema Escolar</h4>
+                    <p class="mb-4 text-muted">Entre com suas credenciais para acessar o painel.</p>
+
+                    <form method="post" class="mb-3">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Cpf" class="form-label"></label>
+                            <input asp-for="Input.Cpf" class="form-control" placeholder="000.000.000-00" autocomplete="username" autofocus />
+                            <span asp-validation-for="Input.Cpf" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3 form-password-toggle">
+                            <div class="d-flex justify-content-between">
+                                <label asp-for="Input.Password" class="form-label"></label>
+                            </div>
+                            <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input asp-for="Input.RememberMe" class="form-check-input" />
+                                <label asp-for="Input.RememberMe" class="form-check-label"></label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary d-grid w-100">Entrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

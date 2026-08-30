@@ -1,0 +1,53 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Painel Inicial";
+}
+
+<section class="panel">
+    <div class="panel-header d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="h5 mb-1">Visão Geral</h1>
+            <p class="text-muted mb-0">Acompanhamento rápido dos principais indicadores acadêmicos.</p>
+        </div>
+        <span class="badge text-bg-primary">Ambiente de desenvolvimento</span>
+    </div>
+    <div class="panel-body">
+        <div class="kpi-grid">
+            <article class="kpi-card">
+                <span class="kpi-label">Alunos</span>
+                <strong class="kpi-value">@Model.TotalAlunos</strong>
+            </article>
+            <article class="kpi-card">
+                <span class="kpi-label">Professores</span>
+                <strong class="kpi-value">@Model.TotalProfessores</strong>
+            </article>
+            <article class="kpi-card">
+                <span class="kpi-label">Turmas</span>
+                <strong class="kpi-value">@Model.TotalTurmas</strong>
+            </article>
+            <article class="kpi-card">
+                <span class="kpi-label">Pendências de Nota</span>
+                <strong class="kpi-value">@Model.TotalPendenciasNota</strong>
+            </article>
+        </div>
+
+        <div class="kpi-grid mt-3">
+            <article class="kpi-card">
+                <span class="kpi-label">Disciplinas</span>
+                <strong class="kpi-value">@Model.TotalDisciplinas</strong>
+            </article>
+            <article class="kpi-card">
+                <span class="kpi-label">Séries</span>
+                <strong class="kpi-value">@Model.TotalSeries</strong>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="panel mt-3">
+    <div class="panel-body">
+        <h2 class="h6">Próximas Entregas</h2>
+        <p class="text-muted mb-0">Consolidar vínculos acadêmicos de séries com alunos, disciplinas e professores.</p>
+    </div>
+</section>

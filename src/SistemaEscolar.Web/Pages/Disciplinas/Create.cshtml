@@ -1,0 +1,67 @@
+@page
+@model SistemaEscolar.Web.Pages.Disciplinas.CreateModel
+@{
+    ViewData["Title"] = "Nova Disciplina";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Disciplinas", "Novo" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Cadastro de Disciplina</h1>
+            <p class="text-muted mb-0">Preencha os dados obrigatórios para criar uma nova disciplina.</p>
+        </div>
+        <a asp-page="/Disciplinas/Index" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+    <div class="panel-body">
+        <form method="post" class="row g-3" data-confirm-message="Confirma o cadastro desta disciplina?">
+            <div asp-validation-summary="ModelOnly" class="text-danger col-12"></div>
+
+            <div class="col-12 col-md-6">
+                <label asp-for="Input.Nome" class="form-label"></label>
+                <input asp-for="Input.Nome" class="form-control" />
+                <span asp-validation-for="Input.Nome" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label asp-for="Input.Codigo" class="form-label"></label>
+                <input asp-for="Input.Codigo" class="form-control" placeholder="Ex.: MAT-01" />
+                <span asp-validation-for="Input.Codigo" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label asp-for="Input.CargaHoraria" class="form-label"></label>
+                <input asp-for="Input.CargaHoraria" type="number" min="1" max="1000" class="form-control" />
+                <span asp-validation-for="Input.CargaHoraria" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Input.SerieIds" class="form-label"></label>
+                <select asp-for="Input.SerieIds" class="form-select" multiple size="6">
+                    @foreach (var serie in Model.Series)
+                    {
+                        <option value="@serie.Value">@serie.Text</option>
+                    }
+                </select>
+                <small class="text-muted">Use Ctrl (ou Command) para selecionar múltiplas séries.</small>
+                <span asp-validation-for="Input.SerieIds" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-md-4 d-flex align-items-center">
+                <div class="form-check mt-4">
+                    <input asp-for="Input.IsAtiva" class="form-check-input" />
+                    <label asp-for="Input.IsAtiva" class="form-check-label"></label>
+                </div>
+            </div>
+
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Salvar Disciplina</button>
+                <a asp-page="/Disciplinas/Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

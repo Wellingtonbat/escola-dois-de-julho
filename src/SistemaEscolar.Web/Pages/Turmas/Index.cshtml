@@ -1,0 +1,263 @@
+@page
+@model SistemaEscolar.Web.Pages.Turmas.IndexModel
+@{
+    ViewData["Title"] = "Turmas";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Turmas" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Gestão de Turmas</h1>
+            <p class="text-muted mb-0">Cadastro e manutenção de turmas por série, turno e ano letivo.</p>
+        </div>
+        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        {
+            <a asp-page="/Turmas/Create" class="btn btn-primary btn-sm">Nova Turma</a>
+        }
+    </div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-5">
+                <input asp-for="Busca" class="form-control" placeholder="Buscar por nome, série ou turno" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="SerieId" class="form-select" title="Filtrar por série">
+                    <option value="">Todas as séries</option>
+                    @foreach (var serie in Model.Series)
+                    {
+                        <option value="@serie.Value">@serie.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <input asp-for="AnoLetivo" type="number" class="form-control" placeholder="Ano" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="ativas">Apenas ativas</option>
+                    <option value="inativas">Apenas inativas</option>
+                </select>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a asp-page="/Turmas/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Turma</th>
+                        <th>Série</th>
+                        <th>Turno</th>
+                        <th>Ano Letivo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Turmas.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Nenhuma turma encontrada.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var turma in Model.Turmas)
+                        {
+                            <tr>
+                                <td>@turma.Nome</td>
+                                <td>@turma.SerieNome</td>
+                                <td>@turma.Turno</td>
+                                <td>@turma.AnoLetivo</td>
+                                <td>
+                                    <span class="status-pill @(turma.IsAtiva ? "status-open" : "status-warn")">
+                                        @(turma.IsAtiva ? "Ativa" : "Inativa")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
+                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-turma"
+                                                data-bs-toggle="modal" data-bs-target="#editTurmaModal" data-id="@turma.Id"
+                                                data-nome="@turma.Nome" data-serie-id="@turma.SerieId" data-turno="@turma.Turno"
+                                                data-ano="@turma.AnoLetivo" data-ativa="@turma.IsAtiva">
+                                            Editar
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@turma.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja @(turma.IsAtiva ? "desativar" : "ativar") esta turma?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="serieId" value="@Model.SerieId" />
+                                            <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(turma.IsAtiva ? "btn-outline-warning" : "btn-outline-success")">
+                                                @(turma.IsAtiva ? "Desativar" : "Ativar")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@turma.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja excluir esta turma?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="serieId" value="@Model.SerieId" />
+                                            <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Somente consulta</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Turmas.Count de @Model.TotalCount turma(s) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de turmas">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Turmas/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-SerieId="@Model.SerieId"
+                               asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Turmas/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-Status="@Model.Status" asp-route-SerieId="@Model.SerieId"
+                                   asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Turmas/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-SerieId="@Model.SerieId"
+                               asp-route-AnoLetivo="@Model.AnoLetivo" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+{
+    <div class="modal fade" id="editTurmaModal" tabindex="-1" aria-labelledby="editTurmaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M6 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm4.5-1a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 9c-2.5 0-5 1.2-5 3v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1c0-1.8-2.5-3-5-3Zm7 0c-.4 0-.9.05-1.3.15C12.5 9.8 13 10.8 13 12v1h2a1 1 0 0 0 1-1v-1c0-1.5-2-3-4-3Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="editTurmaModalLabel">Editar Turma</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Edit"
+                      data-confirm-message="Confirmar atualização dos dados da turma?">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-turma-id" name="id" />
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="serieFilter" value="@Model.SerieId" />
+                        <input type="hidden" name="anoLetivoFilter" value="@Model.AnoLetivo" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="mb-3">
+                            <label for="edit-turma-nome" class="form-label">Nome</label>
+                            <input type="text" id="edit-turma-nome" name="nome" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-turma-serie" class="form-label">Série</label>
+                            <select id="edit-turma-serie" name="serieId" class="form-select" required>
+                                <option value="">Selecione...</option>
+                                @foreach (var serie in Model.Series)
+                                {
+                                    <option value="@serie.Value">@serie.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-turma-turno" class="form-label">Turno</label>
+                            <input type="text" id="edit-turma-turno" name="turno" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-turma-ano" class="form-label">Ano Letivo</label>
+                            <input type="number" id="edit-turma-ano" name="anoLetivo" class="form-control" min="2000"
+                                   max="2100" required />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-turma-ativa" name="isAtiva"
+                                   value="true" />
+                            <input type="hidden" name="isAtiva" value="false" />
+                            <label class="form-check-label" for="edit-turma-ativa">Turma ativa</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const editModal = document.getElementById("editTurmaModal");
+                if (!editModal) {
+                    return;
+                }
+
+                const idInput = document.getElementById("edit-turma-id");
+                const nomeInput = document.getElementById("edit-turma-nome");
+                const serieInput = document.getElementById("edit-turma-serie");
+                const turnoInput = document.getElementById("edit-turma-turno");
+                const anoInput = document.getElementById("edit-turma-ano");
+                const ativaInput = document.getElementById("edit-turma-ativa");
+
+                document.querySelectorAll(".btn-edit-turma").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        idInput.value = button.dataset.id || "";
+                        nomeInput.value = button.dataset.nome || "";
+                        serieInput.value = button.dataset.serieId || "";
+                        turnoInput.value = button.dataset.turno || "";
+                        anoInput.value = button.dataset.ano || "";
+                        ativaInput.checked = (button.dataset.ativa || "").toLowerCase() === "true";
+                    });
+                });
+            })();
+        </script>
+    }
+}

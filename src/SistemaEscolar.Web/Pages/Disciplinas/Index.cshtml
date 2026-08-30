@@ -1,0 +1,265 @@
+@page
+@model SistemaEscolar.Web.Pages.Disciplinas.IndexModel
+@{
+    ViewData["Title"] = "Disciplinas";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Disciplinas" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Gestão de Disciplinas</h1>
+            <p class="text-muted mb-0">Cadastro e manutenção das disciplinas do currículo escolar.</p>
+        </div>
+        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        {
+            <a asp-page="/Disciplinas/Create" class="btn btn-primary btn-sm">Nova Disciplina</a>
+        }
+    </div>
+
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-8">
+                <input asp-for="Busca" class="form-control" placeholder="Buscar por nome ou código" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="ativas">Apenas ativas</option>
+                    <option value="inativas">Apenas inativas</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            <div class="col-12">
+                <a asp-page="/Disciplinas/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Código</th>
+                        <th>Séries</th>
+                        <th>Carga Horária</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Disciplinas.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Nenhuma disciplina encontrada.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var disciplina in Model.Disciplinas)
+                        {
+                            var serieIdsJson = System.Text.Json.JsonSerializer.Serialize(disciplina.Series.Select(x => x.SerieId));
+                            <tr>
+                                <td>@disciplina.Nome</td>
+                                <td>@disciplina.Codigo</td>
+                                <td>@disciplina.SeriesResumo</td>
+                                <td>@disciplina.CargaHoraria h</td>
+                                <td>
+                                    <span class="status-pill @(disciplina.IsAtiva ? "status-open" : "status-warn")">
+                                        @(disciplina.IsAtiva ? "Ativa" : "Inativa")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
+                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-disciplina"
+                                                data-bs-toggle="modal" data-bs-target="#editDisciplinaModal" data-id="@disciplina.Id"
+                                                data-nome="@disciplina.Nome" data-codigo="@disciplina.Codigo"
+                                                data-serie-ids="@serieIdsJson" data-carga="@disciplina.CargaHoraria"
+                                                data-ativa="@disciplina.IsAtiva">
+                                            Editar
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@disciplina.Id"
+                                              class="m-0"
+                                              data-confirm-message="Tem certeza que deseja @(disciplina.IsAtiva ? "desativar" : "ativar") esta disciplina?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(disciplina.IsAtiva ? "btn-outline-warning" : "btn-outline-success")">
+                                                @(disciplina.IsAtiva ? "Desativar" : "Ativar")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@disciplina.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja excluir esta disciplina?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Somente consulta</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Disciplinas.Count de @Model.TotalCount disciplina(s) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de disciplinas">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Disciplinas/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Disciplinas/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Disciplinas/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+{
+    <div class="modal fade" id="editDisciplinaModal" tabindex="-1" aria-labelledby="editDisciplinaModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M2 2.75A1.75 1.75 0 0 1 3.75 1H8v14H3.75A1.75 1.75 0 0 1 2 13.25V2.75Z" />
+                                <path d="M8 1h4.25A1.75 1.75 0 0 1 14 2.75v10.5A1.75 1.75 0 0 1 12.25 15H8V1Z" opacity=".55" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="editDisciplinaModalLabel">Editar Disciplina</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Edit"
+                      data-confirm-message="Confirmar atualização dos dados da disciplina?">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-disciplina-id" name="id" />
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="mb-3">
+                            <label for="edit-disciplina-nome" class="form-label">Nome</label>
+                            <input type="text" id="edit-disciplina-nome" name="nome" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-disciplina-codigo" class="form-label">Código</label>
+                            <input type="text" id="edit-disciplina-codigo" name="codigo" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-disciplina-series" class="form-label">Séries vinculadas</label>
+                            <select id="edit-disciplina-series" name="serieIds" class="form-select" multiple size="6" required>
+                                @foreach (var serie in Model.Series)
+                                {
+                                    <option value="@serie.Value">@serie.Text</option>
+                                }
+                            </select>
+                            <small class="text-muted">Use Ctrl (ou Command) para selecionar múltiplas séries.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-disciplina-carga" class="form-label">Carga Horária</label>
+                            <input type="number" id="edit-disciplina-carga" name="cargaHoraria" class="form-control" min="1"
+                                   max="1000" required />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-disciplina-ativa" name="isAtiva"
+                                   value="true" />
+                            <input type="hidden" name="isAtiva" value="false" />
+                            <label class="form-check-label" for="edit-disciplina-ativa">Disciplina ativa</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const editModal = document.getElementById("editDisciplinaModal");
+                if (!editModal) {
+                    return;
+                }
+
+                const idInput = document.getElementById("edit-disciplina-id");
+                const nomeInput = document.getElementById("edit-disciplina-nome");
+                const codigoInput = document.getElementById("edit-disciplina-codigo");
+                const seriesInput = document.getElementById("edit-disciplina-series");
+                const cargaInput = document.getElementById("edit-disciplina-carga");
+                const ativaInput = document.getElementById("edit-disciplina-ativa");
+
+                const applySeriesSelection = (serieIds) => {
+                    const lookup = new Set(serieIds.map((x) => x.toLowerCase()));
+                    Array.from(seriesInput.options).forEach((opt) => {
+                        opt.selected = lookup.has((opt.value || "").toLowerCase());
+                    });
+                };
+
+                document.querySelectorAll(".btn-edit-disciplina").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        idInput.value = button.dataset.id || "";
+                        nomeInput.value = button.dataset.nome || "";
+                        codigoInput.value = button.dataset.codigo || "";
+
+                        let serieIds = [];
+                        try {
+                            serieIds = JSON.parse(button.dataset.serieIds || "[]");
+                        } catch (e) {
+                            serieIds = [];
+                        }
+                        applySeriesSelection(serieIds);
+
+                        cargaInput.value = button.dataset.carga || "";
+                        ativaInput.checked = (button.dataset.ativa || "").toLowerCase() === "true";
+                    });
+                });
+            })();
+        </script>
+    }
+}

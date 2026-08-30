@@ -1,0 +1,497 @@
+@page
+@model SistemaEscolar.Web.Pages.Alunos.IndexModel
+@{
+    ViewData["Title"] = "Alunos";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Alunos" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">Gestão de Alunos</h1>
+            <p class="text-muted mb-0">Base visual para listagem, filtro e manutenção de cadastros.</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+            {
+                <a asp-page="/Alunos/Index" asp-page-handler="ModeloImportacao" asp-route-Busca="@Model.Busca"
+                   asp-route-Status="@Model.Status" asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                   asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize"
+                   class="btn btn-outline-secondary btn-sm">Baixar Modelo</a>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#importAlunosModal">Importar Lista</button>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#createAlunoModal">Novo Aluno</button>
+            }
+        </div>
+    </div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-4">
+                <input asp-for="Busca" class="form-control" placeholder="Buscar por matrícula, CPF, nome ou turma" />
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Serie" class="form-select" title="Filtrar por série">
+                    <option value="">Todas as séries</option>
+                    @foreach (var serie in Model.Series)
+                    {
+                        <option value="@serie.Value">@serie.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="Turma" class="form-select" id="filtro-turma" title="Filtrar por turma">
+                    <option value="">Todas as turmas</option>
+                    @foreach (var turma in Model.Turmas)
+                    {
+                        <option value="@turma.Value">@turma.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="ativos">Apenas ativos</option>
+                    <option value="inativos">Apenas inativos</option>
+                </select>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a asp-page="/Alunos/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Matrícula</th>
+                        <th>CPF</th>
+                        <th>Nome</th>
+                        <th>Nascimento</th>
+                        <th>Ano Letivo</th>
+                        <th>Série</th>
+                        <th>Turma</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Alunos.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">Nenhum aluno encontrado.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var aluno in Model.Alunos)
+                        {
+                            <tr>
+                                <td>@aluno.Matricula</td>
+                                <td>@aluno.Cpf</td>
+                                <td>@aluno.NomeCompleto</td>
+                                <td>@aluno.DataNascimento.ToString("dd/MM/yyyy")</td>
+                                <td>@aluno.AnoLetivo</td>
+                                <td>@aluno.Serie</td>
+                                <td>@(string.IsNullOrWhiteSpace(aluno.Turma) ? "-" : aluno.Turma)</td>
+                                <td>
+                                    <span class="status-pill @(aluno.IsAtivo ? "status-open" : "status-warn")">
+                                        @(aluno.IsAtivo ? "Ativo" : "Inativo")
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
+                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-aluno"
+                                                data-bs-toggle="modal" data-bs-target="#editAlunoModal" data-id="@aluno.Id"
+                                                data-matricula="@aluno.Matricula" data-cpf="@aluno.Cpf" data-nome="@aluno.NomeCompleto"
+                                                data-nascimento="@aluno.DataNascimento.ToString("yyyy-MM-dd")"
+                                                data-ano-letivo="@aluno.AnoLetivo" data-serie-id="@aluno.SerieId"
+                                                data-turma="@aluno.Turma" data-ativo="@aluno.IsAtivo">
+                                            Editar
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@aluno.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja @(aluno.IsAtivo ? "desativar" : "ativar") este aluno?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="serie" value="@Model.Serie" />
+                                            <input type="hidden" name="turma" value="@Model.Turma" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(aluno.IsAtivo ? "btn-outline-warning" : "btn-outline-success")">
+                                                @(aluno.IsAtivo ? "Desativar" : "Ativar")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@aluno.Id" class="m-0"
+                                              data-confirm-message="Tem certeza que deseja excluir este aluno?">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="serie" value="@Model.Serie" />
+                                            <input type="hidden" name="turma" value="@Model.Turma" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Somente consulta</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+            <small class="text-muted">
+                Exibindo @Model.Alunos.Count de @Model.TotalCount aluno(s) na página @Model.PageNumber de
+                @Model.TotalPages.
+            </small>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Paginação de alunos">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Alunos/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        </li>
+
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
+                                <a class="page-link" asp-page="/Alunos/Index" asp-route-Busca="@Model.Busca"
+                                   asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                                   asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-PageNumber="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
+                            <a class="page-link" asp-page="/Alunos/Index" asp-route-Busca="@Model.Busca"
+                               asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                               asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+{
+    <div class="modal fade" id="createAlunoModal" tabindex="-1" aria-labelledby="createAlunoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 1 15 4.5 8 8 1 4.5 8 1Z" />
+                                <path d="M4 6.2v3.3c0 .9 1.8 1.8 4 1.8s4-.9 4-1.8V6.2L8 8 4 6.2Z" />
+                                <path d="M14 6v3.5a.5.5 0 0 0 1 0V6h-1Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="createAlunoModalLabel">Novo Aluno</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Create"
+                      data-confirm-message="Confirma o cadastro deste aluno?">
+                    <div class="modal-body">
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="serieFilter" value="@Model.Serie" />
+                        <input type="hidden" name="turmaFilter" value="@Model.Turma" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <p class="small text-muted">A matrícula é gerada automaticamente pelo sistema. Se o CPF já
+                            possuir matrícula de anos anteriores, ela será reaproveitada.</p>
+
+                        <div class="mb-3">
+                            <label for="create-aluno-cpf" class="form-label">CPF</label>
+                            <input type="text" id="create-aluno-cpf" name="cpf" class="form-control"
+                                   placeholder="000.000.000-00" data-cpf-mask required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-aluno-nome" class="form-label">Nome Completo</label>
+                            <input type="text" id="create-aluno-nome" name="nomeCompleto" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-aluno-data-nascimento" class="form-label">Data de Nascimento</label>
+                            <input type="date" id="create-aluno-data-nascimento" name="dataNascimento" class="form-control"
+                                   required />
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="create-aluno-ano-letivo" class="form-label">Ano Letivo</label>
+                                <input type="number" id="create-aluno-ano-letivo" name="anoLetivo" class="form-control"
+                                       min="2000" max="2100" value="@DateTime.UtcNow.Year" required />
+                            </div>
+                            <div class="col-6">
+                                <label for="create-aluno-serie" class="form-label">Série</label>
+                                <select id="create-aluno-serie" name="serieId" class="form-select" required>
+                                    <option value="">Selecione...</option>
+                                    @foreach (var serie in Model.SeriesParaFormulario)
+                                    {
+                                        <option value="@serie.Value">@serie.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="create-aluno-turma" class="form-label">Turma (opcional)</label>
+                            <input type="text" id="create-aluno-turma" name="turma" class="form-control" />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="create-aluno-ativo" name="isAtivo"
+                                   value="true" checked />
+                            <input type="hidden" name="isAtivo" value="false" />
+                            <label class="form-check-label" for="create-aluno-ativo">Aluno ativo</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Aluno</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editAlunoModal" tabindex="-1" aria-labelledby="editAlunoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 1 15 4.5 8 8 1 4.5 8 1Z" />
+                                <path d="M4 6.2v3.3c0 .9 1.8 1.8 4 1.8s4-.9 4-1.8V6.2L8 8 4 6.2Z" />
+                                <path d="M14 6v3.5a.5.5 0 0 0 1 0V6h-1Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="editAlunoModalLabel">Editar Aluno</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Edit"
+                      data-confirm-message="Confirmar atualização dos dados do aluno?">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-aluno-id" name="id" />
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="serieFilter" value="@Model.Serie" />
+                        <input type="hidden" name="turmaFilter" value="@Model.Turma" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Matrícula</label>
+                            <input type="text" id="edit-aluno-matricula" class="form-control" disabled readonly />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-aluno-cpf" class="form-label">CPF</label>
+                            <input type="text" id="edit-aluno-cpf" name="cpf" class="form-control" data-cpf-mask required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-aluno-nome" class="form-label">Nome Completo</label>
+                            <input type="text" id="edit-aluno-nome" name="nomeCompleto" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-aluno-data-nascimento" class="form-label">Data de Nascimento</label>
+                            <input type="date" id="edit-aluno-data-nascimento" name="dataNascimento" class="form-control"
+                                   required />
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="edit-aluno-ano-letivo" class="form-label">Ano Letivo</label>
+                                <input type="number" id="edit-aluno-ano-letivo" name="anoLetivo" class="form-control"
+                                       min="2000" max="2100" required />
+                            </div>
+                            <div class="col-6">
+                                <label for="edit-aluno-serie" class="form-label">Série</label>
+                                <select id="edit-aluno-serie" name="serieId" class="form-select" required>
+                                    <option value="">Selecione...</option>
+                                    @foreach (var serie in Model.SeriesParaFormulario)
+                                    {
+                                        <option value="@serie.Value">@serie.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="edit-aluno-turma" class="form-label">Turma (opcional)</label>
+                            <input type="text" id="edit-aluno-turma" name="turma" class="form-control" />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-aluno-ativo" name="isAtivo"
+                                   value="true" />
+                            <input type="hidden" name="isAtivo" value="false" />
+                            <label class="form-check-label" for="edit-aluno-ativo">Aluno ativo</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="importAlunosModal" tabindex="-1" aria-labelledby="importAlunosModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-tall">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="modal-header-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5Z" />
+                                <path d="M7.5 10.5a.5.5 0 0 0 1 0V2.7l2.15 2.15a.5.5 0 0 0 .7-.7l-3-3a.5.5 0 0 0-.7 0l-3 3a.5.5 0 1 0 .7.7L7.5 2.7v7.8Z" />
+                            </svg>
+                        </span>
+                        <h5 class="modal-title" id="importAlunosModalLabel">Importar Lista de Alunos</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="post" asp-page-handler="Import" enctype="multipart/form-data"
+                      data-confirm-message="Confirma a importação da lista de alunos?">
+                    <div class="modal-body">
+                        <input type="hidden" name="busca" value="@Model.Busca" />
+                        <input type="hidden" name="status" value="@Model.Status" />
+                        <input type="hidden" name="serie" value="@Model.Serie" />
+                        <input type="hidden" name="turma" value="@Model.Turma" />
+                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                        <p class="small text-muted mb-2">Todos os alunos da planilha serão matriculados na série e
+                            ano letivo escolhidos abaixo. Formato esperado da planilha: CPF, Nome, DataNascimento e
+                            Status.</p>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label for="import-aluno-ano-letivo" class="form-label">Ano Letivo</label>
+                                <input type="number" id="import-aluno-ano-letivo" name="anoLetivo" class="form-control"
+                                       min="2000" max="2100" value="@DateTime.UtcNow.Year" required />
+                            </div>
+                            <div class="col-6">
+                                <label for="import-aluno-serie" class="form-label">Série</label>
+                                <select id="import-aluno-serie" name="serieId" class="form-select" required>
+                                    <option value="">Selecione...</option>
+                                    @foreach (var serie in Model.SeriesParaFormulario)
+                                    {
+                                        <option value="@serie.Value">@serie.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <input type="file" class="form-control" name="arquivoImportacao" accept=".csv,.xlsx" required />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Importar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const filterSerie = document.getElementById("Serie");
+                const filterTurma = document.getElementById("filtro-turma");
+                const allTurmas = [
+                @foreach (var turma in Model.TurmasAtivas)
+                    {
+                        @:{ serie: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.SerieNome)), value: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.Nome)), text: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.Nome)) },
+                    }
+                                ];
+
+                function refreshTurmasForSerie() {
+                    if (!filterSerie || !filterTurma) {
+                        return;
+                    }
+
+                    const selectedSerie = filterSerie.value || "";
+                    const previousTurma = filterTurma.value || "";
+                    const turmaOptions = selectedSerie
+                        ? allTurmas.filter((turma) => turma.serie === selectedSerie)
+                        : allTurmas;
+
+                    filterTurma.innerHTML = "";
+
+                    const defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.textContent = "Todas as turmas";
+                    filterTurma.appendChild(defaultOption);
+
+                    turmaOptions.forEach((turma) => {
+                        const option = document.createElement("option");
+                        option.value = turma.value;
+                        option.textContent = turma.text;
+                        filterTurma.appendChild(option);
+                    });
+
+                    if (previousTurma && turmaOptions.some((t) => t.value === previousTurma)) {
+                        filterTurma.value = previousTurma;
+                    }
+                }
+
+                if (filterSerie && filterTurma) {
+                    filterSerie.addEventListener("change", () => {
+                        filterTurma.value = "";
+                        refreshTurmasForSerie();
+                    });
+
+                    refreshTurmasForSerie();
+                }
+
+                const editModal = document.getElementById("editAlunoModal");
+                if (!editModal) {
+                    return;
+                }
+
+                const idInput = document.getElementById("edit-aluno-id");
+                const matriculaInput = document.getElementById("edit-aluno-matricula");
+                const cpfInput = document.getElementById("edit-aluno-cpf");
+                const nomeInput = document.getElementById("edit-aluno-nome");
+                const dataNascimentoInput = document.getElementById("edit-aluno-data-nascimento");
+                const anoLetivoInput = document.getElementById("edit-aluno-ano-letivo");
+                const serieInput = document.getElementById("edit-aluno-serie");
+                const turmaInput = document.getElementById("edit-aluno-turma");
+                const ativoInput = document.getElementById("edit-aluno-ativo");
+
+                document.querySelectorAll(".btn-edit-aluno").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        idInput.value = button.dataset.id || "";
+                        matriculaInput.value = button.dataset.matricula || "";
+                        cpfInput.value = button.dataset.cpf || "";
+                        cpfInput.dispatchEvent(new Event("input"));
+                        nomeInput.value = button.dataset.nome || "";
+                        dataNascimentoInput.value = button.dataset.nascimento || "";
+                        anoLetivoInput.value = button.dataset.anoLetivo || "";
+                        serieInput.value = button.dataset.serieId || "";
+                        turmaInput.value = button.dataset.turma || "";
+                        ativoInput.checked = (button.dataset.ativo || "").toLowerCase() === "true";
+                    });
+                });
+            })();
+        </script>
+    }
+}

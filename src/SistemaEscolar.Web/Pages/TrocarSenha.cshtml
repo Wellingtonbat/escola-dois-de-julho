@@ -1,0 +1,54 @@
+@page
+@model SistemaEscolar.Web.Pages.TrocarSenhaModel
+@{
+    ViewData["Title"] = "Trocar Senha";
+}
+
+<section class="panel" style="max-width: 480px; margin: 0 auto;">
+    <div class="panel-header">
+        <div>
+            <h1 class="h5 mb-1">Troca de senha obrigatória</h1>
+            <p class="text-muted mb-0">
+                @if (Model.ForcaTrocaSenha)
+                {
+                    <span>Por segurança, defina uma nova senha antes de continuar.</span>
+                }
+                else
+                {
+                    <span>Informe a senha atual e a nova senha desejada.</span>
+                }
+            </p>
+        </div>
+    </div>
+    <div class="panel-body">
+        <form method="post" class="row g-3">
+            <div asp-validation-summary="ModelOnly" class="text-danger col-12"></div>
+
+            <div class="col-12">
+                <label asp-for="Input.SenhaAtual" class="form-label"></label>
+                <input asp-for="Input.SenhaAtual" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Input.SenhaAtual" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Input.NovaSenha" class="form-label"></label>
+                <input asp-for="Input.NovaSenha" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.NovaSenha" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Input.ConfirmarNovaSenha" class="form-label"></label>
+                <input asp-for="Input.ConfirmarNovaSenha" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.ConfirmarNovaSenha" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Trocar senha</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
