@@ -29,7 +29,8 @@ WORKDIR /app
 
 ENV DOTNET_RUNNING_IN_CONTAINER=true \
     ASPNETCORE_ENVIRONMENT=Production \
-    DOTNET_EnableDiagnostics=0
+    DOTNET_EnableDiagnostics=0 \
+    DOTNET_hostBuilder__reloadConfigOnChange=false
 
 COPY --from=build /app/publish .
 
