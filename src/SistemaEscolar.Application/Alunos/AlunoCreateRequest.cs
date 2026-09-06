@@ -6,5 +6,5 @@ public sealed record AlunoCreateRequest(
     DateTime DataNascimento,
     int AnoLetivo,
     Guid SerieId,
-    string? Turma,
+    Guid? TurmaId,
     bool IsAtivo);

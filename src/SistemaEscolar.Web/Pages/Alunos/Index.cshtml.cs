@@ -47,7 +47,7 @@ public sealed class IndexModel : PageModel
     public string? Serie { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public string? Turma { get; set; }
+    public Guid? TurmaId { get; set; }
 
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
@@ -75,7 +75,7 @@ public sealed class IndexModel : PageModel
             _ => null
         };
 
-        var filter = new AlunoListFilter(Busca, Serie, Turma, statusFilter);
+        var filter = new AlunoListFilter(Busca, Serie, TurmaId, statusFilter);
         var alunosFiltrados = await _alunoService.ListarAsync(filter, cancellationToken);
 
         if (IsProfessorOnly())
@@ -84,7 +84,7 @@ public sealed class IndexModel : PageModel
             if (escopo is not null)
             {
                 alunosFiltrados = alunosFiltrados
-                    .Where(x => x.Turma is not null && escopo.TurmaNomes.Contains(x.Turma, StringComparer.OrdinalIgnoreCase))
+                    .Where(x => x.TurmaId.HasValue && escopo.TurmaIds.Contains(x.TurmaId.Value))
                     .ToList();
             }
         }
@@ -107,12 +107,12 @@ public sealed class IndexModel : PageModel
         DateTime dataNascimento,
         int anoLetivo,
         Guid serieId,
-        string? turma,
+        Guid? turmaId,
         bool isAtivo,
         string? busca,
         string? status,
         string? serieFilter,
-        string? turmaFilter,
+        Guid? turmaFilter,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -120,21 +120,21 @@ public sealed class IndexModel : PageModel
         if (!CanManageAlunos())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para cadastrar alunos.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, Turma = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, TurmaId = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         var result = await _alunoService.CriarAsync(
-            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turma, isAtivo),
+            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turmaId, isAtivo),
             cancellationToken);
 
         if (!result.Succeeded)
         {
             TempData["ErrorMessage"] = result.ErrorMessage ?? "Não foi possível cadastrar o aluno.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, Turma = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, TurmaId = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         TempData["SuccessMessage"] = "Aluno cadastrado com sucesso.";
-        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, Turma = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
+        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, TurmaId = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
     }
 
     public async Task<IActionResult> OnPostEditAsync(
@@ -144,12 +144,12 @@ public sealed class IndexModel : PageModel
         DateTime dataNascimento,
         int anoLetivo,
         Guid serieId,
-        string? turma,
+        Guid? turmaId,
         bool isAtivo,
         string? busca,
         string? status,
         string? serieFilter,
-        string? turmaFilter,
+        Guid? turmaFilter,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -157,22 +157,22 @@ public sealed class IndexModel : PageModel
         if (!CanManageAlunos())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para editar alunos.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, Turma = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, TurmaId = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         var result = await _alunoService.AtualizarAsync(
             id,
-            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turma, isAtivo),
+            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turmaId, isAtivo),
             cancellationToken);
 
         if (!result.Succeeded)
         {
             TempData["ErrorMessage"] = result.ErrorMessage ?? "Não foi possível atualizar o aluno.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, Turma = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, TurmaId = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         TempData["SuccessMessage"] = "Aluno atualizado com sucesso.";
-        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, Turma = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
+        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serieFilter, TurmaId = turmaFilter, PageNumber = pageNumber, PageSize = pageSize });
     }
 
     public async Task<IActionResult> OnPostToggleStatusAsync(
@@ -180,7 +180,7 @@ public sealed class IndexModel : PageModel
         string? busca,
         string? status,
         string? serie,
-        string? turma,
+        Guid? turma,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -188,7 +188,7 @@ public sealed class IndexModel : PageModel
         if (!CanManageAlunos())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para alterar o status de alunos.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         var updated = await _alunoService.AlternarStatusAsync(id, cancellationToken);
@@ -196,11 +196,11 @@ public sealed class IndexModel : PageModel
         if (!updated)
         {
             TempData["ErrorMessage"] = "Aluno não encontrado para atualização de status.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         TempData["SuccessMessage"] = "Status do aluno atualizado com sucesso.";
-        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(
@@ -208,7 +208,7 @@ public sealed class IndexModel : PageModel
         string? busca,
         string? status,
         string? serie,
-        string? turma,
+        Guid? turma,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -216,18 +216,18 @@ public sealed class IndexModel : PageModel
         if (!CanManageAlunos())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para excluir alunos.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         var deleted = await _alunoService.ExcluirAsync(id, cancellationToken);
         if (!deleted)
         {
             TempData["ErrorMessage"] = "Aluno não encontrado para exclusão.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         TempData["SuccessMessage"] = "Aluno excluído com sucesso.";
-        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
     }
 
     public async Task<IActionResult> OnPostImportAsync(
@@ -237,7 +237,7 @@ public sealed class IndexModel : PageModel
         string? busca,
         string? status,
         string? serie,
-        string? turma,
+        Guid? turma,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -245,25 +245,25 @@ public sealed class IndexModel : PageModel
         if (!CanManageAlunos())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para importar alunos.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         if (serieId == Guid.Empty)
         {
             TempData["ErrorMessage"] = "Selecione a série para a qual os alunos serão matriculados.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         if (anoLetivo < 2000 || anoLetivo > 2100)
         {
             TempData["ErrorMessage"] = "Informe um ano letivo válido para a importação.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         if (arquivoImportacao is null || arquivoImportacao.Length == 0)
         {
             TempData["ErrorMessage"] = "Selecione um arquivo CSV ou Excel para importar.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         var extension = Path.GetExtension(arquivoImportacao.FileName);
@@ -271,14 +271,14 @@ public sealed class IndexModel : PageModel
             && !extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
         {
             TempData["ErrorMessage"] = "Formato inválido. A importação aceita arquivos CSV (.csv) ou Excel (.xlsx).";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         const long maxSize = 10 * 1024 * 1024;
         if (arquivoImportacao.Length > maxSize)
         {
             TempData["ErrorMessage"] = "Arquivo acima do limite de 10MB.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         await using var stream = arquivoImportacao.OpenReadStream();
@@ -287,20 +287,20 @@ public sealed class IndexModel : PageModel
         if (result.Importados + result.Falhas > 5000)
         {
             TempData["ErrorMessage"] = "A importação permite no máximo 5.000 registros por arquivo.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         if (result.Importados == 0)
         {
             TempData["ErrorMessage"] = "Nenhum aluno foi importado. Verifique o layout e os dados do arquivo.";
-            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         TempData["SuccessMessage"] = result.Falhas > 0
             ? $"Importação concluída com {result.Importados} sucesso(s) e {result.Falhas} falha(s)."
             : $"Importação concluída com {result.Importados} aluno(s) incluído(s).";
 
-        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, Turma = turma, PageNumber = pageNumber, PageSize = pageSize });
+        return RedirectToPage("/Alunos/Index", new { Busca = busca, Status = status, Serie = serie, TurmaId = turma, PageNumber = pageNumber, PageSize = pageSize });
     }
 
     public async Task<IActionResult> OnGetModeloImportacaoAsync(CancellationToken cancellationToken)
@@ -308,7 +308,7 @@ public sealed class IndexModel : PageModel
         if (!CanManageAlunos())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para baixar o modelo de importação.";
-            return RedirectToPage("/Alunos/Index", new { Busca, Status, Serie, Turma, PageNumber, PageSize });
+            return RedirectToPage("/Alunos/Index", new { Busca, Status, Serie, TurmaId, PageNumber, PageSize });
         }
 
         var template = await _alunoImportService.GerarModeloExcelAsync(cancellationToken);
@@ -351,7 +351,7 @@ public sealed class IndexModel : PageModel
 
         Turmas = turmasFiltradas
             .OrderBy(x => x.Nome)
-            .Select(x => new SelectListItem(x.Nome, x.Nome))
+            .Select(x => new SelectListItem(x.Nome, x.Id.ToString()))
             .ToList();
     }
 }

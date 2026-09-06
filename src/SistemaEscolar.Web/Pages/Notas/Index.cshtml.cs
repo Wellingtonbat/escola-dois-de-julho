@@ -244,7 +244,7 @@ public sealed class IndexModel : PageModel
         var alunosVisiveis = alunos.Where(x => x.IsAtivo);
         if (escopo is not null)
         {
-            alunosVisiveis = alunosVisiveis.Where(x => x.Turma is not null && escopo.TurmaNomes.Contains(x.Turma, StringComparer.OrdinalIgnoreCase));
+            alunosVisiveis = alunosVisiveis.Where(x => x.TurmaId.HasValue && escopo.TurmaIds.Contains(x.TurmaId.Value));
         }
 
         Alunos = alunosVisiveis

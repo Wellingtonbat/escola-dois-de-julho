@@ -52,7 +52,6 @@ public sealed class ResultadoAcademicoRepositoryTests
             NomeCompleto = "Aluno A",
             DataNascimento = new DateTime(2012, 1, 1),
             AnoLetivo = 2026,
-            Turma = "8o Ano A",
             SerieId = serie8Ano.Id,
             IsAtivo = true
         };
@@ -65,7 +64,6 @@ public sealed class ResultadoAcademicoRepositoryTests
             NomeCompleto = "Aluno B",
             DataNascimento = new DateTime(2012, 2, 1),
             AnoLetivo = 2026,
-            Turma = "9o Ano B",
             SerieId = serie9Ano.Id,
             IsAtivo = true
         };
@@ -218,6 +216,9 @@ public sealed class ResultadoAcademicoRepositoryTests
         var serie8Ano = new Serie { Id = Guid.NewGuid(), Nome = "8o Ano", Ordem = 8, IsAtiva = true };
         var serie9Ano = new Serie { Id = Guid.NewGuid(), Nome = "9o Ano", Ordem = 9, IsAtiva = true };
 
+        var turma8AnoA = new Turma { Id = Guid.NewGuid(), Nome = "8o Ano A", SerieId = serie8Ano.Id, Turno = "Manhã", AnoLetivo = 2026, IsAtiva = true };
+        var turma9AnoB = new Turma { Id = Guid.NewGuid(), Nome = "9o Ano B", SerieId = serie9Ano.Id, Turno = "Manhã", AnoLetivo = 2026, IsAtiva = true };
+
         var alunoA = new Aluno
         {
             Id = Guid.NewGuid(),
@@ -226,7 +227,7 @@ public sealed class ResultadoAcademicoRepositoryTests
             NomeCompleto = "Aluno A",
             DataNascimento = new DateTime(2012, 1, 1),
             AnoLetivo = 2026,
-            Turma = "8o Ano A",
+            TurmaId = turma8AnoA.Id,
             SerieId = serie8Ano.Id,
             IsAtivo = true
         };
@@ -239,7 +240,7 @@ public sealed class ResultadoAcademicoRepositoryTests
             NomeCompleto = "Aluno B",
             DataNascimento = new DateTime(2012, 2, 1),
             AnoLetivo = 2026,
-            Turma = "9o Ano B",
+            TurmaId = turma9AnoB.Id,
             SerieId = serie9Ano.Id,
             IsAtivo = true
         };
@@ -260,6 +261,7 @@ public sealed class ResultadoAcademicoRepositoryTests
 
         context.Professores.Add(professor);
         context.Series.AddRange(serie8Ano, serie9Ano);
+        context.Turmas.AddRange(turma8AnoA, turma9AnoB);
         context.Alunos.AddRange(alunoA, alunoB);
         context.Disciplinas.Add(disciplina);
         context.PeriodosLancamento.AddRange(periodo1, periodo2, periodo3, periodo4);

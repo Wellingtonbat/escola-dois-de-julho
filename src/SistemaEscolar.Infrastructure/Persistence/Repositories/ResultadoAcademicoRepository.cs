@@ -29,11 +29,17 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             .Where(x => !x.IsDeleted);
 
         var seriesQuery = _context.Set<Domain.Entities.Serie>().AsNoTracking();
+        var turmasQuery = _context.Set<Domain.Entities.Turma>().AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(filter.Turma))
         {
             var turma = filter.Turma.Trim();
-            alunosQuery = alunosQuery.Where(x => x.Turma == turma);
+            var turmaIds = await turmasQuery
+                .Where(t => t.Nome == turma)
+                .Select(t => t.Id)
+                .ToListAsync(cancellationToken);
+
+            alunosQuery = alunosQuery.Where(x => x.TurmaId.HasValue && turmaIds.Contains(x.TurmaId.Value));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Serie))
@@ -84,11 +90,13 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             join aluno in alunosQuery on nota.AlunoId equals aluno.Id
             join disciplina in disciplinasQuery on nota.DisciplinaId equals disciplina.Id
             join serie in seriesQuery on aluno.SerieId equals serie.Id
+            join turma in turmasQuery on aluno.TurmaId equals (Guid?)turma.Id into turmaGroup
+            from turma in turmaGroup.DefaultIfEmpty()
             group nota by new
             {
                 aluno.Id,
                 aluno.NomeCompleto,
-                aluno.Turma,
+                TurmaNome = turma != null ? turma.Nome : null,
                 SerieNome = serie.Nome,
                 Disciplina = disciplina.Nome
             }
@@ -97,7 +105,7 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             {
                 grupo.Key.Id,
                 grupo.Key.NomeCompleto,
-                grupo.Key.Turma,
+                grupo.Key.TurmaNome,
                 grupo.Key.SerieNome,
                 grupo.Key.Disciplina,
                 TotalLancamentos = grupo.Count(),
@@ -125,7 +133,7 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
                 x.Id,
                 x.NomeCompleto,
                 x.Disciplina,
-                x.Turma ?? string.Empty,
+                x.TurmaNome ?? string.Empty,
                 x.SerieNome,
                 filter.AnoLetivo,
                 Math.Round(x.MediaFinal, 2),

@@ -44,7 +44,6 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.Property(x => x.NomeCompleto).HasMaxLength(200).IsRequired();
             entity.Property(x => x.DataNascimento).HasColumnType("timestamp without time zone").IsRequired();
             entity.Property(x => x.AnoLetivo).IsRequired();
-            entity.Property(x => x.Turma).HasMaxLength(80);
             entity.Property(x => x.IsDeleted).HasDefaultValue(false);
             entity.HasIndex(x => x.Matricula);
             entity.HasIndex(x => new { x.Cpf, x.AnoLetivo }).IsUnique().HasFilter("\"IsDeleted\" = false");
@@ -54,6 +53,11 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.HasOne<Serie>()
                 .WithMany()
                 .HasForeignKey(x => x.SerieId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<Turma>()
+                .WithMany()
+                .HasForeignKey(x => x.TurmaId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

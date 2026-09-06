@@ -245,6 +245,15 @@ public sealed class NotaService : INotaService
             return NotaCreateResult.Fail("As notas devem estar entre 0 e 10.");
         }
 
+        if (request.RecuperacaoParalela.HasValue)
+        {
+            var resultadoUnidadeAtual = CalcularResultadoUnidade(request.Avaliacao1, request.Avaliacao2, request.Avaliacao3);
+            if (resultadoUnidadeAtual >= 5m)
+            {
+                return NotaCreateResult.Fail("A Recuperação Paralela só pode ser lançada quando a média das avaliações for menor que 5,0.");
+            }
+        }
+
         var periodo = await _periodoService.ObterPorIdAsync(request.PeriodoLancamentoId, cancellationToken);
         if (periodo is null)
         {
@@ -321,7 +330,7 @@ public sealed class NotaService : INotaService
         }
 
         var aluno = await _alunoService.ObterPorIdAsync(request.AlunoId, cancellationToken);
-        if (aluno is null || aluno.Turma is null || !escopo.TurmaNomes.Contains(aluno.Turma, StringComparer.OrdinalIgnoreCase))
+        if (aluno is null || !aluno.TurmaId.HasValue || !escopo.TurmaIds.Contains(aluno.TurmaId.Value))
         {
             return (NotaCreateResult.Fail("Você não está vinculado à turma deste aluno."), request);
         }

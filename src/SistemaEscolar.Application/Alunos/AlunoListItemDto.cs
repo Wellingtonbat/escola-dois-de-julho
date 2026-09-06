@@ -9,5 +9,6 @@ public sealed record AlunoListItemDto(
     int AnoLetivo,
     Guid SerieId,
     string Serie,
-    string? Turma,
+    Guid? TurmaId,
+    string? TurmaNome,
     bool IsAtivo);

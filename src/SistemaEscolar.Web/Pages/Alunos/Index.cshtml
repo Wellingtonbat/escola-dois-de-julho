@@ -15,7 +15,7 @@
             @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
             {
                 <a asp-page="/Alunos/Index" asp-page-handler="ModeloImportacao" asp-route-Busca="@Model.Busca"
-                   asp-route-Status="@Model.Status" asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                   asp-route-Status="@Model.Status" asp-route-Serie="@Model.Serie" asp-route-TurmaId="@Model.TurmaId"
                    asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize"
                    class="btn btn-outline-secondary btn-sm">Baixar Modelo</a>
                 <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
@@ -41,7 +41,7 @@
                 </select>
             </div>
             <div class="col-12 col-md-2">
-                <select asp-for="Turma" class="form-select" id="filtro-turma" title="Filtrar por turma">
+                <select asp-for="TurmaId" class="form-select" id="filtro-turma" title="Filtrar por turma">
                     <option value="">Todas as turmas</option>
                     @foreach (var turma in Model.Turmas)
                     {
@@ -95,7 +95,7 @@
                                 <td>@aluno.DataNascimento.ToString("dd/MM/yyyy")</td>
                                 <td>@aluno.AnoLetivo</td>
                                 <td>@aluno.Serie</td>
-                                <td>@(string.IsNullOrWhiteSpace(aluno.Turma) ? "-" : aluno.Turma)</td>
+                                <td>@(aluno.TurmaNome ?? "-")</td>
                                 <td>
                                     <span class="status-pill @(aluno.IsAtivo ? "status-open" : "status-warn")">
                                         @(aluno.IsAtivo ? "Ativo" : "Inativo")
@@ -110,7 +110,7 @@
                                                 data-matricula="@aluno.Matricula" data-cpf="@aluno.Cpf" data-nome="@aluno.NomeCompleto"
                                                 data-nascimento="@aluno.DataNascimento.ToString("yyyy-MM-dd")"
                                                 data-ano-letivo="@aluno.AnoLetivo" data-serie-id="@aluno.SerieId"
-                                                data-turma="@aluno.Turma" data-ativo="@aluno.IsAtivo">
+                                                data-turma-id="@aluno.TurmaId" data-ativo="@aluno.IsAtivo">
                                             Editar
                                         </button>
                                         <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@aluno.Id" class="m-0"
@@ -118,7 +118,7 @@
                                             <input type="hidden" name="busca" value="@Model.Busca" />
                                             <input type="hidden" name="status" value="@Model.Status" />
                                             <input type="hidden" name="serie" value="@Model.Serie" />
-                                            <input type="hidden" name="turma" value="@Model.Turma" />
+                                            <input type="hidden" name="turma" value="@Model.TurmaId" />
                                             <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                                             <input type="hidden" name="pageSize" value="@Model.PageSize" />
                                             <button type="submit"
@@ -131,7 +131,7 @@
                                             <input type="hidden" name="busca" value="@Model.Busca" />
                                             <input type="hidden" name="status" value="@Model.Status" />
                                             <input type="hidden" name="serie" value="@Model.Serie" />
-                                            <input type="hidden" name="turma" value="@Model.Turma" />
+                                            <input type="hidden" name="turma" value="@Model.TurmaId" />
                                             <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                                             <input type="hidden" name="pageSize" value="@Model.PageSize" />
                                             <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
@@ -161,7 +161,7 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
                             <a class="page-link" asp-page="/Alunos/Index" asp-route-Busca="@Model.Busca"
-                               asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                               asp-route-Serie="@Model.Serie" asp-route-TurmaId="@Model.TurmaId"
                                asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
                                asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
                         </li>
@@ -170,7 +170,7 @@
                         {
                             <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
                                 <a class="page-link" asp-page="/Alunos/Index" asp-route-Busca="@Model.Busca"
-                                   asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                                   asp-route-Serie="@Model.Serie" asp-route-TurmaId="@Model.TurmaId"
                                    asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
                                    asp-route-PageNumber="@i">@i</a>
                             </li>
@@ -178,7 +178,7 @@
 
                         <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
                             <a class="page-link" asp-page="/Alunos/Index" asp-route-Busca="@Model.Busca"
-                               asp-route-Serie="@Model.Serie" asp-route-Turma="@Model.Turma"
+                               asp-route-Serie="@Model.Serie" asp-route-TurmaId="@Model.TurmaId"
                                asp-route-Status="@Model.Status" asp-route-PageSize="@Model.PageSize"
                                asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
                         </li>
@@ -213,7 +213,7 @@
                         <input type="hidden" name="busca" value="@Model.Busca" />
                         <input type="hidden" name="status" value="@Model.Status" />
                         <input type="hidden" name="serieFilter" value="@Model.Serie" />
-                        <input type="hidden" name="turmaFilter" value="@Model.Turma" />
+                        <input type="hidden" name="turmaFilter" value="@Model.TurmaId" />
                         <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                         <input type="hidden" name="pageSize" value="@Model.PageSize" />
 
@@ -253,7 +253,13 @@
                         </div>
                         <div class="mb-3 mt-2">
                             <label for="create-aluno-turma" class="form-label">Turma (opcional)</label>
-                            <input type="text" id="create-aluno-turma" name="turma" class="form-control" />
+                            <select id="create-aluno-turma" name="turmaId" class="form-select">
+                                <option value="">Sem turma definida</option>
+                                @foreach (var turma in Model.TurmasAtivas)
+                                {
+                                    <option value="@turma.Id">@turma.Nome</option>
+                                }
+                            </select>
                         </div>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="create-aluno-ativo" name="isAtivo"
@@ -294,7 +300,7 @@
                         <input type="hidden" name="busca" value="@Model.Busca" />
                         <input type="hidden" name="status" value="@Model.Status" />
                         <input type="hidden" name="serieFilter" value="@Model.Serie" />
-                        <input type="hidden" name="turmaFilter" value="@Model.Turma" />
+                        <input type="hidden" name="turmaFilter" value="@Model.TurmaId" />
                         <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                         <input type="hidden" name="pageSize" value="@Model.PageSize" />
 
@@ -334,7 +340,13 @@
                         </div>
                         <div class="mb-3 mt-2">
                             <label for="edit-aluno-turma" class="form-label">Turma (opcional)</label>
-                            <input type="text" id="edit-aluno-turma" name="turma" class="form-control" />
+                            <select id="edit-aluno-turma" name="turmaId" class="form-select">
+                                <option value="">Sem turma definida</option>
+                                @foreach (var turma in Model.TurmasAtivas)
+                                {
+                                    <option value="@turma.Id">@turma.Nome</option>
+                                }
+                            </select>
                         </div>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="edit-aluno-ativo" name="isAtivo"
@@ -374,7 +386,7 @@
                         <input type="hidden" name="busca" value="@Model.Busca" />
                         <input type="hidden" name="status" value="@Model.Status" />
                         <input type="hidden" name="serie" value="@Model.Serie" />
-                        <input type="hidden" name="turma" value="@Model.Turma" />
+                        <input type="hidden" name="turma" value="@Model.TurmaId" />
                         <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                         <input type="hidden" name="pageSize" value="@Model.PageSize" />
 
@@ -414,53 +426,52 @@
     @section Scripts {
         <script>
             (() => {
-                const filterSerie = document.getElementById("Serie");
-                const filterTurma = document.getElementById("filtro-turma");
                 const allTurmas = [
                 @foreach (var turma in Model.TurmasAtivas)
                     {
-                        @:{ serie: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.SerieNome)), value: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.Nome)), text: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.Nome)) },
+                        @:{ serieId: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.SerieId.ToString())), serieNome: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.SerieNome)), id: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.Id.ToString())), nome: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(turma.Nome)) },
                     }
                                 ];
 
-                function refreshTurmasForSerie() {
-                    if (!filterSerie || !filterTurma) {
-                        return;
+                function wireSerieTurmaCascade(serieSelect, turmaSelect, serieKeyProp, placeholder) {
+                    if (!serieSelect || !turmaSelect) {
+                        return null;
                     }
 
-                    const selectedSerie = filterSerie.value || "";
-                    const previousTurma = filterTurma.value || "";
-                    const turmaOptions = selectedSerie
-                        ? allTurmas.filter((turma) => turma.serie === selectedSerie)
-                        : allTurmas;
+                    function refresh(preserveValue) {
+                        const selectedSerieKey = serieSelect.value || "";
+                        const previousTurma = preserveValue !== undefined ? preserveValue : (turmaSelect.value || "");
+                        const turmaOptions = selectedSerieKey
+                            ? allTurmas.filter((turma) => turma[serieKeyProp] === selectedSerieKey)
+                            : allTurmas;
 
-                    filterTurma.innerHTML = "";
+                        turmaSelect.innerHTML = "";
 
-                    const defaultOption = document.createElement("option");
-                    defaultOption.value = "";
-                    defaultOption.textContent = "Todas as turmas";
-                    filterTurma.appendChild(defaultOption);
+                        const defaultOption = document.createElement("option");
+                        defaultOption.value = "";
+                        defaultOption.textContent = placeholder;
+                        turmaSelect.appendChild(defaultOption);
 
-                    turmaOptions.forEach((turma) => {
-                        const option = document.createElement("option");
-                        option.value = turma.value;
-                        option.textContent = turma.text;
-                        filterTurma.appendChild(option);
-                    });
+                        turmaOptions.forEach((turma) => {
+                            const option = document.createElement("option");
+                            option.value = turma.id;
+                            option.textContent = turma.nome;
+                            turmaSelect.appendChild(option);
+                        });
 
-                    if (previousTurma && turmaOptions.some((t) => t.value === previousTurma)) {
-                        filterTurma.value = previousTurma;
+                        if (previousTurma && turmaOptions.some((t) => t.id === previousTurma)) {
+                            turmaSelect.value = previousTurma;
+                        }
                     }
+
+                    serieSelect.addEventListener("change", () => refresh(""));
+                    refresh();
+                    return refresh;
                 }
 
-                if (filterSerie && filterTurma) {
-                    filterSerie.addEventListener("change", () => {
-                        filterTurma.value = "";
-                        refreshTurmasForSerie();
-                    });
-
-                    refreshTurmasForSerie();
-                }
+                wireSerieTurmaCascade(document.getElementById("Serie"), document.getElementById("filtro-turma"), "serieNome", "Todas as turmas");
+                wireSerieTurmaCascade(document.getElementById("create-aluno-serie"), document.getElementById("create-aluno-turma"), "serieId", "Sem turma definida");
+                const refreshEditTurma = wireSerieTurmaCascade(document.getElementById("edit-aluno-serie"), document.getElementById("edit-aluno-turma"), "serieId", "Sem turma definida");
 
                 const editModal = document.getElementById("editAlunoModal");
                 if (!editModal) {
@@ -474,7 +485,6 @@
                 const dataNascimentoInput = document.getElementById("edit-aluno-data-nascimento");
                 const anoLetivoInput = document.getElementById("edit-aluno-ano-letivo");
                 const serieInput = document.getElementById("edit-aluno-serie");
-                const turmaInput = document.getElementById("edit-aluno-turma");
                 const ativoInput = document.getElementById("edit-aluno-ativo");
 
                 document.querySelectorAll(".btn-edit-aluno").forEach((button) => {
@@ -487,7 +497,9 @@
                         dataNascimentoInput.value = button.dataset.nascimento || "";
                         anoLetivoInput.value = button.dataset.anoLetivo || "";
                         serieInput.value = button.dataset.serieId || "";
-                        turmaInput.value = button.dataset.turma || "";
+                        if (refreshEditTurma) {
+                            refreshEditTurma(button.dataset.turmaId || "");
+                        }
                         ativoInput.checked = (button.dataset.ativo || "").toLowerCase() === "true";
                     });
                 });

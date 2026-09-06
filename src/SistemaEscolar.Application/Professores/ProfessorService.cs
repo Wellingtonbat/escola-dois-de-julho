@@ -200,10 +200,9 @@ public sealed class ProfessorService : IProfessorService
         var todasAsTurmas = await _turmaRepository.GetAllAsync(null, cancellationToken);
         var turmasDoProfessor = todasAsTurmas.Where(t => turmaIds.Contains(t.Id)).ToList();
 
-        var turmaNomes = turmasDoProfessor.Select(t => t.Nome).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var serieIds = turmasDoProfessor.Select(t => t.SerieId).Distinct().ToList();
 
-        return new ProfessorEscopoDto(professor.Id, turmaIds, turmaNomes, disciplinaIds, serieIds);
+        return new ProfessorEscopoDto(professor.Id, turmaIds, disciplinaIds, serieIds);
     }
 
     private async Task<(ProfessorCreateResult Result, string NomeCompleto, string Email, string UsuarioCpf, List<ProfessorAtribuicaoInput> AtribuicoesValidas)> ValidateAsync(

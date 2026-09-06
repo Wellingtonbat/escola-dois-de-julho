@@ -88,6 +88,10 @@ public sealed class ApplicationDbInitializer
             return;
         }
 
+        var turma8AnoA = await _context.Turmas.FirstOrDefaultAsync(x => x.Nome == "8o Ano A", cancellationToken);
+        var turma9AnoB = await _context.Turmas.FirstOrDefaultAsync(x => x.Nome == "9o Ano B", cancellationToken);
+        var turma7AnoC = await _context.Turmas.FirstOrDefaultAsync(x => x.Nome == "7o Ano C", cancellationToken);
+
         var proximaMatricula = await _alunoRepository.ProximaMatriculaAsync(cancellationToken);
         var alunos = new[]
         {
@@ -99,7 +103,7 @@ public sealed class ApplicationDbInitializer
                 NomeCompleto = "Gabriel Santos",
                 DataNascimento = new DateTime(2012, 4, 10),
                 AnoLetivo = 2026,
-                Turma = "8o Ano A",
+                TurmaId = turma8AnoA?.Id,
                 SerieId = serie8Ano.Id,
                 IsAtivo = true
             },
@@ -111,7 +115,7 @@ public sealed class ApplicationDbInitializer
                 NomeCompleto = "Ana Beatriz Lima",
                 DataNascimento = new DateTime(2011, 9, 18),
                 AnoLetivo = 2026,
-                Turma = "9o Ano B",
+                TurmaId = turma9AnoB?.Id,
                 SerieId = serie9Ano.Id,
                 IsAtivo = true
             },
@@ -123,7 +127,7 @@ public sealed class ApplicationDbInitializer
                 NomeCompleto = "Lucas Ferreira",
                 DataNascimento = new DateTime(2013, 1, 30),
                 AnoLetivo = 2026,
-                Turma = "7o Ano C",
+                TurmaId = turma7AnoC?.Id,
                 SerieId = serie7Ano.Id,
                 IsAtivo = false
             }
@@ -426,11 +430,11 @@ public sealed class ApplicationDbInitializer
                 DisciplinaId = disciplinaHistoria.Id,
                 ProfessorId = professorRicardo.Id,
                 PeriodoLancamentoId = periodo2Trimestre.Id,
-                Avaliacao1 = 5.0m,
-                Avaliacao2 = 5.5m,
-                Avaliacao3 = 6.0m,
+                Avaliacao1 = 3.5m,
+                Avaliacao2 = 4.0m,
+                Avaliacao3 = 4.5m,
                 RecuperacaoParalela = 6.0m,
-                ResultadoUnidade = 5.5m,
+                ResultadoUnidade = 4.0m,
                 ResultadoFinalUnidade = 6.0m,
                 Valor = 6.0m,
                 IsFinalizada = false

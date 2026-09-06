@@ -280,6 +280,7 @@ User.IsInRole("Professor"))
                             <label for="create-recuperacao" class="form-label">Recuperação Paralela (opcional)</label>
                             <input type="number" id="create-recuperacao" name="recuperacaoParalela" class="form-control"
                                    step="0.01" min="0" max="10" />
+                            <small id="create-recuperacao-hint" class="text-muted"></small>
                         </div>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="create-finalizada" name="isFinalizada"
@@ -382,6 +383,7 @@ User.IsInRole("Professor"))
                             <label for="edit-recuperacao" class="form-label">Recuperação Paralela (opcional)</label>
                             <input type="number" id="edit-recuperacao" name="recuperacaoParalela" class="form-control"
                                    step="0.01" min="0" max="10" />
+                            <small id="edit-recuperacao-hint" class="text-muted"></small>
                         </div>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="edit-finalizada" name="isFinalizada"
@@ -402,6 +404,53 @@ User.IsInRole("Professor"))
     @section Scripts {
         <script>
             (() => {
+                function wireRecuperacaoGating(prefix) {
+                    const avaliacao1 = document.getElementById(`${prefix}-avaliacao1`);
+                    const avaliacao2 = document.getElementById(`${prefix}-avaliacao2`);
+                    const avaliacao3 = document.getElementById(`${prefix}-avaliacao3`);
+                    const recuperacao = document.getElementById(`${prefix}-recuperacao`);
+                    const hint = document.getElementById(`${prefix}-recuperacao-hint`);
+                    if (!avaliacao1 || !avaliacao2 || !avaliacao3 || !recuperacao || !hint) {
+                        return;
+                    }
+
+                    function atualizarDica() {
+                        const valores = [avaliacao1, avaliacao2, avaliacao3]
+                            .map((input) => (input.value || "").replace(",", "."))
+                            .filter((value) => value !== "")
+                            .map((value) => parseFloat(value))
+                            .filter((value) => !Number.isNaN(value));
+
+                        if (valores.length === 0) {
+                            hint.textContent = "Só é possível lançar a Recuperação Paralela quando a média das avaliações for menor que 5,0.";
+                            hint.classList.remove("text-danger");
+                            hint.classList.add("text-muted");
+                            return;
+                        }
+
+                        const media = valores.reduce((soma, valor) => soma + valor, 0) / valores.length;
+                        const mediaFormatada = media.toFixed(2).replace(".", ",");
+
+                        if (media < 5) {
+                            hint.textContent = `Média atual: ${mediaFormatada} — Recuperação Paralela disponível.`;
+                            hint.classList.remove("text-danger");
+                            hint.classList.add("text-muted");
+                        } else {
+                            hint.textContent = `Média atual: ${mediaFormatada} — Recuperação Paralela não é necessária (média já é igual ou maior que 5,0).`;
+                            hint.classList.remove("text-muted");
+                            hint.classList.add("text-danger");
+                        }
+                    }
+
+                    [avaliacao1, avaliacao2, avaliacao3].forEach((input) => {
+                        input.addEventListener("input", atualizarDica);
+                    });
+                    atualizarDica();
+                }
+
+                wireRecuperacaoGating("create");
+                wireRecuperacaoGating("edit");
+
                 const editModal = document.getElementById("editNotaModal");
                 if (!editModal) {
                     return;
@@ -431,6 +480,7 @@ User.IsInRole("Professor"))
                         avaliacao3Input.value = toNumberInputValue(button.dataset.avaliacao3);
                         recuperacaoInput.value = toNumberInputValue(button.dataset.recuperacao);
                         finalizadaInput.checked = (button.dataset.finalizada || "").toLowerCase() === "true";
+                        avaliacao3Input.dispatchEvent(new Event("input"));
                     });
                 });
             })();

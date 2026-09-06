@@ -11,6 +11,6 @@ public sealed class Aluno : BaseEntity
     public DateTime DataNascimento { get; set; }
     public int AnoLetivo { get; set; }
     public Guid SerieId { get; set; }
-    public string? Turma { get; set; }
+    public Guid? TurmaId { get; set; }
     public bool IsAtivo { get; set; } = true;
 }
