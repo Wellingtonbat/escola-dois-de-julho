@@ -76,7 +76,7 @@ public sealed class AlunoImportService : IAlunoImportService
 
         worksheet.Cell(2, 1).Value = "12345678901";
         worksheet.Cell(2, 2).Value = "Maria Silva";
-        worksheet.Cell(2, 3).Value = "10/05/2012";
+        worksheet.Cell(2, 3).Value = "25/12/2012";
         worksheet.Cell(2, 4).Value = "Ativo";
 
         worksheet.Range(1, 1, 1, 4).Style.Font.Bold = true;
@@ -123,7 +123,7 @@ public sealed class AlunoImportService : IAlunoImportService
                 continue;
             }
 
-            if (!TryBuildImportRow(partes, out var row))
+            if (partes.Length < 3 || !TryBuildImportRow(partes[0], partes[1], ParseDate(partes[2]), partes.ElementAtOrDefault(3), out var row))
             {
                 falhas++;
                 continue;
@@ -156,15 +156,15 @@ public sealed class AlunoImportService : IAlunoImportService
                 continue;
             }
 
-            var partes = new[]
-            {
-                row.Cell(1).GetString(),
-                row.Cell(2).GetString(),
-                row.Cell(3).GetString(),
-                row.Cell(4).GetString()
-            };
+            // Quando a célula de nascimento é uma data "de verdade" (não texto digitado), lemos o valor
+            // diretamente, sem passar por texto — isso evita qualquer ambiguidade de dia/mês por causa da
+            // cultura do servidor (o container de produção usa formato americano por padrão).
+            var celulaData = row.Cell(3);
+            var dataNascimento = celulaData.DataType == XLDataType.DateTime
+                ? celulaData.GetDateTime()
+                : ParseDate(celulaData.GetString());
 
-            if (!TryBuildImportRow(partes, out var importRow))
+            if (!TryBuildImportRow(row.Cell(1).GetString(), row.Cell(2).GetString(), dataNascimento, row.Cell(4).GetString(), out var importRow))
             {
                 falhas++;
                 continue;
@@ -176,19 +176,13 @@ public sealed class AlunoImportService : IAlunoImportService
         return (rows, falhas);
     }
 
-    private static bool TryBuildImportRow(string[] partes, out ImportAlunoRow? row)
+    private static bool TryBuildImportRow(string? cpfRaw, string? nomeRaw, DateTime dataNascimento, string? statusRaw, out ImportAlunoRow? row)
     {
         row = null;
 
-        if (partes.Length < 3)
-        {
-            return false;
-        }
-
-        var cpf = new string((partes[0] ?? string.Empty).Where(char.IsDigit).ToArray());
-        var nome = partes[1].Trim();
-        var dataNascimento = ParseDate(partes[2]);
-        var isAtivo = partes.Length >= 4 ? ParseStatus(partes[3]) : true;
+        var cpf = new string((cpfRaw ?? string.Empty).Where(char.IsDigit).ToArray());
+        var nome = (nomeRaw ?? string.Empty).Trim();
+        var isAtivo = ParseStatus(statusRaw);
 
         if (cpf.Length != 11 || string.IsNullOrWhiteSpace(nome) || dataNascimento == default)
         {
@@ -210,6 +204,19 @@ public sealed class AlunoImportService : IAlunoImportService
         return status is "ativo" or "1" or "true" or "sim";
     }
 
+    // Formatos aceitos, nessa ordem, sempre com dia antes do mês (padrão brasileiro). Usamos TryParseExact
+    // com CultureInfo.InvariantCulture em vez de TryParse: assim o resultado nunca depende da cultura
+    // configurada no servidor (o container de produção usa formato americano por padrão, o que trocaria
+    // dia por mês silenciosamente em datas como 05/10/2012).
+    private static readonly string[] FormatosDataAceitos =
+    {
+        "dd/MM/yyyy",
+        "d/M/yyyy",
+        "dd-MM-yyyy",
+        "d-M-yyyy",
+        "yyyy-MM-dd",
+    };
+
     private static DateTime ParseDate(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -217,12 +224,14 @@ public sealed class AlunoImportService : IAlunoImportService
             return default;
         }
 
-        if (DateTime.TryParse(value, out var parsed))
-        {
-            return parsed.Date;
-        }
-
-        return default;
+        return DateTime.TryParseExact(
+            value.Trim(),
+            FormatosDataAceitos,
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None,
+            out var parsed)
+            ? parsed.Date
+            : default;
     }
 
     private sealed record ImportAlunoRow(
