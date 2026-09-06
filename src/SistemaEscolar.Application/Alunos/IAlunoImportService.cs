@@ -6,6 +6,7 @@ public interface IAlunoImportService
         string fileName,
         Stream stream,
         Guid serieId,
+        Guid? turmaId,
         int anoLetivo,
         CancellationToken cancellationToken = default);
 

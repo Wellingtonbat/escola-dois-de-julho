@@ -233,6 +233,7 @@ public sealed class IndexModel : PageModel
     public async Task<IActionResult> OnPostImportAsync(
         IFormFile? arquivoImportacao,
         Guid serieId,
+        Guid? turmaId,
         int anoLetivo,
         string? busca,
         string? status,
@@ -283,7 +284,7 @@ public sealed class IndexModel : PageModel
 
         await using var stream = arquivoImportacao.OpenReadStream();
 
-        var result = await _alunoImportService.ImportarAsync(arquivoImportacao.FileName, stream, serieId, anoLetivo, cancellationToken);
+        var result = await _alunoImportService.ImportarAsync(arquivoImportacao.FileName, stream, serieId, turmaId, anoLetivo, cancellationToken);
         if (result.Importados + result.Falhas > 5000)
         {
             TempData["ErrorMessage"] = "A importação permite no máximo 5.000 registros por arquivo.";

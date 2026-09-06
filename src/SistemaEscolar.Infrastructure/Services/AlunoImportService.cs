@@ -16,6 +16,7 @@ public sealed class AlunoImportService : IAlunoImportService
         string fileName,
         Stream stream,
         Guid serieId,
+        Guid? turmaId,
         int anoLetivo,
         CancellationToken cancellationToken = default)
     {
@@ -48,7 +49,7 @@ public sealed class AlunoImportService : IAlunoImportService
         foreach (var row in rows)
         {
             var result = await _alunoService.CriarAsync(
-                new AlunoCreateRequest(row.Cpf, row.Nome, row.DataNascimento, anoLetivo, serieId, null, row.IsAtivo),
+                new AlunoCreateRequest(row.Cpf, row.Nome, row.DataNascimento, anoLetivo, serieId, turmaId, row.IsAtivo),
                 cancellationToken);
 
             if (result.Succeeded)

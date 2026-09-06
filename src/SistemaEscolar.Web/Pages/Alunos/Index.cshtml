@@ -391,8 +391,9 @@
                         <input type="hidden" name="pageSize" value="@Model.PageSize" />
 
                         <p class="small text-muted mb-2">Todos os alunos da planilha serão matriculados na série e
-                            ano letivo escolhidos abaixo. Formato esperado da planilha: CPF, Nome, DataNascimento e
-                            Status.</p>
+                            ano letivo escolhidos abaixo. A turma é opcional: deixe em branco para vincular cada
+                            aluno depois, ou escolha uma turma para já importar todos direto nela. Formato esperado
+                            da planilha: CPF, Nome, DataNascimento e Status.</p>
 
                         <div class="row g-2 mb-2">
                             <div class="col-6">
@@ -410,6 +411,16 @@
                                     }
                                 </select>
                             </div>
+                        </div>
+                        <div class="mb-2">
+                            <label for="import-aluno-turma" class="form-label">Turma (opcional)</label>
+                            <select id="import-aluno-turma" name="turmaId" class="form-select">
+                                <option value="">Sem turma definida</option>
+                                @foreach (var turma in Model.TurmasAtivas)
+                                {
+                                    <option value="@turma.Id">@turma.Nome</option>
+                                }
+                            </select>
                         </div>
 
                         <input type="file" class="form-control" name="arquivoImportacao" accept=".csv,.xlsx" required />
@@ -472,6 +483,7 @@
                 wireSerieTurmaCascade(document.getElementById("Serie"), document.getElementById("filtro-turma"), "serieNome", "Todas as turmas");
                 wireSerieTurmaCascade(document.getElementById("create-aluno-serie"), document.getElementById("create-aluno-turma"), "serieId", "Sem turma definida");
                 const refreshEditTurma = wireSerieTurmaCascade(document.getElementById("edit-aluno-serie"), document.getElementById("edit-aluno-turma"), "serieId", "Sem turma definida");
+                wireSerieTurmaCascade(document.getElementById("import-aluno-serie"), document.getElementById("import-aluno-turma"), "serieId", "Sem turma definida");
 
                 const editModal = document.getElementById("editAlunoModal");
                 if (!editModal) {
