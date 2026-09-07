@@ -14,7 +14,7 @@
         <a asp-page="/Series/Index" class="btn btn-outline-secondary btn-sm">Voltar</a>
     </div>
     <div class="panel-body">
-        <form method="post" class="row g-3" data-confirm-message="Confirma o cadastro desta série?">
+        <form method="post" class="row g-3">
             <div asp-validation-summary="ModelOnly" class="text-danger col-12"></div>
 
             <div class="col-12 col-md-8">
@@ -37,7 +37,7 @@
             </div>
 
             <div class="col-12 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Salvar Série</button>
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Confirma o cadastro desta série?');">Salvar Série</button>
                 <a asp-page="/Series/Index" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </form>

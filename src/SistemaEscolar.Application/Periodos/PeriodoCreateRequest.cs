@@ -5,5 +5,4 @@ public sealed record PeriodoCreateRequest(
     int Trimestre,
     string Descricao,
     DateTime DataInicial,
-    DateTime DataFinal,
-    bool IsAberto);
+    DateTime DataFinal);

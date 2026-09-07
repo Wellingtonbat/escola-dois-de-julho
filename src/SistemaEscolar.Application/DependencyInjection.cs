@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IPeriodoService, PeriodoService>();
         services.AddScoped<IProfessorService, ProfessorService>();
         services.AddScoped<IResultadoAcademicoService, ResultadoAcademicoService>();
+        services.AddScoped<IRecuperacaoFinalService, RecuperacaoFinalService>();
         services.AddScoped<ISerieService, SerieService>();
         services.AddScoped<ITurmaService, TurmaService>();
 

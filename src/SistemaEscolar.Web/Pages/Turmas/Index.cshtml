@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Turmas";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Turmas" };
+    var podeGerenciar = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
 }
 
 <section class="panel">
@@ -11,7 +12,7 @@
             <h1 class="h5 mb-1">Gestão de Turmas</h1>
             <p class="text-muted mb-0">Cadastro e manutenção de turmas por série, turno e ano letivo.</p>
         </div>
-        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        @if (podeGerenciar)
         {
             <a asp-page="/Turmas/Create" class="btn btn-primary btn-sm">Nova Turma</a>
         }
@@ -70,7 +71,7 @@
                     {
                         @foreach (var turma in Model.Turmas)
                         {
-                            <tr>
+                            <tr class="@(podeGerenciar ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-turma">
                                 <td>@turma.Nome</td>
                                 <td>@turma.SerieNome</td>
                                 <td>@turma.Turno</td>
@@ -80,39 +81,44 @@
                                         @(turma.IsAtiva ? "Ativa" : "Inativa")
                                     </span>
                                 </td>
-                                <td class="d-flex gap-2">
-                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
-                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                <td>
+                                    @if (podeGerenciar)
                                     {
-                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-turma"
-                                                data-bs-toggle="modal" data-bs-target="#editTurmaModal" data-id="@turma.Id"
-                                                data-nome="@turma.Nome" data-serie-id="@turma.SerieId" data-turno="@turma.Turno"
-                                                data-ano="@turma.AnoLetivo" data-ativa="@turma.IsAtiva">
-                                            Editar
-                                        </button>
-                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@turma.Id" class="m-0"
-                                              data-confirm-message="Tem certeza que deseja @(turma.IsAtiva ? "desativar" : "ativar") esta turma?">
-                                            <input type="hidden" name="busca" value="@Model.Busca" />
-                                            <input type="hidden" name="status" value="@Model.Status" />
-                                            <input type="hidden" name="serieId" value="@Model.SerieId" />
-                                            <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
-                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
-                                            <button type="submit"
-                                                    class="btn btn-sm @(turma.IsAtiva ? "btn-outline-warning" : "btn-outline-success")">
-                                                @(turma.IsAtiva ? "Desativar" : "Ativar")
+                                        <div class="actions-cell">
+                                            <button type="button" class="icon-btn edit btn-edit-turma"
+                                                    data-bs-toggle="modal" data-bs-target="#editTurmaModal" data-id="@turma.Id"
+                                                    data-nome="@turma.Nome" data-serie-id="@turma.SerieId" data-turno="@turma.Turno"
+                                                    data-ano="@turma.AnoLetivo" data-ativa="@turma.IsAtiva" title="Editar">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
                                             </button>
-                                        </form>
-                                        <form method="post" asp-page-handler="Delete" asp-route-id="@turma.Id" class="m-0"
-                                              data-confirm-message="Tem certeza que deseja excluir esta turma?">
-                                            <input type="hidden" name="busca" value="@Model.Busca" />
-                                            <input type="hidden" name="status" value="@Model.Status" />
-                                            <input type="hidden" name="serieId" value="@Model.SerieId" />
-                                            <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
-                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
-                                        </form>
+                                            <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@turma.Id" class="m-0">
+                                                <input type="hidden" name="busca" value="@Model.Busca" />
+                                                <input type="hidden" name="status" value="@Model.Status" />
+                                                <input type="hidden" name="serieId" value="@Model.SerieId" />
+                                                <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
+                                                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                                <button type="submit" class="icon-btn toggle" title="@(turma.IsAtiva ? "Desativar" : "Ativar")"
+                                                        onclick="return confirm('Tem certeza que deseja @(turma.IsAtiva ? "desativar" : "ativar") esta turma?');">
+                                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-page-handler="Delete" asp-route-id="@turma.Id" class="m-0">
+                                                <input type="hidden" name="busca" value="@Model.Busca" />
+                                                <input type="hidden" name="status" value="@Model.Status" />
+                                                <input type="hidden" name="serieId" value="@Model.SerieId" />
+                                                <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
+                                                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                                <button type="submit" class="icon-btn delete" title="Excluir"
+                                                        onclick="return confirm('Tem certeza que deseja excluir esta turma?');">
+                                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" /><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" /></svg>
+                                                </button>
+                                            </form>
+                                            <span class="row-chevron">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
+                                            </span>
+                                        </div>
                                     }
                                     else
                                     {
@@ -182,8 +188,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form method="post" asp-page-handler="Edit"
-                      data-confirm-message="Confirmar atualização dos dados da turma?">
+                <form method="post" asp-page-handler="Edit">
                     <div class="modal-body">
                         <input type="hidden" id="edit-turma-id" name="id" />
                         <input type="hidden" name="busca" value="@Model.Busca" />
@@ -225,7 +230,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmar atualização dos dados da turma?');">Salvar alterações</button>
                     </div>
                 </form>
             </div>

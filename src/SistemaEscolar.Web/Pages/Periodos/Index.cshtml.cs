@@ -51,7 +51,6 @@ public sealed class IndexModel : PageModel
         string descricao,
         DateTime dataInicial,
         DateTime dataFinal,
-        bool isAberto,
         CancellationToken cancellationToken)
     {
         if (!CanManagePeriodos())
@@ -61,7 +60,7 @@ public sealed class IndexModel : PageModel
         }
 
         var result = await _periodoService.CriarAsync(
-            new PeriodoCreateRequest(anoLetivo, trimestre, descricao, dataInicial, dataFinal, isAberto),
+            new PeriodoCreateRequest(anoLetivo, trimestre, descricao, dataInicial, dataFinal),
             cancellationToken);
 
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
@@ -78,7 +77,6 @@ public sealed class IndexModel : PageModel
         string descricao,
         DateTime dataInicial,
         DateTime dataFinal,
-        bool isAberto,
         CancellationToken cancellationToken)
     {
         if (!CanManagePeriodos())
@@ -89,7 +87,7 @@ public sealed class IndexModel : PageModel
 
         var result = await _periodoService.AtualizarAsync(
             id,
-            new PeriodoCreateRequest(anoLetivo, trimestre, descricao, dataInicial, dataFinal, isAberto),
+            new PeriodoCreateRequest(anoLetivo, trimestre, descricao, dataInicial, dataFinal),
             cancellationToken);
 
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded

@@ -96,6 +96,7 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             {
                 aluno.Id,
                 aluno.NomeCompleto,
+                DisciplinaId = disciplina.Id,
                 TurmaNome = turma != null ? turma.Nome : null,
                 SerieNome = serie.Nome,
                 Disciplina = disciplina.Nome
@@ -105,6 +106,7 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             {
                 grupo.Key.Id,
                 grupo.Key.NomeCompleto,
+                grupo.Key.DisciplinaId,
                 grupo.Key.TurmaNome,
                 grupo.Key.SerieNome,
                 grupo.Key.Disciplina,
@@ -114,29 +116,48 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
 
         var dados = await query.ToListAsync(cancellationToken);
 
+        var recuperacoesFinais = await _context.RecuperacoesFinais
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.AnoLetivo == filter.AnoLetivo)
+            .ToDictionaryAsync(x => (x.AlunoId, x.DisciplinaId), x => x.Valor, cancellationToken);
+
         var resultados = dados.Select(x =>
         {
-            var situacao = x.TotalLancamentos < BimestresEsperados
+            var mediaFinal = Math.Round(x.MediaFinal, 2);
+            var completo = x.TotalLancamentos >= BimestresEsperados;
+            var recuperacaoFinalDisponivel = completo && mediaFinal < MediaAprovacao;
+            var temRecuperacaoFinal = recuperacoesFinais.TryGetValue((x.Id, x.DisciplinaId), out var recuperacaoValor);
+            decimal? recuperacaoFinal = temRecuperacaoFinal ? recuperacaoValor : null;
+
+            var resultadoFinalAno = recuperacaoFinal.HasValue && mediaFinal < MediaAprovacao
+                ? Math.Max(mediaFinal, recuperacaoFinal.Value)
+                : mediaFinal;
+
+            var situacao = !completo
                 ? "Pendente"
-                : x.MediaFinal >= MediaAprovacao
+                : resultadoFinalAno >= MediaAprovacao
                     ? "Aprovado"
                     : "Reprovado";
 
             var motivo = situacao switch
             {
                 "Pendente" => "Lançamentos incompletos no ano letivo.",
-                "Reprovado" => "Média final abaixo de 5,0.",
-                _ => "Aprovado por média final."
+                "Reprovado" => recuperacaoFinal.HasValue ? "Recuperação final não atingiu a média mínima." : "Média final abaixo de 5,0.",
+                _ => recuperacaoFinal.HasValue && mediaFinal < MediaAprovacao ? "Aprovado por recuperação final." : "Aprovado por média final."
             };
 
             return new ResultadoAcademicoDto(
                 x.Id,
                 x.NomeCompleto,
+                x.DisciplinaId,
                 x.Disciplina,
                 x.TurmaNome ?? string.Empty,
                 x.SerieNome,
                 filter.AnoLetivo,
-                Math.Round(x.MediaFinal, 2),
+                mediaFinal,
+                recuperacaoFinal,
+                recuperacaoFinalDisponivel,
+                Math.Round(resultadoFinalAno, 2),
                 situacao,
                 motivo);
         });

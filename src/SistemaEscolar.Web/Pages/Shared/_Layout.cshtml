@@ -183,9 +183,9 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
                                                             @if (SignInManager.IsSignedIn(User))
                                                             {
                                                                 <span class="user-chip">@usuarioLogadoNome</span>
-                                                                <form method="post" asp-page="/Logout" class="mb-0"
-                                                                      data-confirm-message="Tem certeza que deseja sair do sistema?">
-                                                                    <button type="submit" class="btn btn-sm btn-outline-primary">Sair</button>
+                                                                <form method="post" asp-page="/Logout" class="mb-0">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-primary"
+                                                                            onclick="return confirm('Tem certeza que deseja sair do sistema?');">Sair</button>
                                                                 </form>
                                                             }
                                                             else

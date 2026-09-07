@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Professores";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Professores" };
+    var podeGerenciar = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
 }
 
 <section class="panel">
@@ -11,7 +12,7 @@
             <h1 class="h5 mb-1">Gestão de Professores</h1>
             <p class="text-muted mb-0">Cadastro e manutenção de professores, vínculos e status.</p>
         </div>
-        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        @if (podeGerenciar)
         {
             <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createProfessorModal">
                 Novo Professor
@@ -73,7 +74,7 @@
                                 disciplinaId = a.DisciplinaId,
                                 disciplinaNome = a.DisciplinaNome
                             }));
-                            <tr>
+                            <tr class="@(podeGerenciar ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-professor">
                                 <td>@professor.NomeCompleto</td>
                                 <td>@professor.Email</td>
                                 <td>@professor.UsuarioCpf</td>
@@ -85,41 +86,46 @@
                                         @(professor.IsAtivo ? "Ativo" : "Inativo")
                                     </span>
                                 </td>
-                                <td class="d-flex gap-2">
-                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
-                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                <td>
+                                    @if (podeGerenciar)
                                     {
-                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-professor"
-                                                data-bs-toggle="modal" data-bs-target="#editProfessorModal" data-id="@professor.Id"
-                                                data-nome="@professor.NomeCompleto" data-email="@professor.Email"
-                                                data-cpf="@professor.UsuarioCpf" data-atribuicoes="@atribuicoesJson"
-                                                data-ativo="@professor.IsAtivo">
-                                            Editar
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-redefinir-senha-professor"
-                                                data-bs-toggle="modal" data-bs-target="#redefinirSenhaProfessorModal" data-id="@professor.Id"
-                                                data-nome="@professor.NomeCompleto">
-                                            Redefinir senha
-                                        </button>
-                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@professor.Id" class="m-0"
-                                              data-confirm-message="Tem certeza que deseja @(professor.IsAtivo ? "desativar" : "ativar") este professor?">
-                                            <input type="hidden" name="busca" value="@Model.Busca" />
-                                            <input type="hidden" name="status" value="@Model.Status" />
-                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
-                                            <button type="submit"
-                                                    class="btn btn-sm @(professor.IsAtivo ? "btn-outline-warning" : "btn-outline-success")">
-                                                @(professor.IsAtivo ? "Desativar" : "Ativar")
+                                        <div class="actions-cell">
+                                            <button type="button" class="icon-btn edit btn-edit-professor"
+                                                    data-bs-toggle="modal" data-bs-target="#editProfessorModal" data-id="@professor.Id"
+                                                    data-nome="@professor.NomeCompleto" data-email="@professor.Email"
+                                                    data-cpf="@professor.UsuarioCpf" data-atribuicoes="@atribuicoesJson"
+                                                    data-ativo="@professor.IsAtivo" title="Editar">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
                                             </button>
-                                        </form>
-                                        <form method="post" asp-page-handler="Delete" asp-route-id="@professor.Id" class="m-0"
-                                              data-confirm-message="Tem certeza que deseja excluir este professor?">
-                                            <input type="hidden" name="busca" value="@Model.Busca" />
-                                            <input type="hidden" name="status" value="@Model.Status" />
-                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
-                                        </form>
+                                            <button type="button" class="icon-btn resetpw btn-redefinir-senha-professor"
+                                                    data-bs-toggle="modal" data-bs-target="#redefinirSenhaProfessorModal" data-id="@professor.Id"
+                                                    data-nome="@professor.NomeCompleto" title="Redefinir senha">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 8 10h-.535A4 4 0 1 1 0 8zm4-2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" /></svg>
+                                            </button>
+                                            <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@professor.Id" class="m-0">
+                                                <input type="hidden" name="busca" value="@Model.Busca" />
+                                                <input type="hidden" name="status" value="@Model.Status" />
+                                                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                                <button type="submit" class="icon-btn toggle" title="@(professor.IsAtivo ? "Desativar" : "Ativar")"
+                                                        onclick="return confirm('Tem certeza que deseja @(professor.IsAtivo ? "desativar" : "ativar") este professor?');">
+                                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-page-handler="Delete" asp-route-id="@professor.Id" class="m-0">
+                                                <input type="hidden" name="busca" value="@Model.Busca" />
+                                                <input type="hidden" name="status" value="@Model.Status" />
+                                                <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                                <button type="submit" class="icon-btn delete" title="Excluir"
+                                                        onclick="return confirm('Tem certeza que deseja excluir este professor?');">
+                                                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" /><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" /></svg>
+                                                </button>
+                                            </form>
+                                            <span class="row-chevron">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
+                                            </span>
+                                        </div>
                                     }
                                     else
                                     {
@@ -186,8 +192,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form method="post" asp-page-handler="Create" id="create-professor-form"
-                      data-confirm-message="Confirma o cadastro deste professor?">
+                <form method="post" asp-page-handler="Create" id="create-professor-form">
                     <div class="modal-body">
                         <input type="hidden" name="busca" value="@Model.Busca" />
                         <input type="hidden" name="status" value="@Model.Status" />
@@ -297,7 +302,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar Professor</button>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Confirma o cadastro deste professor?');">Salvar Professor</button>
                     </div>
                 </form>
             </div>
@@ -319,8 +324,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form method="post" asp-page-handler="Edit" id="edit-professor-form"
-                      data-confirm-message="Confirmar atualização dos dados do professor?">
+                <form method="post" asp-page-handler="Edit" id="edit-professor-form">
                     <div class="modal-body">
                         <input type="hidden" id="edit-professor-id" name="id" />
                         <input type="hidden" name="busca" value="@Model.Busca" />
@@ -406,7 +410,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmar atualização dos dados do professor?');">Salvar alterações</button>
                     </div>
                 </form>
             </div>
@@ -427,8 +431,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form method="post" asp-page-handler="RedefinirSenha"
-                      data-confirm-message="Confirma a redefinição da senha deste professor?">
+                <form method="post" asp-page-handler="RedefinirSenha">
                     <div class="modal-body">
                         <input type="hidden" id="redefinir-senha-professor-id" name="id" />
                         <input type="hidden" name="busca" value="@Model.Busca" />
@@ -465,7 +468,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Redefinir Senha</button>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Confirma a redefinição da senha deste professor?');">Redefinir Senha</button>
                     </div>
                 </form>
             </div>

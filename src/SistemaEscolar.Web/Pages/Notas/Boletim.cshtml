@@ -1,0 +1,311 @@
+@page
+@model SistemaEscolar.Web.Pages.Notas.BoletimModel
+@{
+    ViewData["Title"] = "Boletim do Aluno";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Notas", "Boletim do Aluno" };
+    var iniciais = string.Join("", (Model.Aluno?.NomeCompleto ?? "?").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => x[0])).ToUpperInvariant();
+}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a asp-page="/Notas/Index" class="btn btn-outline-secondary btn-sm" title="Voltar para a lista de notas">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" /></svg>
+    </a>
+    <h1 class="h5 mb-0">Boletim — @Model.Aluno?.NomeCompleto</h1>
+</div>
+
+<section class="panel mb-3">
+    <div class="panel-body boletim-student-card">
+        <span class="boletim-avatar">@iniciais</span>
+        <div class="flex-grow-1">
+            <p class="h5 mb-2">@Model.Aluno?.NomeCompleto</p>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="meta-tag">Matrícula <strong>@Model.Aluno?.Matricula</strong></span>
+                <span class="meta-tag">Turma <strong>@(Model.Aluno?.TurmaNome ?? "Sem turma")</strong></span>
+                <span class="meta-tag">Série <strong>@Model.Aluno?.Serie</strong></span>
+                <span class="meta-tag">Ano Letivo <strong>@Model.Aluno?.AnoLetivo</strong></span>
+            </div>
+        </div>
+        <div class="boletim-divider"></div>
+        <div class="donut-block">
+            <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#eef0f6" stroke-width="10" />
+                @foreach (var arco in Model.Arcos)
+                {
+                    <circle cx="50" cy="50" r="42" fill="none" stroke-width="10" stroke-linecap="round"
+                            transform="rotate(-90 50 50)"
+                            stroke="@arco.Cor" stroke-dasharray="@arco.DashArray" stroke-dashoffset="@arco.DashOffset"></circle>
+                }
+            </svg>
+            <div>
+                <p class="donut-legend-title">Progresso no ano</p>
+                <div class="legend-row"><span class="legend-dot" style="background:#1fb980"></span>Em dia&nbsp;<b>@Model.EmDiaCount</b></div>
+                <div class="legend-row"><span class="legend-dot" style="background:#ef4ea8"></span>Atenção&nbsp;<b>@Model.AtencaoCount</b></div>
+                <div class="legend-row"><span class="legend-dot" style="background:#d8dae6"></span>Não iniciada&nbsp;<b>@Model.NaoIniciadoCount</b></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
+    <div class="trimestre-tabs">
+        @foreach (var tab in Model.Tabs)
+        {
+            <a class="trimestre-tab @(tab.Ativo ? "ativo" : null)"
+               asp-page="/Notas/Boletim" asp-route-AlunoId="@Model.AlunoId" asp-route-PeriodoId="@tab.Id">@tab.Label</a>
+        }
+    </div>
+    @if (Model.PodeEditar)
+    {
+        <div class="hint-inline">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm.93-9.412-2 .25-.07.328.392.073c.255.06.302.15.244.422l-.628 2.96c-.164.771.087 1.132.685 1.132.464 0 1.002-.213 1.246-.508l.078-.375c-.171.15-.42.21-.588.21-.238 0-.324-.166-.262-.463zM9 5.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" /></svg>
+            Edite as notas abaixo — salva automaticamente ao sair do campo.
+        </div>
+    }
+    else
+    {
+        <div class="hint-inline text-danger">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
+            Período fechado — somente o Diretor pode alterar notas deste trimestre.
+        </div>
+    }
+</div>
+
+<div class="disciplinas-grid">
+    @foreach (var item in Model.Disciplinas)
+    {
+        var somenteLeitura = !Model.PodeEditar || !item.TemProfessorAtribuido;
+        <article class="disc-card" data-disc-card>
+            <div class="disc-head">
+                <div>
+                    <p class="disc-name">@item.DisciplinaNome</p>
+                    <p class="disc-professor">@item.ProfessorNome</p>
+                </div>
+                <span class="@item.StatusClass" data-status-pill>@item.StatusLabel</span>
+            </div>
+
+            <div class="sparkline-row">
+                @foreach (var barra in item.Barras)
+                {
+                    <div class="spark-bar-wrap">
+                        <div class="spark-bar @(barra.Ativo ? "ativo" : null)" style="height:@(barra.AlturaPx)px; background:@barra.Cor"></div>
+                    </div>
+                }
+            </div>
+
+            <form method="post" asp-page-handler="Salvar" data-boletim-form>
+                <input type="hidden" name="alunoId" value="@Model.AlunoId" />
+                <input type="hidden" name="disciplinaId" value="@item.DisciplinaId" />
+                <input type="hidden" name="professorId" value="@item.ProfessorId" />
+                <input type="hidden" name="periodoLancamentoId" value="@Model.PeriodoSelecionadoId" />
+
+                <div class="avals-grid mb-2">
+                    <div>
+                        <label class="field-label">1ª Aval.</label>
+                        <input class="field-input" type="text" inputmode="decimal" name="avaliacao1" value="@item.Avaliacao1" data-campo
+                               @(somenteLeitura ? "readonly" : null) />
+                    </div>
+                    <div>
+                        <label class="field-label">2ª Aval.</label>
+                        <input class="field-input" type="text" inputmode="decimal" name="avaliacao2" value="@item.Avaliacao2" data-campo
+                               @(somenteLeitura ? "readonly" : null) />
+                    </div>
+                    <div>
+                        <label class="field-label">3ª Aval.</label>
+                        <input class="field-input" type="text" inputmode="decimal" name="avaliacao3" value="@item.Avaliacao3" data-campo
+                               @(somenteLeitura ? "readonly" : null) />
+                    </div>
+                </div>
+                <p class="text-muted small mb-2" data-soma-aval-hint>Soma das avaliações: <span data-soma-aval>@item.Soma</span> / 10,00</p>
+
+                <div class="rec-row mb-2">
+                    <label class="field-label">Recuperação Paralela</label>
+                    <input class="field-input" type="text" inputmode="decimal" placeholder="—" name="recuperacaoParalela"
+                           value="@item.RecuperacaoParalela" data-campo data-recuperacao
+                           @(somenteLeitura || !item.PodeRecuperar ? "disabled" : null) />
+                    <p class="rec-hint @(item.PodeRecuperar ? "ok" : null)" data-rec-hint>
+                        @(item.PodeRecuperar
+                            ? "Recuperação disponível — soma das avaliações abaixo de 5,0."
+                            : "Só é possível lançar quando a soma das avaliações for menor que 5,0.")
+                    </p>
+                </div>
+
+                <p class="rec-hint text-danger" data-erro hidden></p>
+
+                <div class="disc-footer">
+                    <div class="final-block">
+                        <span class="final-label" title="Maior valor entre a soma das avaliações e a recuperação paralela">Resultado Final:</span>
+                        <span class="final-value" data-media>@item.ResultadoFinal</span>
+                        <span class="text-muted small">(soma: <span data-media-bruta>@item.Soma</span>)</span>
+                    </div>
+                    <span class="saved-tag" data-saved-tag>
+                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.485 1.929a1 1 0 0 1 0 1.415l-7.07 7.07a1 1 0 0 1-1.415 0L2.121 7.536a1 1 0 1 1 1.415-1.415L6 8.586l6.364-6.364a1 1 0 0 1 1.414 0Z" /></svg>
+                        Salvo
+                    </span>
+                    @if (item.NotaId.HasValue && Model.PodeEditar)
+                    {
+                        <div class="disc-footer-actions">
+                            <button type="submit" formaction="?handler=Finalizar&id=@item.NotaId&alunoId=@Model.AlunoId&periodoId=@Model.PeriodoSelecionadoId"
+                                    class="icon-btn finish" title="@(item.Finalizada ? "Reabrir" : "Finalizar")">
+                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
+                            </button>
+                            <button type="submit" formaction="?handler=Excluir&id=@item.NotaId&alunoId=@Model.AlunoId&periodoId=@Model.PeriodoSelecionadoId"
+                                    class="icon-btn delete" title="Excluir lançamento"
+                                    onclick="return confirm('Tem certeza que deseja excluir este lançamento?');">
+                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" /><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" /></svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </form>
+        </article>
+    }
+</div>
+
+@if (Model.Disciplinas.Count == 0)
+{
+    <div class="panel">
+        <div class="panel-body text-center text-muted">
+            Nenhuma disciplina disponível para este aluno neste perfil de acesso.
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (() => {
+            document.querySelectorAll("[data-boletim-form]").forEach((form) => {
+                const card = form.closest("[data-disc-card]");
+                const camposEditaveis = form.querySelectorAll("[data-campo]:not([readonly])");
+                const recuperacaoInput = form.querySelector("[data-recuperacao]");
+                const recHint = card.querySelector("[data-rec-hint]");
+                const mediaEl = card.querySelector("[data-media]");
+                const mediaBrutaEl = card.querySelector("[data-media-bruta]");
+                const somaAvalEl = card.querySelector("[data-soma-aval]");
+                const somaAvalHint = card.querySelector("[data-soma-aval-hint]");
+                const statusPill = card.querySelector("[data-status-pill]");
+                const savedTag = card.querySelector("[data-saved-tag]");
+                const erroEl = card.querySelector("[data-erro]");
+                let savedTagTimeout = null;
+
+                function toNumber(value) {
+                    const s = (value || "").trim().replace(",", ".");
+                    if (s === "") return null;
+                    const n = parseFloat(s);
+                    return Number.isNaN(n) ? null : n;
+                }
+
+                function atualizarSomaAvaliacoes(valores) {
+                    if (!somaAvalEl) {
+                        return;
+                    }
+                    const soma = valores.reduce((total, v) => total + v, 0);
+                    somaAvalEl.textContent = soma.toFixed(2).replace(".", ",");
+                    if (somaAvalHint) {
+                        somaAvalHint.classList.toggle("text-danger", soma > 10);
+                    }
+                }
+
+                function atualizarDicaRecuperacao() {
+                    const av1 = form.querySelector('[name="avaliacao1"]');
+                    const av2 = form.querySelector('[name="avaliacao2"]');
+                    const av3 = form.querySelector('[name="avaliacao3"]');
+                    const valores = [av1, av2, av3]
+                        .map((input) => toNumber(input.value))
+                        .filter((v) => v !== null);
+
+                    atualizarSomaAvaliacoes(valores);
+
+                    if (!recuperacaoInput || recuperacaoInput.readOnly) {
+                        return;
+                    }
+
+                    if (valores.length === 0) {
+                        recuperacaoInput.disabled = true;
+                        recuperacaoInput.value = "";
+                        if (recHint) {
+                            recHint.textContent = "Só é possível lançar quando a soma das avaliações for menor que 5,0.";
+                            recHint.classList.remove("ok");
+                        }
+                        return;
+                    }
+
+                    const soma = valores.reduce((total, v) => total + v, 0);
+                    const podeRecuperar = soma < 5;
+                    recuperacaoInput.disabled = !podeRecuperar;
+                    if (!podeRecuperar) {
+                        recuperacaoInput.value = "";
+                    }
+                    if (recHint) {
+                        recHint.textContent = podeRecuperar
+                            ? "Recuperação disponível — soma das avaliações abaixo de 5,0."
+                            : "Só é possível lançar quando a soma das avaliações for menor que 5,0.";
+                        recHint.classList.toggle("ok", podeRecuperar);
+                    }
+                }
+
+                async function salvar() {
+                    const formData = new FormData(form);
+                    try {
+                        const resposta = await fetch(form.action || window.location.pathname + "?handler=Salvar", {
+                            method: "POST",
+                            body: formData,
+                            headers: { "X-Requested-With": "XMLHttpRequest" },
+                        });
+                        const dados = await resposta.json();
+
+                        if (!dados.succeeded) {
+                            if (erroEl) {
+                                erroEl.textContent = dados.error || "Não foi possível salvar a nota.";
+                                erroEl.hidden = false;
+                            }
+                            return;
+                        }
+
+                        if (erroEl) {
+                            erroEl.hidden = true;
+                        }
+
+                        if (mediaEl) mediaEl.textContent = dados.final;
+                        if (mediaBrutaEl) mediaBrutaEl.textContent = dados.soma;
+                        if (somaAvalEl) somaAvalEl.textContent = dados.soma;
+                        if (statusPill) {
+                            statusPill.textContent = dados.statusLabel;
+                            statusPill.className = dados.statusClass;
+                        }
+                        if (recuperacaoInput) {
+                            recuperacaoInput.disabled = !dados.podeRecuperar;
+                            if (recHint) {
+                                recHint.textContent = dados.podeRecuperar
+                                    ? "Recuperação disponível — soma das avaliações abaixo de 5,0."
+                                    : "Só é possível lançar quando a soma das avaliações for menor que 5,0.";
+                                recHint.classList.toggle("ok", dados.podeRecuperar);
+                            }
+                        }
+                        if (savedTag) {
+                            savedTag.classList.add("show");
+                            clearTimeout(savedTagTimeout);
+                            savedTagTimeout = setTimeout(() => savedTag.classList.remove("show"), 2500);
+                        }
+                    } catch (erro) {
+                        console.error(erro);
+                    }
+                }
+
+                // Debounce: editar vários campos em sequência rápida (ex.: usando Tab) deve gerar
+                // uma única gravação com o estado final do formulário, não uma por campo — do
+                // contrário, respostas fora de ordem poderiam sobrescrever o valor mais recente
+                // com um estado intermediário já ultrapassado.
+                let agendamentoSalvar = null;
+                function agendarSalvar() {
+                    clearTimeout(agendamentoSalvar);
+                    agendamentoSalvar = setTimeout(salvar, 500);
+                }
+
+                camposEditaveis.forEach((input) => {
+                    input.addEventListener("input", atualizarDicaRecuperacao);
+                    input.addEventListener("change", agendarSalvar);
+                });
+            });
+        })();
+    </script>
+}

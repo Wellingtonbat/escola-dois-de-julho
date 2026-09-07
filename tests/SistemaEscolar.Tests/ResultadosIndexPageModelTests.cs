@@ -16,16 +16,20 @@ public sealed class ResultadosIndexPageModelTests
             .Select(i => new ResultadoAcademicoDto(
                 Guid.NewGuid(),
                 $"Aluno {i:00}",
+                Guid.NewGuid(),
                 "Matemática",
                 "8o Ano A",
                 "8o Ano",
                 2026,
                 i,
+                null,
+                false,
+                i,
                 "Aprovado",
                 "Aprovado por média final."))
             .ToList();
 
-        var model = new IndexModel(new ResultadoAcademicoServiceStub(data));
+        var model = new IndexModel(new ResultadoAcademicoServiceStub(data), new RecuperacaoFinalServiceStub());
         model.Ordenacao = "media";
         model.Direcao = "desc";
         model.PageSize = 10;
@@ -68,7 +72,7 @@ public sealed class ResultadosIndexPageModelTests
         var sheet = workbook.Worksheet("Resultados");
 
         Assert.Equal("Disciplina", sheet.Cell(1, 1).GetString());
-        Assert.Equal("Situação", sheet.Cell(1, 7).GetString());
+        Assert.Equal("Situação", sheet.Cell(1, 9).GetString());
         Assert.Equal("Matemática", sheet.Cell(2, 1).GetString());
         Assert.Equal("Aluno A", sheet.Cell(2, 2).GetString());
     }
@@ -99,13 +103,13 @@ public sealed class ResultadosIndexPageModelTests
     {
         var data = new List<ResultadoAcademicoDto>
         {
-            new(Guid.NewGuid(), "Aluno A", "Matemática", "8o Ano A", "8o Ano", 2026, 8.25m, "Aprovado", "Aprovado por média final."),
-            new(Guid.NewGuid(), "Aluno B", "Matemática", "8o Ano A", "8o Ano", 2026, 5.25m, "Reprovado", "Média final abaixo de 5,0."),
-            new(Guid.NewGuid(), "Aluno C", "Português", "9o Ano B", "9o Ano", 2026, 0m, "Pendente", "Lançamentos incompletos no ano letivo.")
+            new(Guid.NewGuid(), "Aluno A", Guid.NewGuid(), "Matemática", "8o Ano A", "8o Ano", 2026, 8.25m, null, false, 8.25m, "Aprovado", "Aprovado por média final."),
+            new(Guid.NewGuid(), "Aluno B", Guid.NewGuid(), "Matemática", "8o Ano A", "8o Ano", 2026, 5.25m, null, false, 5.25m, "Reprovado", "Média final abaixo de 5,0."),
+            new(Guid.NewGuid(), "Aluno C", Guid.NewGuid(), "Português", "9o Ano B", "9o Ano", 2026, 0m, null, false, 0m, "Pendente", "Lançamentos incompletos no ano letivo.")
         };
 
         var service = new ResultadoAcademicoServiceStub(data);
-        return new IndexModel(service)
+        return new IndexModel(service, new RecuperacaoFinalServiceStub())
         {
             AnoLetivo = 2026,
             Situacao = "todos",

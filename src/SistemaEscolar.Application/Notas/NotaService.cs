@@ -179,8 +179,13 @@ public sealed class NotaService : INotaService
             return false;
         }
 
+        if (!await ProfessorTemAcessoAoLancamentoAsync(nota, cancellationToken))
+        {
+            return false;
+        }
+
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !periodo.IsAberto && !_currentUserService.IsInRole("Diretor"))
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !_currentUserService.IsInRole("Diretor"))
         {
             return false;
         }
@@ -198,14 +203,40 @@ public sealed class NotaService : INotaService
             return false;
         }
 
+        if (!await ProfessorTemAcessoAoLancamentoAsync(nota, cancellationToken))
+        {
+            return false;
+        }
+
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !periodo.IsAberto && !_currentUserService.IsInRole("Diretor"))
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !_currentUserService.IsInRole("Diretor"))
         {
             return false;
         }
 
         await _notaRepository.SoftDeleteAsync(nota, cancellationToken);
         return true;
+    }
+
+    // Um professor só pode finalizar/excluir lançamentos das suas próprias turmas e disciplinas.
+    // Sem esta checagem, um professor poderia manipular a URL do formulário (o "id" do lançamento)
+    // e alterar notas de disciplinas de outros professores, já que o handler da página só confere
+    // o perfil (Professor) e não o vínculo com aquele lançamento específico.
+    private async Task<bool> ProfessorTemAcessoAoLancamentoAsync(Domain.Entities.Nota nota, CancellationToken cancellationToken)
+    {
+        if (!IsProfessorOnly())
+        {
+            return true;
+        }
+
+        var escopo = await _professorService.ObterEscopoPorUsuarioAsync(_currentUserService.UserName, cancellationToken);
+        if (escopo is null || !escopo.DisciplinaIds.Contains(nota.DisciplinaId))
+        {
+            return false;
+        }
+
+        var aluno = await _alunoService.ObterPorIdAsync(nota.AlunoId, cancellationToken);
+        return aluno is not null && aluno.TurmaId.HasValue && escopo.TurmaIds.Contains(aluno.TurmaId.Value);
     }
 
     private async Task<NotaCreateResult> ValidateRequestAsync(NotaCreateRequest request, Guid? ignoreId, CancellationToken cancellationToken)
@@ -245,13 +276,15 @@ public sealed class NotaService : INotaService
             return NotaCreateResult.Fail("As notas devem estar entre 0 e 10.");
         }
 
-        if (request.RecuperacaoParalela.HasValue)
+        var somaAvaliacoesAtual = CalcularResultadoUnidade(request.Avaliacao1, request.Avaliacao2, request.Avaliacao3);
+        if (somaAvaliacoesAtual > 10m)
         {
-            var resultadoUnidadeAtual = CalcularResultadoUnidade(request.Avaliacao1, request.Avaliacao2, request.Avaliacao3);
-            if (resultadoUnidadeAtual >= 5m)
-            {
-                return NotaCreateResult.Fail("A Recuperação Paralela só pode ser lançada quando a média das avaliações for menor que 5,0.");
-            }
+            return NotaCreateResult.Fail("A soma das avaliações do trimestre não pode ultrapassar 10,0.");
+        }
+
+        if (request.RecuperacaoParalela.HasValue && somaAvaliacoesAtual >= 5m)
+        {
+            return NotaCreateResult.Fail("A Recuperação Paralela só pode ser lançada quando a soma das avaliações do trimestre for menor que 5,0.");
         }
 
         var periodo = await _periodoService.ObterPorIdAsync(request.PeriodoLancamentoId, cancellationToken);
@@ -260,9 +293,9 @@ public sealed class NotaService : INotaService
             return NotaCreateResult.Fail("Não há período de lançamento configurado com este identificador.");
         }
 
-        if (!periodo.IsAberto && !_currentUserService.IsInRole("Diretor"))
+        if (!PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !_currentUserService.IsInRole("Diretor"))
         {
-            return NotaCreateResult.Fail("Período fechado impede alterações de notas para este perfil.");
+            return NotaCreateResult.Fail(PeriodoDisponibilidade.ObterMotivoFechado(periodo, DateTime.UtcNow));
         }
 
         var alunos = await _alunoService.ListarAsync(null, cancellationToken);
@@ -349,6 +382,6 @@ public sealed class NotaService : INotaService
 
         return avaliacoes.Count == 0
             ? 0m
-            : Math.Round(avaliacoes.Average(), 2);
+            : Math.Round(avaliacoes.Sum(), 2);
     }
 }

@@ -21,12 +21,23 @@ public sealed class PeriodoService : IPeriodoService
 
     public async Task<IReadOnlyList<PeriodoListItemDto>> ListarAsync(PeriodoListFilter? filter = null, CancellationToken cancellationToken = default)
     {
-        var periodos = await _periodoRepository.GetAllAsync(filter, cancellationToken);
-        return periodos
+        // O filtro de Status (aberto/fechado) reflete a disponibilidade EFETIVA (data + flag manual),
+        // não apenas o campo IsAberto isolado — por isso é aplicado aqui, em memória, e não no repositório.
+        var repositoryFilter = filter is null ? null : new PeriodoListFilter(filter.AnoLetivo, filter.Trimestre, null);
+        var periodos = await _periodoRepository.GetAllAsync(repositoryFilter, cancellationToken);
+        var hoje = DateTime.UtcNow;
+
+        var dtos = periodos
             .OrderByDescending(x => x.AnoLetivo)
             .ThenBy(x => x.Bimestre)
-            .Select(Map)
-            .ToList();
+            .Select(Map);
+
+        if (filter?.IsAberto.HasValue == true)
+        {
+            dtos = dtos.Where(x => PeriodoDisponibilidade.EstaAberto(x, hoje) == filter.IsAberto.Value);
+        }
+
+        return dtos.ToList();
     }
 
     public async Task<PeriodoListItemDto?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -57,7 +68,7 @@ public sealed class PeriodoService : IPeriodoService
             Descricao = request.Descricao.Trim(),
             DataInicial = request.DataInicial.Date,
             DataFinal = request.DataFinal.Date,
-            IsAberto = request.IsAberto
+            IsAberto = true
         };
 
         await _periodoRepository.AddAsync(periodo, cancellationToken);
@@ -83,7 +94,6 @@ public sealed class PeriodoService : IPeriodoService
         periodo.Descricao = request.Descricao.Trim();
         periodo.DataInicial = request.DataInicial.Date;
         periodo.DataFinal = request.DataFinal.Date;
-        periodo.IsAberto = request.IsAberto;
 
         await _periodoRepository.UpdateAsync(periodo, cancellationToken);
         return PeriodoCreateResult.Success();

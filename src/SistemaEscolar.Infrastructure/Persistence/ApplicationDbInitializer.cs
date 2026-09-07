@@ -356,7 +356,7 @@ public sealed class ApplicationDbInitializer
                 Descricao = "1o Trimestre 2026",
                 DataInicial = new DateTime(2026, 2, 1),
                 DataFinal = new DateTime(2026, 5, 31),
-                IsAberto = false
+                IsAberto = true
             },
             new Domain.Entities.PeriodoLancamento
             {
@@ -376,7 +376,7 @@ public sealed class ApplicationDbInitializer
                 Descricao = "3o Trimestre 2026",
                 DataInicial = new DateTime(2026, 9, 1),
                 DataFinal = new DateTime(2026, 12, 20),
-                IsAberto = false
+                IsAberto = true
             }
         };
 

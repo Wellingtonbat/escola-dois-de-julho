@@ -1,8 +1,11 @@
 @page
+@using SistemaEscolar.Application.Periodos
 @model SistemaEscolar.Web.Pages.Periodos.IndexModel
 @{
     ViewData["Title"] = "Períodos";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Períodos" };
+    var podeGerenciar = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+    var hoje = DateTime.UtcNow;
 }
 
 <section class="panel">
@@ -11,7 +14,7 @@
             <h1 class="h5 mb-1">Períodos de Lançamento</h1>
             <p class="text-muted mb-0">Controle de abertura e fechamento dos períodos para lançamento de notas.</p>
         </div>
-        @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+        @if (podeGerenciar)
         {
             <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
                     data-bs-target="#createPeriodoModal">
@@ -70,44 +73,55 @@
                     {
                         @foreach (var periodo in Model.Periodos)
                         {
-                            <tr>
+                            var estaAberto = PeriodoDisponibilidade.EstaAberto(periodo, hoje);
+                            <tr class="@(podeGerenciar ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-periodo">
                                 <td>@periodo.AnoLetivo</td>
                                 <td>@periodo.Trimestre</td>
                                 <td>@periodo.Descricao</td>
                                 <td>@periodo.DataInicial.ToString("dd/MM/yyyy")</td>
                                 <td>@periodo.DataFinal.ToString("dd/MM/yyyy")</td>
                                 <td>
-                                    <span class="status-pill @(periodo.IsAberto ? "status-open" : "status-warn")">
-                                        @(periodo.IsAberto ? "Aberto" : "Fechado")
+                                    <span class="status-pill @(estaAberto ? "status-open" : "status-warn")">
+                                        @(estaAberto ? "Aberto" : "Fechado")
                                     </span>
-                                </td>
-                                <td class="d-flex gap-2">
-                                    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") ||
-                            User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+                                    @if (!estaAberto)
                                     {
-                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-periodo"
-                                                data-bs-toggle="modal" data-bs-target="#editPeriodoModal" data-id="@periodo.Id"
-                                                data-ano="@periodo.AnoLetivo" data-trimestre="@periodo.Trimestre"
-                                                data-descricao="@periodo.Descricao"
-                                                data-inicio="@periodo.DataInicial.ToString("yyyy-MM-dd")"
-                                                data-fim="@periodo.DataFinal.ToString("yyyy-MM-dd")" data-aberto="@periodo.IsAberto">
-                                            Editar
-                                        </button>
-                                        @if (User.IsInRole("Diretor"))
-                                        {
-                                            <form method="post" asp-page-handler="@(periodo.IsAberto ? "Fechar" : "Abrir")"
-                                                  asp-route-id="@periodo.Id" class="m-0"
-                                                  data-confirm-message="Tem certeza que deseja @(periodo.IsAberto ? "fechar" : "abrir") este período?">
-                                                <button type="submit"
-                                                        class="btn btn-sm @(periodo.IsAberto ? "btn-outline-warning" : "btn-outline-success")">
-                                                    @(periodo.IsAberto ? "Fechar" : "Abrir")
-                                                </button>
-                                            </form>
-                                        }
-                                        <form method="post" asp-page-handler="Delete" asp-route-id="@periodo.Id" class="m-0"
-                                              data-confirm-message="Tem certeza que deseja excluir este período?">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
-                                        </form>
+                                        <div class="small text-muted mt-1">@PeriodoDisponibilidade.ObterMotivoFechado(periodo, hoje)</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (podeGerenciar)
+                                    {
+                                        <div class="actions-cell">
+                                            <button type="button" class="icon-btn edit btn-edit-periodo"
+                                                    data-bs-toggle="modal" data-bs-target="#editPeriodoModal" data-id="@periodo.Id"
+                                                    data-ano="@periodo.AnoLetivo" data-trimestre="@periodo.Trimestre"
+                                                    data-descricao="@periodo.Descricao"
+                                                    data-inicio="@periodo.DataInicial.ToString("yyyy-MM-dd")"
+                                                    data-fim="@periodo.DataFinal.ToString("yyyy-MM-dd")"
+                                                    title="Editar">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
+                                            </button>
+                                            @if (User.IsInRole("Diretor"))
+                                            {
+                                                <form method="post" asp-page-handler="@(periodo.IsAberto ? "Fechar" : "Abrir")"
+                                                      asp-route-id="@periodo.Id" class="m-0">
+                                                    <button type="submit" class="icon-btn toggle" title="@(periodo.IsAberto ? "Fechar antecipadamente" : "Reabrir")"
+                                                            onclick="return confirm('Tem certeza que deseja @(periodo.IsAberto ? "fechar antecipadamente" : "reabrir") este período?');">
+                                                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-page-handler="Delete" asp-route-id="@periodo.Id" class="m-0">
+                                                    <button type="submit" class="icon-btn delete" title="Excluir"
+                                                            onclick="return confirm('Tem certeza que deseja excluir este período?');">
+                                                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" /><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" /></svg>
+                                                    </button>
+                                                </form>
+                                            }
+                                            <span class="row-chevron">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
+                                            </span>
+                                        </div>
                                     }
                                     else
                                     {
@@ -140,7 +154,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form method="post" asp-page-handler="Create" data-confirm-message="Confirmar cadastro deste período?">
+                <form method="post" asp-page-handler="Create">
                     <div class="modal-body">
                         <div class="row g-2">
                             <div class="col-6">
@@ -173,16 +187,13 @@
                                 <input type="date" id="create-periodo-fim" name="dataFinal" class="form-control" required />
                             </div>
                         </div>
-                        <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" id="create-periodo-aberto" name="isAberto"
-                                   value="true" />
-                            <input type="hidden" name="isAberto" value="false" />
-                            <label class="form-check-label" for="create-periodo-aberto">Período aberto</label>
-                        </div>
+                        <p class="small text-muted mt-2 mb-0">
+                            O período fica disponível para lançamento de notas automaticamente entre a Data Inicial e a Data Final.
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar período</button>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmar cadastro deste período?');">Salvar período</button>
                     </div>
                 </form>
             </div>
@@ -203,7 +214,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form method="post" asp-page-handler="Edit" data-confirm-message="Confirmar atualização deste período?">
+                <form method="post" asp-page-handler="Edit">
                     <div class="modal-body">
                         <input type="hidden" id="edit-periodo-id" name="id" />
                         <div class="row g-2">
@@ -236,16 +247,14 @@
                                 <input type="date" id="edit-periodo-fim" name="dataFinal" class="form-control" required />
                             </div>
                         </div>
-                        <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" id="edit-periodo-aberto" name="isAberto"
-                                   value="true" />
-                            <input type="hidden" name="isAberto" value="false" />
-                            <label class="form-check-label" for="edit-periodo-aberto">Período aberto</label>
-                        </div>
+                        <p class="small text-muted mt-2 mb-0">
+                            O período fica disponível para lançamento de notas automaticamente entre a Data Inicial e a Data Final.
+                            Use o botão de fechar/reabrir na lista para uma exceção manual.
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmar atualização deste período?');">Salvar alterações</button>
                     </div>
                 </form>
             </div>
@@ -266,7 +275,6 @@
                 const descricaoInput = document.getElementById("edit-periodo-descricao");
                 const inicioInput = document.getElementById("edit-periodo-inicio");
                 const fimInput = document.getElementById("edit-periodo-fim");
-                const abertoInput = document.getElementById("edit-periodo-aberto");
 
                 document.querySelectorAll(".btn-edit-periodo").forEach((button) => {
                     button.addEventListener("click", () => {
@@ -276,7 +284,6 @@
                         descricaoInput.value = button.dataset.descricao || "";
                         inicioInput.value = button.dataset.inicio || "";
                         fimInput.value = button.dataset.fim || "";
-                        abertoInput.checked = (button.dataset.aberto || "").toLowerCase() === "true";
                     });
                 });
             })();

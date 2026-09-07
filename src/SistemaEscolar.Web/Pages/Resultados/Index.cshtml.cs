@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using ClosedXML.Excel;
@@ -11,12 +12,16 @@ namespace SistemaEscolar.Web.Pages.Resultados;
 
 public sealed class IndexModel : PageModel
 {
+    private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
+
     private const int PageSizeFixo = 50;
     private readonly IResultadoAcademicoService _resultadoService;
+    private readonly IRecuperacaoFinalService _recuperacaoFinalService;
 
-    public IndexModel(IResultadoAcademicoService resultadoService)
+    public IndexModel(IResultadoAcademicoService resultadoService, IRecuperacaoFinalService recuperacaoFinalService)
     {
         _resultadoService = resultadoService;
+        _recuperacaoFinalService = recuperacaoFinalService;
     }
 
     public IReadOnlyList<ResultadoAcademicoDto> Resultados { get; private set; } = Array.Empty<ResultadoAcademicoDto>();
@@ -71,12 +76,88 @@ public sealed class IndexModel : PageModel
             .ToList();
     }
 
+    public async Task<IActionResult> OnPostSalvarRecuperacaoFinalAsync(
+        Guid alunoId,
+        Guid disciplinaId,
+        string? recuperacaoFinal,
+        string? busca,
+        int anoLetivo,
+        string? turma,
+        string? serie,
+        string? situacao,
+        string? ordenacao,
+        string? direcao,
+        int pageNumber,
+        CancellationToken cancellationToken)
+    {
+        if (!CanLancarRecuperacao())
+        {
+            TempData["ErrorMessage"] = "Você não tem permissão para lançar a Recuperação Final.";
+            return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
+        }
+
+        if (!TryParseNota(recuperacaoFinal, out var valor) || !valor.HasValue)
+        {
+            TempData["ErrorMessage"] = "Informe um valor numérico entre 0 e 10 para a Recuperação Final.";
+            return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
+        }
+
+        var resultado = await _recuperacaoFinalService.SalvarAsync(
+            new RecuperacaoFinalSaveRequest(alunoId, disciplinaId, anoLetivo, valor.Value),
+            cancellationToken);
+
+        TempData[resultado.Succeeded ? "SuccessMessage" : "ErrorMessage"] = resultado.Succeeded
+            ? "Recuperação Final lançada com sucesso."
+            : resultado.ErrorMessage;
+
+        return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
+    }
+
+    private IActionResult RedirectToPageComFiltros(
+        string? busca, int anoLetivo, string? turma, string? serie, string? situacao, string? ordenacao, string? direcao, int pageNumber)
+    {
+        return RedirectToPage("/Resultados/Index", new
+        {
+            Busca = busca,
+            AnoLetivo = anoLetivo,
+            Turma = turma,
+            Serie = serie,
+            Situacao = situacao,
+            Ordenacao = ordenacao,
+            Direcao = direcao,
+            PageNumber = pageNumber
+        });
+    }
+
+    private bool CanLancarRecuperacao() =>
+        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") || User.IsInRole("Professor");
+
+    private static bool TryParseNota(string? rawValue, out decimal? value)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            value = null;
+            return false;
+        }
+
+        var text = rawValue.Trim();
+        if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)
+            || decimal.TryParse(text, NumberStyles.Number, PtBr, out parsed))
+        {
+            value = parsed;
+            return true;
+        }
+
+        value = null;
+        return false;
+    }
+
     public async Task<IActionResult> OnGetExportCsvAsync(CancellationToken cancellationToken)
     {
         var resultados = await GetFilteredOrderedAsync(cancellationToken);
 
         var csv = new StringBuilder();
-        csv.AppendLine("Disciplina;Aluno;Turma;Serie;AnoLetivo;MediaFinal;Situacao;Motivo");
+        csv.AppendLine("Disciplina;Aluno;Turma;Serie;AnoLetivo;MediaFinal;RecuperacaoFinal;ResultadoFinal;Situacao;Motivo");
 
         foreach (var item in resultados)
         {
@@ -87,6 +168,8 @@ public sealed class IndexModel : PageModel
                 EscapeCsv(item.Serie),
                 item.AnoLetivo,
                 item.MediaFinal.ToString("0.00"),
+                item.RecuperacaoFinal.HasValue ? item.RecuperacaoFinal.Value.ToString("0.00") : "",
+                item.ResultadoFinalAno.ToString("0.00"),
                 EscapeCsv(item.Situacao),
                 EscapeCsv(item.Motivo)));
         }
@@ -108,8 +191,10 @@ public sealed class IndexModel : PageModel
         worksheet.Cell(1, 4).Value = "Série";
         worksheet.Cell(1, 5).Value = "Ano Letivo";
         worksheet.Cell(1, 6).Value = "Média Final";
-        worksheet.Cell(1, 7).Value = "Situação";
-        worksheet.Cell(1, 8).Value = "Motivo";
+        worksheet.Cell(1, 7).Value = "Recuperação Final";
+        worksheet.Cell(1, 8).Value = "Resultado Final";
+        worksheet.Cell(1, 9).Value = "Situação";
+        worksheet.Cell(1, 10).Value = "Motivo";
 
         var row = 2;
         foreach (var item in resultados)
@@ -120,13 +205,20 @@ public sealed class IndexModel : PageModel
             worksheet.Cell(row, 4).Value = item.Serie;
             worksheet.Cell(row, 5).Value = item.AnoLetivo;
             worksheet.Cell(row, 6).Value = item.MediaFinal;
-            worksheet.Cell(row, 7).Value = item.Situacao;
-            worksheet.Cell(row, 8).Value = item.Motivo;
+            if (item.RecuperacaoFinal.HasValue)
+            {
+                worksheet.Cell(row, 7).Value = item.RecuperacaoFinal.Value;
+            }
+            worksheet.Cell(row, 8).Value = item.ResultadoFinalAno;
+            worksheet.Cell(row, 9).Value = item.Situacao;
+            worksheet.Cell(row, 10).Value = item.Motivo;
             row++;
         }
 
-        worksheet.Range(1, 1, 1, 8).Style.Font.Bold = true;
+        worksheet.Range(1, 1, 1, 10).Style.Font.Bold = true;
         worksheet.Column(6).Style.NumberFormat.Format = "0.00";
+        worksheet.Column(7).Style.NumberFormat.Format = "0.00";
+        worksheet.Column(8).Style.NumberFormat.Format = "0.00";
         worksheet.Columns().AdjustToContents();
 
         using var stream = new MemoryStream();
@@ -186,6 +278,8 @@ public sealed class IndexModel : PageModel
                                 columns.RelativeColumn(1);
                                 columns.RelativeColumn(1);
                                 columns.RelativeColumn(1.5f);
+                                columns.RelativeColumn(1.5f);
+                                columns.RelativeColumn(1.5f);
                                 columns.RelativeColumn(3.5f);
                             });
 
@@ -196,6 +290,7 @@ public sealed class IndexModel : PageModel
                                 header.Cell().Element(CellStyle).Text("Série").Bold();
                                 header.Cell().Element(CellStyle).AlignCenter().Text("Ano").Bold();
                                 header.Cell().Element(CellStyle).AlignRight().Text("Média").Bold();
+                                header.Cell().Element(CellStyle).AlignRight().Text("Resultado Final").Bold();
                                 header.Cell().Element(CellStyle).Text("Situação").Bold();
                                 header.Cell().Element(CellStyle).Text("Motivo").Bold();
                             });
@@ -207,6 +302,7 @@ public sealed class IndexModel : PageModel
                                 table.Cell().Element(CellStyle).Text(item.Serie);
                                 table.Cell().Element(CellStyle).AlignCenter().Text(item.AnoLetivo.ToString());
                                 table.Cell().Element(CellStyle).AlignRight().Text(item.MediaFinal.ToString("0.00"));
+                                table.Cell().Element(CellStyle).AlignRight().Text(item.ResultadoFinalAno.ToString("0.00"));
                                 table.Cell().Element(CellStyle).Text(item.Situacao);
                                 table.Cell().Element(CellStyle).Text(item.Motivo);
                             }

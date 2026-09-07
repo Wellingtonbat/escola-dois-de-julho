@@ -54,66 +54,24 @@ if (appShell && sidebarToggle && appOverlay) {
   });
 }
 
-const systemConfirmModalElement = document.getElementById("systemConfirmModal");
-const systemConfirmModalMessage = document.getElementById(
-  "systemConfirmModalMessage",
-);
-const systemConfirmModalAccept = document.getElementById(
-  "systemConfirmModalAccept",
-);
-
-let pendingConfirmAction = null;
-
-if (
-  systemConfirmModalElement &&
-  systemConfirmModalMessage &&
-  systemConfirmModalAccept &&
-  window.bootstrap
-) {
-  const systemConfirmModal = new window.bootstrap.Modal(
-    systemConfirmModalElement,
-  );
-
-  const askConfirmation = (message, onConfirm) => {
-    systemConfirmModalMessage.textContent = message;
-    pendingConfirmAction = onConfirm;
-    systemConfirmModal.show();
-  };
-
-  systemConfirmModalAccept.addEventListener("click", () => {
-    if (typeof pendingConfirmAction === "function") {
-      pendingConfirmAction();
+document.querySelectorAll("tr.row-clicavel").forEach((row) => {
+  row.addEventListener("click", (event) => {
+    if (event.target.closest(".actions-cell")) {
+      return;
     }
-    pendingConfirmAction = null;
-    systemConfirmModal.hide();
+
+    const destino = row.dataset.href;
+    if (destino) {
+      window.location.href = destino;
+      return;
+    }
+
+    const editSelector = row.dataset.editTrigger;
+    if (editSelector) {
+      row.querySelector(editSelector)?.click();
+    }
   });
-
-  systemConfirmModalElement.addEventListener("hidden.bs.modal", () => {
-    pendingConfirmAction = null;
-  });
-
-  document.addEventListener(
-    "submit",
-    (event) => {
-      const form = event.target;
-      if (!(form instanceof HTMLFormElement)) {
-        return;
-      }
-
-      const message = form.dataset.confirmMessage;
-      if (!message || form.dataset.confirmed === "true") {
-        return;
-      }
-
-      event.preventDefault();
-      askConfirmation(message, () => {
-        form.dataset.confirmed = "true";
-        form.requestSubmit();
-      });
-    },
-    true,
-  );
-}
+});
 
 const systemFeedbackModalElement = document.getElementById(
   "systemFeedbackModal",

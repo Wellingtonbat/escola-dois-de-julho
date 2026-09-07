@@ -16,6 +16,7 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
     public DbSet<Disciplina> Disciplinas => Set<Disciplina>();
     public DbSet<DisciplinaSerie> DisciplinaSeries => Set<DisciplinaSerie>();
     public DbSet<Nota> Notas => Set<Nota>();
+    public DbSet<RecuperacaoFinal> RecuperacoesFinais => Set<RecuperacaoFinal>();
     public DbSet<PeriodoLancamento> PeriodosLancamento => Set<PeriodoLancamento>();
     public DbSet<Professor> Professores => Set<Professor>();
     public DbSet<ProfessorAtribuicao> ProfessorAtribuicoes => Set<ProfessorAtribuicao>();
@@ -169,6 +170,30 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.HasOne<PeriodoLancamento>()
                 .WithMany()
                 .HasForeignKey(x => x.PeriodoLancamentoId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<RecuperacaoFinal>(entity =>
+        {
+            entity.ToTable("RecuperacoesFinais");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.AnoLetivo).IsRequired();
+            entity.Property(x => x.Valor).HasPrecision(4, 2).IsRequired();
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.HasIndex(x => new { x.AlunoId, x.DisciplinaId, x.AnoLetivo })
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+            entity.Property(x => x.CreatedBy).HasMaxLength(128);
+            entity.Property(x => x.UpdatedBy).HasMaxLength(128);
+
+            entity.HasOne<Aluno>()
+                .WithMany()
+                .HasForeignKey(x => x.AlunoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<Disciplina>()
+                .WithMany()
+                .HasForeignKey(x => x.DisciplinaId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

@@ -58,7 +58,7 @@
                         @foreach (var usuario in Model.Usuarios)
                         {
                             var perfilExibicao = usuario.Perfil == "Secretaria" ? "Secretária" : usuario.Perfil;
-                            <tr>
+                            <tr class="row-clicavel" data-edit-trigger=".btn-edit-usuario">
                                 <td>@usuario.NomeCompleto</td>
                                 <td>@usuario.Email</td>
                                 <td>@usuario.Cpf</td>
@@ -68,37 +68,44 @@
                                         @(usuario.IsAtivo ? "Ativo" : "Inativo")
                                     </span>
                                 </td>
-                                <td class="d-flex gap-2">
-                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-usuario"
-                                            data-bs-toggle="modal" data-bs-target="#editUsuarioModal" data-id="@usuario.Id"
-                                            data-nome="@usuario.NomeCompleto" data-email="@usuario.Email"
-                                            data-cpf="@usuario.Cpf" data-perfil="@usuario.Perfil" data-ativo="@usuario.IsAtivo">
-                                        Editar
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-redefinir-senha-usuario"
-                                            data-bs-toggle="modal" data-bs-target="#redefinirSenhaUsuarioModal" data-id="@usuario.Id"
-                                            data-nome="@usuario.NomeCompleto">
-                                        Redefinir senha
-                                    </button>
-                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@usuario.Id" class="m-0"
-                                          data-confirm-message="Tem certeza que deseja @(usuario.IsAtivo ? "desativar" : "ativar") este usuário?">
-                                        <input type="hidden" name="busca" value="@Model.Busca" />
-                                        <input type="hidden" name="status" value="@Model.Status" />
-                                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
-                                        <button type="submit"
-                                                class="btn btn-sm @(usuario.IsAtivo ? "btn-outline-warning" : "btn-outline-success")">
-                                            @(usuario.IsAtivo ? "Desativar" : "Ativar")
+                                <td>
+                                    <div class="actions-cell">
+                                        <button type="button" class="icon-btn edit btn-edit-usuario"
+                                                data-bs-toggle="modal" data-bs-target="#editUsuarioModal" data-id="@usuario.Id"
+                                                data-nome="@usuario.NomeCompleto" data-email="@usuario.Email"
+                                                data-cpf="@usuario.Cpf" data-perfil="@usuario.Perfil" data-ativo="@usuario.IsAtivo"
+                                                title="Editar">
+                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
                                         </button>
-                                    </form>
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@usuario.Id" class="m-0"
-                                          data-confirm-message="Tem certeza que deseja excluir este usuário?">
-                                        <input type="hidden" name="busca" value="@Model.Busca" />
-                                        <input type="hidden" name="status" value="@Model.Status" />
-                                        <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
-                                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
-                                    </form>
+                                        <button type="button" class="icon-btn resetpw btn-redefinir-senha-usuario"
+                                                data-bs-toggle="modal" data-bs-target="#redefinirSenhaUsuarioModal" data-id="@usuario.Id"
+                                                data-nome="@usuario.NomeCompleto" title="Redefinir senha">
+                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 8 10h-.535A4 4 0 1 1 0 8zm4-2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" /></svg>
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@usuario.Id" class="m-0">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="icon-btn toggle" title="@(usuario.IsAtivo ? "Desativar" : "Ativar")"
+                                                    onclick="return confirm('Tem certeza que deseja @(usuario.IsAtivo ? "desativar" : "ativar") este usuário?');">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@usuario.Id" class="m-0">
+                                            <input type="hidden" name="busca" value="@Model.Busca" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="icon-btn delete" title="Excluir"
+                                                    onclick="return confirm('Tem certeza que deseja excluir este usuário?');">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" /><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" /></svg>
+                                            </button>
+                                        </form>
+                                        <span class="row-chevron">
+                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
+                                        </span>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -159,8 +166,7 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <form method="post" asp-page-handler="Create" id="create-usuario-form"
-                  data-confirm-message="Confirma o cadastro deste usuário?">
+            <form method="post" asp-page-handler="Create" id="create-usuario-form">
                 <div class="modal-body">
                     <input type="hidden" name="busca" value="@Model.Busca" />
                     <input type="hidden" name="status" value="@Model.Status" />
@@ -222,7 +228,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar Usuário</button>
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Confirma o cadastro deste usuário?');">Salvar Usuário</button>
                 </div>
             </form>
         </div>
@@ -243,8 +249,7 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <form method="post" asp-page-handler="Edit"
-                  data-confirm-message="Confirmar atualização dos dados do usuário?">
+            <form method="post" asp-page-handler="Edit">
                 <div class="modal-body">
                     <input type="hidden" id="edit-usuario-id" name="id" />
                     <input type="hidden" name="busca" value="@Model.Busca" />
@@ -282,7 +287,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmar atualização dos dados do usuário?');">Salvar alterações</button>
                 </div>
             </form>
         </div>
@@ -303,8 +308,7 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <form method="post" asp-page-handler="RedefinirSenha"
-                  data-confirm-message="Confirma a redefinição da senha deste usuário?">
+            <form method="post" asp-page-handler="RedefinirSenha">
                 <div class="modal-body">
                     <input type="hidden" id="redefinir-senha-usuario-id" name="id" />
                     <input type="hidden" name="busca" value="@Model.Busca" />
@@ -341,7 +345,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Redefinir Senha</button>
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Confirma a redefinição da senha deste usuário?');">Redefinir Senha</button>
                 </div>
             </form>
         </div>
