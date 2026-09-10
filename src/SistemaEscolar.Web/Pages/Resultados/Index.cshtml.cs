@@ -1,11 +1,16 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using ClosedXML.Excel;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using SistemaEscolar.Application.Notas;
+using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Resultados;
+using SistemaEscolar.Application.Series;
+using SistemaEscolar.Application.Turmas;
 using System.Text;
 
 namespace SistemaEscolar.Web.Pages.Resultados;
@@ -17,14 +22,30 @@ public sealed class IndexModel : PageModel
     private const int PageSizeFixo = 50;
     private readonly IResultadoAcademicoService _resultadoService;
     private readonly IRecuperacaoFinalService _recuperacaoFinalService;
+    private readonly ITurmaService _turmaService;
+    private readonly ISerieService _serieService;
+    private readonly INotaService _notaService;
+    private readonly IPeriodoService _periodoService;
 
-    public IndexModel(IResultadoAcademicoService resultadoService, IRecuperacaoFinalService recuperacaoFinalService)
+    public IndexModel(
+        IResultadoAcademicoService resultadoService,
+        IRecuperacaoFinalService recuperacaoFinalService,
+        ITurmaService turmaService,
+        ISerieService serieService,
+        INotaService notaService,
+        IPeriodoService periodoService)
     {
         _resultadoService = resultadoService;
         _recuperacaoFinalService = recuperacaoFinalService;
+        _turmaService = turmaService;
+        _serieService = serieService;
+        _notaService = notaService;
+        _periodoService = periodoService;
     }
 
     public IReadOnlyList<ResultadoAcademicoDto> Resultados { get; private set; } = Array.Empty<ResultadoAcademicoDto>();
+    public IReadOnlyList<SelectListItem> Turmas { get; private set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> Series { get; private set; } = Array.Empty<SelectListItem>();
 
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
@@ -60,6 +81,8 @@ public sealed class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        await LoadFilterOptionsAsync(cancellationToken);
+
         var resultados = await GetFilteredOrderedAsync(cancellationToken);
 
         TotalAprovados = resultados.Count(x => x.Situacao.Equals("Aprovado", StringComparison.OrdinalIgnoreCase));
@@ -182,44 +205,113 @@ public sealed class IndexModel : PageModel
     {
         var resultados = await GetFilteredOrderedAsync(cancellationToken);
 
+        var periodosDoAno = (await _periodoService.ListarAsync(null, cancellationToken))
+            .Where(x => x.AnoLetivo == AnoLetivo)
+            .OrderBy(x => x.Trimestre)
+            .ToList();
+
+        var todasNotas = await _notaService.ListarAsync(null, cancellationToken);
+        var recuperacoesFinais = await _recuperacaoFinalService.ListarPorAnoAsync(AnoLetivo, cancellationToken);
+
         using var workbook = new XLWorkbook();
-        var worksheet = workbook.Worksheets.Add("Resultados");
 
-        worksheet.Cell(1, 1).Value = "Disciplina";
-        worksheet.Cell(1, 2).Value = "Aluno";
-        worksheet.Cell(1, 3).Value = "Turma";
-        worksheet.Cell(1, 4).Value = "Série";
-        worksheet.Cell(1, 5).Value = "Ano Letivo";
-        worksheet.Cell(1, 6).Value = "Média Final";
-        worksheet.Cell(1, 7).Value = "Recuperação Final";
-        worksheet.Cell(1, 8).Value = "Resultado Final";
-        worksheet.Cell(1, 9).Value = "Situação";
-        worksheet.Cell(1, 10).Value = "Motivo";
+        var gruposDisciplina = resultados
+            .GroupBy(x => x.Disciplina)
+            .OrderBy(x => x.Key);
 
-        var row = 2;
-        foreach (var item in resultados)
+        foreach (var grupo in gruposDisciplina)
         {
-            worksheet.Cell(row, 1).Value = item.Disciplina;
-            worksheet.Cell(row, 2).Value = item.AlunoNome;
-            worksheet.Cell(row, 3).Value = item.Turma;
-            worksheet.Cell(row, 4).Value = item.Serie;
-            worksheet.Cell(row, 5).Value = item.AnoLetivo;
-            worksheet.Cell(row, 6).Value = item.MediaFinal;
-            if (item.RecuperacaoFinal.HasValue)
+            var worksheet = workbook.Worksheets.Add(SanitizarNomeAba(grupo.Key));
+
+            worksheet.Cell(1, 1).Value = "Aluno";
+            worksheet.Range(1, 1, 2, 1).Merge();
+
+            var colunasSub = new[] { "Av1", "Av2", "Av3", "Res.Un", "Rec.Par", "Res.Fi" };
+            var coluna = 2;
+            for (var t = 1; t <= 3; t++)
             {
-                worksheet.Cell(row, 7).Value = item.RecuperacaoFinal.Value;
+                worksheet.Range(1, coluna, 1, coluna + 5).Merge().Value = $"{t}º Trimestre";
+                for (var i = 0; i < colunasSub.Length; i++)
+                {
+                    worksheet.Cell(2, coluna + i).Value = colunasSub[i];
+                }
+
+                coluna += 6;
             }
-            worksheet.Cell(row, 8).Value = item.ResultadoFinalAno;
-            worksheet.Cell(row, 9).Value = item.Situacao;
-            worksheet.Cell(row, 10).Value = item.Motivo;
-            row++;
+
+            worksheet.Cell(1, coluna).Value = "Tot.Pts";
+            worksheet.Range(1, coluna, 2, coluna).Merge();
+            worksheet.Cell(1, coluna + 1).Value = "Méd.Curso";
+            worksheet.Range(1, coluna + 1, 2, coluna + 1).Merge();
+            worksheet.Cell(1, coluna + 2).Value = "Rec.";
+            worksheet.Range(1, coluna + 2, 2, coluna + 2).Merge();
+            worksheet.Cell(1, coluna + 3).Value = "Res.";
+            worksheet.Range(1, coluna + 3, 2, coluna + 3).Merge();
+            var totalColunas = coluna + 3;
+
+            var cabecalho = worksheet.Range(1, 1, 2, totalColunas);
+            cabecalho.Style.Font.Bold = true;
+            cabecalho.Style.Fill.BackgroundColor = XLColor.FromHtml("#F2F2F2");
+            cabecalho.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            cabecalho.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            cabecalho.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+            var linha = 3;
+            foreach (var item in grupo.OrderBy(x => x.AlunoNome))
+            {
+                var notasDoAluno = todasNotas
+                    .Where(n => n.AlunoId == item.AlunoId && n.DisciplinaId == item.DisciplinaId)
+                    .ToList();
+                var temRecuperacao = recuperacoesFinais.TryGetValue((item.AlunoId, item.DisciplinaId), out var recuperacaoValor);
+                var calculo = BoletimCalculo.Calcular(periodosDoAno, notasDoAluno, temRecuperacao ? recuperacaoValor : null);
+
+                worksheet.Cell(linha, 1).Value = item.AlunoNome;
+
+                var c = 2;
+                foreach (var trimestre in calculo.Trimestres)
+                {
+                    worksheet.Cell(linha, c).Value = trimestre.Av1;
+                    worksheet.Cell(linha, c + 1).Value = trimestre.Av2;
+                    worksheet.Cell(linha, c + 2).Value = trimestre.Av3;
+                    worksheet.Cell(linha, c + 3).Value = trimestre.ResUnidade;
+                    worksheet.Cell(linha, c + 4).Value = trimestre.RecParalela;
+                    worksheet.Cell(linha, c + 5).Value = trimestre.ResFinal;
+                    c += 6;
+                }
+
+                worksheet.Cell(linha, c).Value = BoletimCalculo.FormatarNumero(calculo.TotalPontos);
+                worksheet.Cell(linha, c + 1).Value = calculo.MediaCurso.HasValue ? BoletimCalculo.FormatarNumero(calculo.MediaCurso.Value) : "—";
+                worksheet.Cell(linha, c + 2).Value = calculo.RecuperacaoFinal.HasValue ? BoletimCalculo.FormatarNumero(calculo.RecuperacaoFinal.Value) : "—";
+
+                var celulaSituacao = worksheet.Cell(linha, c + 3);
+                celulaSituacao.Value = calculo.Situacao;
+                if (calculo.Situacao == "AP")
+                {
+                    celulaSituacao.Style.Fill.BackgroundColor = XLColor.FromHtml("#DDF8EC");
+                }
+                else if (calculo.Situacao == "RP")
+                {
+                    celulaSituacao.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFE3EA");
+                }
+
+                linha++;
+            }
+
+            if (linha > 3)
+            {
+                var corpo = worksheet.Range(3, 1, linha - 1, totalColunas);
+                corpo.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                corpo.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            }
+
+            worksheet.SheetView.FreezeRows(2);
+            worksheet.Columns().AdjustToContents();
         }
 
-        worksheet.Range(1, 1, 1, 10).Style.Font.Bold = true;
-        worksheet.Column(6).Style.NumberFormat.Format = "0.00";
-        worksheet.Column(7).Style.NumberFormat.Format = "0.00";
-        worksheet.Column(8).Style.NumberFormat.Format = "0.00";
-        worksheet.Columns().AdjustToContents();
+        if (workbook.Worksheets.Count == 0)
+        {
+            workbook.Worksheets.Add("Resultados").Cell(1, 1).Value = "Nenhum resultado encontrado.";
+        }
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -227,6 +319,13 @@ public sealed class IndexModel : PageModel
             stream.ToArray(),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"resultados-academicos-{AnoLetivo}.xlsx");
+    }
+
+    private static string SanitizarNomeAba(string nome)
+    {
+        var invalidos = new[] { '\\', '/', '?', '*', '[', ']', ':' };
+        var limpo = new string(nome.Select(c => invalidos.Contains(c) ? '-' : c).ToArray());
+        return limpo.Length > 31 ? limpo[..31] : limpo;
     }
 
     public async Task<IActionResult> OnGetExportPdfAsync(CancellationToken cancellationToken)
@@ -319,6 +418,21 @@ public sealed class IndexModel : PageModel
         return File(pdfBytes, "application/pdf", $"resultados-academicos-{AnoLetivo}.pdf");
     }
 
+    private async Task LoadFilterOptionsAsync(CancellationToken cancellationToken)
+    {
+        var turmas = await _turmaService.ListarAsync(null, cancellationToken);
+        Turmas = turmas
+            .OrderBy(x => x.Nome)
+            .Select(x => new SelectListItem($"{x.Nome} ({x.SerieNome})", x.Nome))
+            .ToList();
+
+        var series = await _serieService.ListarAsync(null, cancellationToken);
+        Series = series
+            .OrderBy(x => x.Ordem)
+            .Select(x => new SelectListItem(x.Nome, x.Nome))
+            .ToList();
+    }
+
     private async Task<List<ResultadoAcademicoDto>> GetFilteredOrderedAsync(CancellationToken cancellationToken)
     {
         var filter = new ResultadoAcademicoFilter(AnoLetivo, Turma, Serie, Situacao);
@@ -330,8 +444,7 @@ public sealed class IndexModel : PageModel
             resultados = resultados
                 .Where(x => x.AlunoNome.Contains(busca, StringComparison.OrdinalIgnoreCase)
                             || x.Disciplina.Contains(busca, StringComparison.OrdinalIgnoreCase)
-                            || x.Turma.Contains(busca, StringComparison.OrdinalIgnoreCase)
-                            || x.Serie.Contains(busca, StringComparison.OrdinalIgnoreCase))
+                            || x.ProfessorNome.Contains(busca, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 

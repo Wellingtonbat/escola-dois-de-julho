@@ -22,10 +22,10 @@ public sealed class ProfessorRepository : IProfessorRepository
 
         if (!string.IsNullOrWhiteSpace(filter?.Busca))
         {
-            var busca = filter.Busca.Trim();
+            var busca = filter.Busca.Trim().ToLower();
             query = query.Where(x =>
-                x.NomeCompleto.Contains(busca) ||
-                x.Email.Contains(busca));
+                x.NomeCompleto.ToLower().Contains(busca) ||
+                x.Email.ToLower().Contains(busca));
         }
 
         if (filter?.IsAtivo.HasValue == true)

@@ -1,11 +1,15 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
+using SistemaEscolar.Application.Resultados;
 
 namespace SistemaEscolar.Web.Pages.Notas;
 
@@ -18,19 +22,22 @@ public sealed class BoletimModel : PageModel
     private readonly IProfessorService _professorService;
     private readonly IPeriodoService _periodoService;
     private readonly INotaService _notaService;
+    private readonly IRecuperacaoFinalService _recuperacaoFinalService;
 
     public BoletimModel(
         IAlunoService alunoService,
         IDisciplinaService disciplinaService,
         IProfessorService professorService,
         IPeriodoService periodoService,
-        INotaService notaService)
+        INotaService notaService,
+        IRecuperacaoFinalService recuperacaoFinalService)
     {
         _alunoService = alunoService;
         _disciplinaService = disciplinaService;
         _professorService = professorService;
         _periodoService = periodoService;
         _notaService = notaService;
+        _recuperacaoFinalService = recuperacaoFinalService;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -291,6 +298,286 @@ public sealed class BoletimModel : PageModel
         return RedirectToPage("/Notas/Boletim", new { AlunoId = alunoId, PeriodoId = periodoId });
     }
 
+    public async Task<IActionResult> OnGetBaixarPdfAsync(CancellationToken cancellationToken)
+    {
+        if (!PodeGerarBoletimPdf())
+        {
+            TempData["ErrorMessage"] = "Somente Diretor, Coordenador ou Secretaria podem baixar o boletim em PDF.";
+            return RedirectToPage("/Notas/Boletim", new { AlunoId, PeriodoId });
+        }
+
+        var aluno = await _alunoService.ObterPorIdAsync(AlunoId, cancellationToken);
+        if (aluno is null)
+        {
+            TempData["ErrorMessage"] = "Aluno não encontrado.";
+            return RedirectToPage("/Notas/Index");
+        }
+
+        var periodosDoAno = (await _periodoService.ListarAsync(null, cancellationToken))
+            .Where(x => x.AnoLetivo == aluno.AnoLetivo)
+            .OrderBy(x => x.Trimestre)
+            .ToList();
+
+        var todasDisciplinas = (await _disciplinaService.ListarAsync(null, cancellationToken))
+            .Where(x => x.IsAtiva && x.Series.Any(s => s.SerieId == aluno.SerieId))
+            .OrderBy(x => x.Nome)
+            .ToList();
+
+        var notasDoAluno = (await _notaService.ListarAsync(null, cancellationToken))
+            .Where(x => x.AlunoId == AlunoId)
+            .ToList();
+
+        var recuperacoesFinais = await _recuperacaoFinalService.ListarPorAlunoEAnoAsync(AlunoId, aluno.AnoLetivo, cancellationToken);
+
+        var numeroChamada = 1;
+        if (aluno.TurmaId.HasValue)
+        {
+            var colegas = (await _alunoService.ListarAsync(new AlunoListFilter(null, null, aluno.TurmaId, true), cancellationToken))
+                .OrderBy(x => x.NomeCompleto, StringComparer.Create(PtBr, ignoreCase: true))
+                .ToList();
+            var indice = colegas.FindIndex(x => x.Id == AlunoId);
+            numeroChamada = indice >= 0 ? indice + 1 : 1;
+        }
+
+        var linhas = todasDisciplinas
+            .Select(disciplina => ConstruirLinhaBoletim(disciplina, periodosDoAno, notasDoAluno, recuperacoesFinais))
+            .ToList();
+
+        var pdfBytes = GerarPdfBoletim(aluno, numeroChamada, linhas);
+        var nomeArquivo = $"boletim-{aluno.NomeCompleto}-{aluno.AnoLetivo}.pdf".Replace(' ', '-');
+        return File(pdfBytes, "application/pdf", nomeArquivo);
+    }
+
+    private static BoletimLinhaVm ConstruirLinhaBoletim(
+        DisciplinaListItemDto disciplina,
+        IReadOnlyList<PeriodoListItemDto> periodosDoAno,
+        IReadOnlyList<NotaListItemDto> notasDoAluno,
+        IReadOnlyDictionary<Guid, decimal> recuperacoesFinais)
+    {
+        var notasDaDisciplina = notasDoAluno.Where(n => n.DisciplinaId == disciplina.Id).ToList();
+        recuperacoesFinais.TryGetValue(disciplina.Id, out var recuperacaoValor);
+        var temRecuperacaoFinal = recuperacoesFinais.ContainsKey(disciplina.Id);
+
+        var resultado = BoletimCalculo.Calcular(periodosDoAno, notasDaDisciplina, temRecuperacaoFinal ? recuperacaoValor : null);
+
+        return new BoletimLinhaVm(
+            disciplina.Nome,
+            resultado.Trimestres.Select(t => new BoletimTrimestreVm(t.Av1, t.Av2, t.Av3, t.ResUnidade, t.RecParalela, t.ResFinal)).ToList(),
+            resultado.TemLancamento,
+            BoletimCalculo.FormatarNumero(resultado.TotalPontos),
+            resultado.MediaCurso.HasValue ? BoletimCalculo.FormatarNumero(resultado.MediaCurso.Value) : "—",
+            resultado.RecuperacaoFinal.HasValue ? BoletimCalculo.FormatarNumero(resultado.RecuperacaoFinal.Value) : "—",
+            resultado.Situacao);
+    }
+
+    private static byte[] GerarPdfBoletim(AlunoListItemDto aluno, int numeroChamada, IReadOnlyList<BoletimLinhaVm> linhas)
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        var aprovadas = linhas.Count(x => x.Situacao == "AP");
+        var reprovadas = linhas.Count(x => x.Situacao == "RP");
+        var semResultado = linhas.Count - aprovadas - reprovadas;
+        const int colunasPorTrimestre = 6;
+        const int totalTrimestres = 3;
+        const int colunasResumo = 4;
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4.Landscape());
+                page.Margin(24);
+                page.DefaultTextStyle(x => x.FontSize(8));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().Column(esquerda =>
+                        {
+                            esquerda.Item().Text("Escola Municipal 2 de Julho").Bold().FontSize(13);
+                            esquerda.Item().Text("Secretaria Municipal de Educação - Salvador, Bahia");
+                            esquerda.Item().Text($"Ano Letivo {aluno.AnoLetivo} - Sistema de Gestão Acadêmica");
+                        });
+
+                        row.RelativeItem().Column(direita =>
+                        {
+                            direita.Item().AlignRight().Text(aluno.NomeCompleto.ToUpperInvariant()).Bold().FontSize(12);
+                            direita.Item().AlignRight().Row(pills =>
+                            {
+                                pills.Spacing(4);
+                                pills.AutoItem().Element(PillStyle).Text(aluno.Serie);
+                                pills.AutoItem().Element(PillStyle).Text($"Turma {aluno.TurmaNome ?? "-"}");
+                                pills.AutoItem().Element(PillStyle).Text($"Nº {numeroChamada}");
+                            });
+                        });
+                    });
+                    col.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
+                });
+
+                page.Content().Column(conteudo =>
+                {
+                conteudo.Item().PaddingTop(10).Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(3.4f);
+                        for (var t = 0; t < totalTrimestres; t++)
+                        {
+                            columns.RelativeColumn(0.8f);
+                            columns.RelativeColumn(0.8f);
+                            columns.RelativeColumn(0.8f);
+                            columns.RelativeColumn(1f);
+                            columns.RelativeColumn(1f);
+                            columns.RelativeColumn(1f);
+                        }
+
+                        columns.RelativeColumn(1f);
+                        columns.RelativeColumn(1.1f);
+                        columns.RelativeColumn(0.8f);
+                        columns.RelativeColumn(0.8f);
+                    });
+
+                    table.Header(header =>
+                    {
+                        header.Cell().RowSpan(2).Element(CabecalhoPrincipal).AlignMiddle().Text("Disciplina");
+                        header.Cell().ColumnSpan(colunasPorTrimestre).Element(CabecalhoPrincipal).AlignCenter().Text("1º Trimestre");
+                        header.Cell().ColumnSpan(colunasPorTrimestre).Element(CabecalhoPrincipal).AlignCenter().Text("2º Trimestre");
+                        header.Cell().ColumnSpan(colunasPorTrimestre).Element(CabecalhoPrincipal).AlignCenter().Text("3º Trimestre");
+                        header.Cell().RowSpan(2).Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("Tot.Pts");
+                        header.Cell().RowSpan(2).Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("Méd.Curso");
+                        header.Cell().RowSpan(2).Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("Rec.");
+                        header.Cell().RowSpan(2).Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("Res.");
+
+                        for (var t = 0; t < totalTrimestres; t++)
+                        {
+                            header.Cell().Element(CabecalhoSecundario).AlignCenter().Text("Av1");
+                            header.Cell().Element(CabecalhoSecundario).AlignCenter().Text("Av2");
+                            header.Cell().Element(CabecalhoSecundario).AlignCenter().Text("Av3");
+                            header.Cell().Element(CabecalhoSecundario).AlignCenter().Text("Res.Un");
+                            header.Cell().Element(CabecalhoSecundario).AlignCenter().Text("Rec.Par");
+                            header.Cell().Element(CabecalhoSecundario).AlignCenter().Text("Res.Fi");
+                        }
+                    });
+
+                    foreach (var linha in linhas)
+                    {
+                        table.Cell().Element(CelulaDisciplina).AlignMiddle().Text(linha.Disciplina).Bold();
+
+                        if (!linha.TemLancamento)
+                        {
+                            table.Cell().ColumnSpan(colunasPorTrimestre * totalTrimestres + colunasResumo).Element(CelulaSemDados).AlignCenter().AlignMiddle().Text("Sem dados lançados").Italic();
+                            continue;
+                        }
+
+                        foreach (var trimestre in linha.Trimestres)
+                        {
+                            table.Cell().Element(Celula).AlignCenter().Text(trimestre.Av1);
+                            table.Cell().Element(Celula).AlignCenter().Text(trimestre.Av2);
+                            table.Cell().Element(Celula).AlignCenter().Text(trimestre.Av3);
+                            table.Cell().Element(Celula).AlignCenter().Text(trimestre.ResUnidade).Bold();
+                            table.Cell().Element(Celula).AlignCenter().Text(trimestre.RecParalela);
+                            table.Cell().Element(Celula).AlignCenter().Text(trimestre.ResFinal).Bold();
+                        }
+
+                        table.Cell().Element(Celula).AlignCenter().Text(linha.TotalPontos).Bold();
+                        table.Cell().Element(Celula).AlignCenter().Text(linha.MediaCurso).Bold();
+                        table.Cell().Element(Celula).AlignCenter().Text(linha.RecuperacaoFinal);
+                        table.Cell().Element(CelulaSituacao(linha.Situacao)).AlignCenter().Text(linha.Situacao).Bold();
+                    }
+                });
+
+                conteudo.Item().PaddingTop(8).Text($"{aprovadas} aprovada(s)   |   {reprovadas} reprovada(s)   |   {semResultado} sem resultado");
+
+                if (reprovadas > 0)
+                {
+                    conteudo.Item().PaddingTop(4).Background(Colors.Red.Lighten4).Padding(4)
+                        .Text($"Com reprovação em {reprovadas} disciplina(s)").Bold().FontColor(Colors.Red.Darken2);
+                }
+
+                // Espaço fixo e generoso até o bloco de assinaturas — um espaçador flexível
+                // (ExtendVertical) aqui empurra a linha inteira para uma segunda página em
+                // branco, já que ele reserva 100% do espaço restante sem sobrar nada para o
+                // conteúdo seguinte.
+                conteudo.Item().PaddingTop(120);
+
+                conteudo.Item().PaddingBottom(10).Row(row =>
+                {
+                    row.Spacing(20);
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Height(40);
+                        c.Item().LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                        c.Item().AlignCenter().PaddingTop(3).Text("Direção");
+                    });
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Height(40);
+                        c.Item().LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                        c.Item().AlignCenter().PaddingTop(3).Text("Coordenação Pedagógica");
+                    });
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Height(40);
+                        c.Item().LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                        c.Item().AlignCenter().PaddingTop(3).Text("Responsável pelo Aluno");
+                    });
+                });
+                });
+            });
+        }).GeneratePdf();
+    }
+
+    private static IContainer PillStyle(IContainer container) =>
+        container.Background(Colors.Grey.Lighten3).PaddingVertical(2).PaddingHorizontal(6).DefaultTextStyle(x => x.FontSize(8).SemiBold());
+
+    private static IContainer CabecalhoPrincipal(IContainer container) =>
+        container.Background(Colors.Grey.Lighten2).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(3).DefaultTextStyle(x => x.Bold().FontSize(7.5f));
+
+    private static IContainer CabecalhoSecundario(IContainer container) =>
+        container.Background(Colors.Grey.Lighten4).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(2).DefaultTextStyle(x => x.Bold().FontSize(6.5f));
+
+    private static IContainer Celula(IContainer container) =>
+        container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(2).DefaultTextStyle(x => x.FontSize(7));
+
+    private static IContainer CelulaDisciplina(IContainer container) =>
+        container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(7.5f));
+
+    private static IContainer CelulaSemDados(IContainer container) =>
+        container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(7).FontColor(Colors.Grey.Darken1));
+
+    private static Func<IContainer, IContainer> CelulaSituacao(string situacao) => container =>
+    {
+        var corFundo = situacao switch
+        {
+            "AP" => Colors.Green.Lighten4,
+            "RP" => Colors.Red.Lighten4,
+            _ => Colors.White
+        };
+        var corTexto = situacao switch
+        {
+            "AP" => Colors.Green.Darken2,
+            "RP" => Colors.Red.Darken2,
+            _ => Colors.Black
+        };
+
+        return container.Background(corFundo).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(2).DefaultTextStyle(x => x.FontSize(7).FontColor(corTexto));
+    };
+
+    private bool PodeGerarBoletimPdf() =>
+        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+
+    public sealed record BoletimTrimestreVm(string Av1, string Av2, string Av3, string ResUnidade, string RecParalela, string ResFinal);
+
+    public sealed record BoletimLinhaVm(
+        string Disciplina,
+        IReadOnlyList<BoletimTrimestreVm> Trimestres,
+        bool TemLancamento,
+        string TotalPontos,
+        string MediaCurso,
+        string RecuperacaoFinal,
+        string Situacao);
+
     private bool CanManageNotas() =>
         User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") || User.IsInRole("Professor");
 
@@ -301,39 +588,7 @@ public sealed class BoletimModel : PageModel
         && !User.IsInRole("Cordenador")
         && !User.IsInRole("Secretaria");
 
-    private static (bool Lancado, decimal? Soma, decimal Final, bool PodeRecuperar, string StatusLabel, string StatusClass) Calcular(NotaListItemDto? nota)
-    {
-        if (nota is null)
-        {
-            return (false, null, 0m, false, "Não lançado", "status-pill status-neutral");
-        }
-
-        var avals = new[] { nota.Avaliacao1, nota.Avaliacao2, nota.Avaliacao3 }.Where(x => x.HasValue).ToList();
-        var lancado = avals.Count > 0;
-        var soma = lancado ? nota.ResultadoUnidade : (decimal?)null;
-        var podeRecuperar = soma.HasValue && soma.Value < 5m;
-        var final = nota.ResultadoFinalUnidade;
-
-        string statusLabel;
-        string statusClass;
-        if (!lancado)
-        {
-            statusLabel = "Não lançado";
-            statusClass = "status-pill status-neutral";
-        }
-        else if (avals.Count < 3)
-        {
-            statusLabel = "Em andamento";
-            statusClass = "status-pill status-warn";
-        }
-        else
-        {
-            statusLabel = final >= 5m ? "Aprovado" : "Reprovado";
-            statusClass = final >= 5m ? "status-pill status-open" : "status-pill status-danger";
-        }
-
-        return (lancado, soma, final, podeRecuperar, statusLabel, statusClass);
-    }
+    private static NotaCalculo.Resultado Calcular(NotaListItemDto? nota) => NotaCalculo.Calcular(nota);
 
     private static IReadOnlyList<ArcoVm> ConstruirArcos(IReadOnlyList<string> categorias)
     {

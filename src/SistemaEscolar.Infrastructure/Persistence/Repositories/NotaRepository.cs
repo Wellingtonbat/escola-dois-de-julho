@@ -46,11 +46,11 @@ public sealed class NotaRepository : INotaRepository
 
         if (!string.IsNullOrWhiteSpace(filter?.Busca))
         {
-            var busca = filter.Busca.Trim();
+            var busca = filter.Busca.Trim().ToLower();
             query = query.Where(x =>
-                x.AlunoNome.Contains(busca) ||
-                x.DisciplinaNome.Contains(busca) ||
-                x.ProfessorNome.Contains(busca));
+                x.AlunoNome.ToLower().Contains(busca) ||
+                x.DisciplinaNome.ToLower().Contains(busca) ||
+                x.ProfessorNome.ToLower().Contains(busca));
         }
 
         if (filter?.AnoLetivo.HasValue == true)

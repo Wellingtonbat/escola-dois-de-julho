@@ -22,10 +22,10 @@ public sealed class TurmaRepository : ITurmaRepository
 
         if (!string.IsNullOrWhiteSpace(filter?.Busca))
         {
-            var busca = filter.Busca.Trim();
+            var busca = filter.Busca.Trim().ToLower();
             query = query.Where(x =>
-                x.Nome.Contains(busca) ||
-                x.Turno.Contains(busca));
+                x.Nome.ToLower().Contains(busca) ||
+                x.Turno.ToLower().Contains(busca));
         }
 
         if (filter?.SerieId.HasValue == true)

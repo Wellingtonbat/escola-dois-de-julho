@@ -22,8 +22,8 @@ public sealed class DisciplinaRepository : IDisciplinaRepository
 
         if (!string.IsNullOrWhiteSpace(filter?.Busca))
         {
-            var busca = filter.Busca.Trim();
-            query = query.Where(x => x.Nome.Contains(busca) || x.Codigo.Contains(busca));
+            var busca = filter.Busca.Trim().ToLower();
+            query = query.Where(x => x.Nome.ToLower().Contains(busca) || x.Codigo.ToLower().Contains(busca));
         }
 
         if (filter?.IsAtiva.HasValue == true)

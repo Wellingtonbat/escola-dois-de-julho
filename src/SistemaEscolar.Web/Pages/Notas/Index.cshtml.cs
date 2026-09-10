@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaEscolar.Application.Alunos;
+using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
+using SistemaEscolar.Application.Turmas;
 
 namespace SistemaEscolar.Web.Pages.Notas;
 
@@ -15,23 +17,30 @@ public sealed class IndexModel : PageModel
     private readonly IAlunoService _alunoService;
     private readonly IProfessorService _professorService;
     private readonly IPeriodoService _periodoService;
+    private readonly ITurmaService _turmaService;
+    private readonly IDisciplinaService _disciplinaService;
 
     public IndexModel(
         INotaService notaService,
         IAlunoService alunoService,
         IProfessorService professorService,
-        IPeriodoService periodoService)
+        IPeriodoService periodoService,
+        ITurmaService turmaService,
+        IDisciplinaService disciplinaService)
     {
         _notaService = notaService;
         _alunoService = alunoService;
         _professorService = professorService;
         _periodoService = periodoService;
+        _turmaService = turmaService;
+        _disciplinaService = disciplinaService;
     }
 
     public IReadOnlyList<NotaListItemDto> Notas { get; private set; } = Array.Empty<NotaListItemDto>();
     public IReadOnlyList<SelectListItem> Alunos { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> Periodos { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<int> AnosDisponiveis { get; private set; } = Array.Empty<int>();
+    public LancamentoMassaModalVm LancamentoMassaModal { get; private set; } = new();
 
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
@@ -161,6 +170,17 @@ public sealed class IndexModel : PageModel
             .ThenBy(x => x.Trimestre)
             .Select(x => new SelectListItem(x.Descricao, x.Id.ToString()))
             .ToList();
+
+        var (turmasLancamentoMassa, turmaDisciplinaJson) = await LancamentoMassaOptions.BuildAsync(
+            _professorService, _turmaService, _disciplinaService, escopo, cancellationToken);
+
+        LancamentoMassaModal = new LancamentoMassaModalVm
+        {
+            Periodos = Periodos,
+            Turmas = turmasLancamentoMassa,
+            TurmaDisciplinaJson = turmaDisciplinaJson,
+            MostrarAvisoEscopo = IsProfessorOnly(),
+        };
     }
 
     private bool CanManageNotas()

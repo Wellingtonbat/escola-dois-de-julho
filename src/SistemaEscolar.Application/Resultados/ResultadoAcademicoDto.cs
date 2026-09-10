@@ -7,6 +7,7 @@ public sealed record ResultadoAcademicoDto(
     string Disciplina,
     string Turma,
     string Serie,
+    string ProfessorNome,
     int AnoLetivo,
     decimal MediaFinal,
     decimal? RecuperacaoFinal,

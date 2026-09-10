@@ -14,9 +14,15 @@
         </div>
         @if (podeGerenciar)
         {
-            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#abrirBoletimModal">
-                Abrir Boletim de um Aluno
-            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#abrirBoletimModal">
+                    Abrir Boletim de um Aluno
+                </button>
+                <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#lancamentoMassaModal">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z" /></svg>
+                    Lançamento em Massa
+                </button>
+            </div>
         }
     </div>
     <div class="panel-body">
@@ -51,8 +57,6 @@
             </div>
             <div class="col-12 col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
-            </div>
-            <div class="col-12">
                 <a asp-page="/Notas/Index" class="btn btn-outline-secondary">Limpar</a>
             </div>
         </form>
@@ -237,4 +241,5 @@
         </div>
     </div>
 
+    <partial name="_LancamentoMassaModal" model="Model.LancamentoMassaModal" />
 }

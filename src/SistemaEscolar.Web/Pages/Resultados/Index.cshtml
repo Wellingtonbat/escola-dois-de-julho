@@ -38,16 +38,28 @@
             <input type="hidden" name="PageNumber" value="1" />
             <div class="col-12 col-md-3">
                 <input asp-for="Busca" class="form-control"
-                       placeholder="Buscar por aluno, disciplina, turma ou série" />
+                       placeholder="Buscar por aluno, disciplina ou professor" />
             </div>
             <div class="col-12 col-md-2">
                 <input asp-for="AnoLetivo" type="number" class="form-control" placeholder="Ano" />
             </div>
             <div class="col-12 col-md-2">
-                <input asp-for="Turma" class="form-control" placeholder="Turma" />
+                <select asp-for="Turma" class="form-select">
+                    <option value="">Todas as turmas</option>
+                    @foreach (var turma in Model.Turmas)
+                    {
+                        <option value="@turma.Value">@turma.Text</option>
+                    }
+                </select>
             </div>
             <div class="col-12 col-md-2">
-                <input asp-for="Serie" class="form-control" placeholder="Série" />
+                <select asp-for="Serie" class="form-select">
+                    <option value="">Todas as séries</option>
+                    @foreach (var serie in Model.Series)
+                    {
+                        <option value="@serie.Value">@serie.Text</option>
+                    }
+                </select>
             </div>
             <div class="col-12 col-md-2">
                 <select asp-for="Situacao" class="form-select">
@@ -74,8 +86,6 @@
             </div>
             <div class="col-12 col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
-            </div>
-            <div class="col-12">
                 <a asp-page="/Resultados/Index" class="btn btn-outline-secondary">Limpar</a>
             </div>
         </form>
@@ -100,6 +110,7 @@
                         <th>Aluno</th>
                         <th>Turma</th>
                         <th>Série</th>
+                        <th>Professor</th>
                         <th>Ano</th>
                         <th>Média Final</th>
                         <th>Recuperação Final</th>
@@ -112,7 +123,7 @@
                     @if (Model.Resultados.Count == 0)
                     {
                         <tr>
-                            <td colspan="10" class="text-center text-muted">Nenhum resultado encontrado.</td>
+                            <td colspan="11" class="text-center text-muted">Nenhum resultado encontrado.</td>
                         </tr>
                     }
                     else
@@ -124,7 +135,7 @@
                         foreach (var grupo in gruposDisciplina)
                         {
                             <tr class="table-light">
-                                <td colspan="10" class="fw-semibold">Disciplina: @grupo.Key</td>
+                                <td colspan="11" class="fw-semibold">Disciplina: @grupo.Key</td>
                             </tr>
 
                             @foreach (var item in grupo)
@@ -134,6 +145,7 @@
                                     <td>@item.AlunoNome</td>
                                     <td>@item.Turma</td>
                                     <td>@item.Serie</td>
+                                    <td>@item.ProfessorNome</td>
                                     <td>@item.AnoLetivo</td>
                                     <td>@item.MediaFinal.ToString("0.00")</td>
                                     <td>

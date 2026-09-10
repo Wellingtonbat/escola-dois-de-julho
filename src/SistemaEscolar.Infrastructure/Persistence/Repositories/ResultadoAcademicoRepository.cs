@@ -33,9 +33,9 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
 
         if (!string.IsNullOrWhiteSpace(filter.Turma))
         {
-            var turma = filter.Turma.Trim();
+            var turma = filter.Turma.Trim().ToLower();
             var turmaIds = await turmasQuery
-                .Where(t => t.Nome == turma)
+                .Where(t => t.Nome.ToLower() == turma)
                 .Select(t => t.Id)
                 .ToListAsync(cancellationToken);
 
@@ -44,9 +44,9 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
 
         if (!string.IsNullOrWhiteSpace(filter.Serie))
         {
-            var serie = filter.Serie.Trim();
+            var serie = filter.Serie.Trim().ToLower();
             var serieIds = await seriesQuery
-                .Where(s => s.Nome == serie)
+                .Where(s => s.Nome.ToLower() == serie)
                 .Select(s => s.Id)
                 .ToListAsync(cancellationToken);
 
@@ -85,6 +85,8 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             alunosQuery = alunosQuery.Where(aluno => notasAno.Any(nota => nota.AlunoId == aluno.Id));
         }
 
+        var professoresQuery = _context.Professores.AsNoTracking();
+
         var query =
             from nota in notasAno
             join aluno in alunosQuery on nota.AlunoId equals aluno.Id
@@ -92,7 +94,9 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             join serie in seriesQuery on aluno.SerieId equals serie.Id
             join turma in turmasQuery on aluno.TurmaId equals (Guid?)turma.Id into turmaGroup
             from turma in turmaGroup.DefaultIfEmpty()
-            group nota by new
+            join professor in professoresQuery on nota.ProfessorId equals professor.Id into professorGroup
+            from professor in professorGroup.DefaultIfEmpty()
+            group new { nota, ProfessorNome = professor != null ? professor.NomeCompleto : null } by new
             {
                 aluno.Id,
                 aluno.NomeCompleto,
@@ -110,8 +114,9 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
                 grupo.Key.TurmaNome,
                 grupo.Key.SerieNome,
                 grupo.Key.Disciplina,
+                ProfessorNome = grupo.Select(x => x.ProfessorNome).FirstOrDefault(),
                 TotalLancamentos = grupo.Count(),
-                MediaFinal = grupo.Average(x => x.Valor)
+                MediaFinal = grupo.Average(x => x.nota.Valor)
             };
 
         var dados = await query.ToListAsync(cancellationToken);
@@ -153,6 +158,7 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
                 x.Disciplina,
                 x.TurmaNome ?? string.Empty,
                 x.SerieNome,
+                x.ProfessorNome ?? string.Empty,
                 filter.AnoLetivo,
                 mediaFinal,
                 recuperacaoFinal,

@@ -8,4 +8,14 @@ internal sealed class RecuperacaoFinalServiceStub : IRecuperacaoFinalService
     {
         return Task.FromResult(RecuperacaoFinalSaveResult.Success());
     }
+
+    public Task<IReadOnlyDictionary<Guid, decimal>> ListarPorAlunoEAnoAsync(Guid alunoId, int anoLetivo, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyDictionary<Guid, decimal>>(new Dictionary<Guid, decimal>());
+    }
+
+    public Task<IReadOnlyDictionary<(Guid AlunoId, Guid DisciplinaId), decimal>> ListarPorAnoAsync(int anoLetivo, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyDictionary<(Guid AlunoId, Guid DisciplinaId), decimal>>(new Dictionary<(Guid, Guid), decimal>());
+    }
 }

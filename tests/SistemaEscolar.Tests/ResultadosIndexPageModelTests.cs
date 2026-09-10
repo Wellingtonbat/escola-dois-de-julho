@@ -20,6 +20,7 @@ public sealed class ResultadosIndexPageModelTests
                 "Matemática",
                 "8o Ano A",
                 "8o Ano",
+                "Professora Ana",
                 2026,
                 i,
                 null,
@@ -29,7 +30,7 @@ public sealed class ResultadosIndexPageModelTests
                 "Aprovado por média final."))
             .ToList();
 
-        var model = new IndexModel(new ResultadoAcademicoServiceStub(data), new RecuperacaoFinalServiceStub());
+        var model = BuildModel(data);
         model.Ordenacao = "media";
         model.Direcao = "desc";
         model.PageSize = 10;
@@ -46,7 +47,7 @@ public sealed class ResultadosIndexPageModelTests
     [Fact]
     public async Task ExportCsv_DeveRetornarArquivoCsv()
     {
-        var model = BuildModel();
+        var model = BuildModel(AmostraPadrao());
 
         var actionResult = await model.OnGetExportCsvAsync(CancellationToken.None);
 
@@ -57,9 +58,9 @@ public sealed class ResultadosIndexPageModelTests
     }
 
     [Fact]
-    public async Task ExportExcel_DeveRetornarArquivoXlsxComCabecalho()
+    public async Task ExportExcel_DeveGerarUmaAbaPorDisciplinaComCabecalhoDeTrimestres()
     {
-        var model = BuildModel();
+        var model = BuildModel(AmostraPadrao());
 
         var actionResult = await model.OnGetExportExcelAsync(CancellationToken.None);
 
@@ -69,18 +70,22 @@ public sealed class ResultadosIndexPageModelTests
 
         using var stream = new MemoryStream(fileResult.FileContents);
         using var workbook = new XLWorkbook(stream);
-        var sheet = workbook.Worksheet("Resultados");
 
-        Assert.Equal("Disciplina", sheet.Cell(1, 1).GetString());
-        Assert.Equal("Situação", sheet.Cell(1, 9).GetString());
-        Assert.Equal("Matemática", sheet.Cell(2, 1).GetString());
-        Assert.Equal("Aluno A", sheet.Cell(2, 2).GetString());
+        Assert.Contains("Matemática", workbook.Worksheets.Select(w => w.Name));
+        Assert.Contains("Português", workbook.Worksheets.Select(w => w.Name));
+
+        var matematica = workbook.Worksheet("Matemática");
+        Assert.Equal("Aluno", matematica.Cell(1, 1).GetString());
+        Assert.Equal("1º Trimestre", matematica.Cell(1, 2).GetString());
+        Assert.Equal("Av1", matematica.Cell(2, 2).GetString());
+        Assert.Equal("Tot.Pts", matematica.Cell(1, 20).GetString());
+        Assert.Equal("Aluno A", matematica.Cell(3, 1).GetString());
     }
 
     [Fact]
     public async Task ExportPdf_DeveConterTotaisPorSituacao()
     {
-        var model = BuildModel();
+        var model = BuildModel(AmostraPadrao());
 
         var actionResult = await model.OnGetExportPdfAsync(CancellationToken.None);
 
@@ -99,17 +104,24 @@ public sealed class ResultadosIndexPageModelTests
         Assert.Contains("Pendentes", text);
     }
 
-    private static IndexModel BuildModel()
-    {
-        var data = new List<ResultadoAcademicoDto>
+    private static List<ResultadoAcademicoDto> AmostraPadrao() =>
+        new()
         {
-            new(Guid.NewGuid(), "Aluno A", Guid.NewGuid(), "Matemática", "8o Ano A", "8o Ano", 2026, 8.25m, null, false, 8.25m, "Aprovado", "Aprovado por média final."),
-            new(Guid.NewGuid(), "Aluno B", Guid.NewGuid(), "Matemática", "8o Ano A", "8o Ano", 2026, 5.25m, null, false, 5.25m, "Reprovado", "Média final abaixo de 5,0."),
-            new(Guid.NewGuid(), "Aluno C", Guid.NewGuid(), "Português", "9o Ano B", "9o Ano", 2026, 0m, null, false, 0m, "Pendente", "Lançamentos incompletos no ano letivo.")
+            new(Guid.NewGuid(), "Aluno A", Guid.NewGuid(), "Matemática", "8o Ano A", "8o Ano", "Professor João", 2026, 8.25m, null, false, 8.25m, "Aprovado", "Aprovado por média final."),
+            new(Guid.NewGuid(), "Aluno B", Guid.NewGuid(), "Matemática", "8o Ano A", "8o Ano", "Professor João", 2026, 5.25m, null, false, 5.25m, "Reprovado", "Média final abaixo de 5,0."),
+            new(Guid.NewGuid(), "Aluno C", Guid.NewGuid(), "Português", "9o Ano B", "9o Ano", "Professora Ana", 2026, 0m, null, false, 0m, "Pendente", "Lançamentos incompletos no ano letivo.")
         };
 
+    private static IndexModel BuildModel(IReadOnlyList<ResultadoAcademicoDto> data)
+    {
         var service = new ResultadoAcademicoServiceStub(data);
-        return new IndexModel(service, new RecuperacaoFinalServiceStub())
+        return new IndexModel(
+            service,
+            new RecuperacaoFinalServiceStub(),
+            new TurmaServiceStub(),
+            new SerieServiceStub(),
+            new NotaServiceStub(),
+            new PeriodoServiceStub())
         {
             AnoLetivo = 2026,
             Situacao = "todos",

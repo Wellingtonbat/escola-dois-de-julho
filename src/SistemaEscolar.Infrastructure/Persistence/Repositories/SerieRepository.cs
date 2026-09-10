@@ -22,8 +22,8 @@ public sealed class SerieRepository : ISerieRepository
 
         if (!string.IsNullOrWhiteSpace(filter?.Busca))
         {
-            var busca = filter.Busca.Trim();
-            query = query.Where(x => x.Nome.Contains(busca));
+            var busca = filter.Busca.Trim().ToLower();
+            query = query.Where(x => x.Nome.ToLower().Contains(busca));
         }
 
         if (filter?.IsAtiva.HasValue == true)

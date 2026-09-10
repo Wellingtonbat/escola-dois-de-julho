@@ -34,15 +34,15 @@ public sealed class AlunoRepository : IAlunoRepository
 
         if (!string.IsNullOrWhiteSpace(filter?.Busca))
         {
-            var busca = filter.Busca.Trim();
+            var busca = filter.Busca.Trim().ToLower();
             var turmaIdsBusca = _context.Set<Turma>()
                 .AsNoTracking()
-                .Where(t => t.Nome.Contains(busca))
+                .Where(t => t.Nome.ToLower().Contains(busca))
                 .Select(t => t.Id);
 
             query = query.Where(x =>
-                x.NomeCompleto.Contains(busca) ||
-                x.Matricula.Contains(busca) ||
+                x.NomeCompleto.ToLower().Contains(busca) ||
+                x.Matricula.ToLower().Contains(busca) ||
                 x.Cpf.Contains(busca) ||
                 (x.TurmaId.HasValue && turmaIdsBusca.Contains(x.TurmaId.Value)));
         }

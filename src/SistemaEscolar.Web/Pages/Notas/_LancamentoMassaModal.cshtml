@@ -1,0 +1,107 @@
+@model SistemaEscolar.Web.Pages.Notas.LancamentoMassaModalVm
+
+<div class="modal fade" id="lancamentoMassaModal" tabindex="-1" aria-labelledby="lancamentoMassaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="modal-header-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z" />
+                        </svg>
+                    </span>
+                    <h5 class="modal-title" id="lancamentoMassaModalLabel">Lançamento de Notas em Massa</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="get" asp-page="/Notas/LancamentoMassa">
+                <div class="modal-body">
+                    <p class="small text-muted">Escolha o trimestre, a turma e a disciplina para abrir a planilha com todos os alunos de uma vez.</p>
+                    <div class="mb-3">
+                        <label for="lm-periodo-id" class="form-label">Trimestre</label>
+                        <select id="lm-periodo-id" name="PeriodoId" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            @foreach (var periodo in Model.Periodos)
+                            {
+                                <option value="@periodo.Value" selected="@(Model.PeriodoSelecionadoId.HasValue && periodo.Value == Model.PeriodoSelecionadoId.Value.ToString())">@periodo.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="lm-turma-id" class="form-label">Turma</label>
+                        <select id="lm-turma-id" name="TurmaId" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            @foreach (var turma in Model.Turmas)
+                            {
+                                <option value="@turma.Value" selected="@(Model.TurmaSelecionadaId.HasValue && turma.Value == Model.TurmaSelecionadaId.Value.ToString())">@turma.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-1">
+                        <label for="lm-disciplina-id" class="form-label">Disciplina</label>
+                        <select id="lm-disciplina-id" name="DisciplinaId" class="form-select" required @(Model.TurmaSelecionadaId.HasValue ? null : "disabled")>
+                            @if (Model.TurmaSelecionadaId.HasValue && Model.DisciplinaSelecionadaId.HasValue)
+                            {
+                                <option value="@Model.DisciplinaSelecionadaId" selected>@Model.DisciplinaSelecionadaNome</option>
+                            }
+                            else
+                            {
+                                <option value="">Escolha uma turma primeiro</option>
+                            }
+                        </select>
+                    </div>
+                    @if (Model.MostrarAvisoEscopo)
+                    {
+                        <p class="hint-inline mt-3">
+                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm.93-9.412-2 .25-.07.328.392.073c.255.06.302.15.244.422l-.628 2.96c-.164.771.087 1.132.685 1.132.464 0 1.002-.213 1.246-.508l.078-.375c-.171.15-.42.21-.588.21-.238 0-.324-.166-.262-.463zM9 5.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" /></svg>
+                            Mostrando apenas as turmas e disciplinas vinculadas a você.
+                        </p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Abrir Planilha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const turmaDisciplinaPares = @Html.Raw(Model.TurmaDisciplinaJson);
+        const turmaSelect = document.getElementById("lm-turma-id");
+        const disciplinaSelect = document.getElementById("lm-disciplina-id");
+        const disciplinaSelecionadaId = @Html.Raw(Model.DisciplinaSelecionadaId.HasValue ? $"\"{Model.DisciplinaSelecionadaId}\"" : "null");
+
+        function preencherDisciplinas(turmaId, manterSelecionada) {
+            disciplinaSelect.innerHTML = "";
+
+            if (!turmaId) {
+                disciplinaSelect.disabled = true;
+                disciplinaSelect.appendChild(new Option("Escolha uma turma primeiro", ""));
+                return;
+            }
+
+            const opcoes = turmaDisciplinaPares
+                .filter((p) => p.turmaId === turmaId)
+                .sort((a, b) => a.disciplinaNome.localeCompare(b.disciplinaNome, "pt-BR"));
+
+            disciplinaSelect.disabled = opcoes.length === 0;
+            disciplinaSelect.appendChild(new Option(opcoes.length ? "Selecione..." : "Nenhuma disciplina vinculada a esta turma", ""));
+            opcoes.forEach((p) => {
+                const opcao = new Option(p.disciplinaNome, p.disciplinaId);
+                if (manterSelecionada && p.disciplinaId === disciplinaSelecionadaId) {
+                    opcao.selected = true;
+                }
+                disciplinaSelect.appendChild(opcao);
+            });
+        }
+
+        turmaSelect?.addEventListener("change", () => preencherDisciplinas(turmaSelect.value, false));
+
+        if (turmaSelect?.value) {
+            preencherDisciplinas(turmaSelect.value, true);
+        }
+    })();
+</script>

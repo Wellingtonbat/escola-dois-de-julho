@@ -39,4 +39,22 @@ public sealed class RecuperacaoFinalRepository : IRecuperacaoFinalRepository
 
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyDictionary<Guid, decimal>> ListarPorAlunoEAnoAsync(Guid alunoId, int anoLetivo, CancellationToken cancellationToken = default)
+    {
+        return await _context.RecuperacoesFinais
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.AlunoId == alunoId && x.AnoLetivo == anoLetivo)
+            .ToDictionaryAsync(x => x.DisciplinaId, x => x.Valor, cancellationToken);
+    }
+
+    public async Task<IReadOnlyDictionary<(Guid AlunoId, Guid DisciplinaId), decimal>> ListarPorAnoAsync(int anoLetivo, CancellationToken cancellationToken = default)
+    {
+        var registros = await _context.RecuperacoesFinais
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.AnoLetivo == anoLetivo)
+            .ToListAsync(cancellationToken);
+
+        return registros.ToDictionary(x => (x.AlunoId, x.DisciplinaId), x => x.Valor);
+    }
 }

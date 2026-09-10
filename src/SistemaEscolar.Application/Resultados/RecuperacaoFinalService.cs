@@ -72,6 +72,12 @@ public sealed class RecuperacaoFinalService : IRecuperacaoFinalService
         return RecuperacaoFinalSaveResult.Success();
     }
 
+    public Task<IReadOnlyDictionary<Guid, decimal>> ListarPorAlunoEAnoAsync(Guid alunoId, int anoLetivo, CancellationToken cancellationToken = default) =>
+        _recuperacaoFinalRepository.ListarPorAlunoEAnoAsync(alunoId, anoLetivo, cancellationToken);
+
+    public Task<IReadOnlyDictionary<(Guid AlunoId, Guid DisciplinaId), decimal>> ListarPorAnoAsync(int anoLetivo, CancellationToken cancellationToken = default) =>
+        _recuperacaoFinalRepository.ListarPorAnoAsync(anoLetivo, cancellationToken);
+
     private bool IsProfessorOnly() =>
         _currentUserService.IsInRole("Professor")
         && !_currentUserService.IsInRole("Diretor")

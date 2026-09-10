@@ -1,0 +1,223 @@
+@page
+@model SistemaEscolar.Web.Pages.Notas.LancamentoMassaModel
+@{
+    ViewData["Title"] = "Lançamento em Massa";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Notas", "Lançamento em Massa" };
+}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a asp-page="/Notas/Index" class="btn btn-outline-secondary btn-sm" title="Voltar para a lista de notas">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" /></svg>
+    </a>
+    <h1 class="h5 mb-0">@Model.Disciplina?.Nome — @Model.Turma?.Nome</h1>
+</div>
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <p class="text-muted mb-0">@(Model.Periodo?.Trimestre)º Trimestre — @Model.Periodo?.DataInicial.ToString("dd/MM/yyyy") a @Model.Periodo?.DataFinal.ToString("dd/MM/yyyy")</p>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <span class="meta-tag"><strong>@Model.TotalAlunos</strong>&nbsp;alunos</span>
+                <span class="meta-tag" style="display:inline-flex;align-items:center;gap:.35rem;"><span class="legend-dot" style="background:#1fb980"></span><strong>@Model.LancadosCount</strong>&nbsp;lançados</span>
+                <span class="meta-tag" style="display:inline-flex;align-items:center;gap:.35rem;"><span class="legend-dot" style="background:#f2b400"></span><strong>@Model.PendentesCount</strong>&nbsp;pendentes</span>
+            </div>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#lancamentoMassaModal">Trocar seleção</button>
+    </div>
+
+    <div class="panel-body">
+        @if (Model.PodeEditar)
+        {
+            <p class="hint-inline mb-2">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm.93-9.412-2 .25-.07.328.392.073c.255.06.302.15.244.422l-.628 2.96c-.164.771.087 1.132.685 1.132.464 0 1.002-.213 1.246-.508l.078-.375c-.171.15-.42.21-.588.21-.238 0-.324-.166-.262-.463zM9 5.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" /></svg>
+                Use Tab para passar de aluno em aluno — cada campo salva sozinho ao sair dele.
+            </p>
+        }
+        else
+        {
+            <p class="hint-inline text-danger mb-2">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
+                Período fechado — somente o Diretor pode alterar notas deste trimestre.
+            </p>
+        }
+
+        @if (Model.Alunos.Count == 0)
+        {
+            <div class="text-center text-muted py-4">Nenhum aluno ativo cadastrado nesta turma.</div>
+        }
+        else if (!Model.ProfessorId.HasValue)
+        {
+            <div class="text-center text-muted py-4">Não há professor atribuído a esta turma e disciplina.</div>
+        }
+        else
+        {
+            <div class="grid-wrap">
+                <div class="grid-scroll">
+                    <table class="grade-sheet" id="grade-sheet"
+                           data-disciplina-id="@Model.DisciplinaId" data-professor-id="@Model.ProfessorId"
+                           data-periodo-id="@Model.PeriodoId" data-pode-editar="@Model.PodeEditar.ToString().ToLowerInvariant()">
+                        <thead>
+                            <tr>
+                                <th class="col-num">#</th>
+                                <th class="col-aluno">Aluno</th>
+                                <th>1ª Aval.</th>
+                                <th>2ª Aval.</th>
+                                <th>3ª Aval.</th>
+                                <th>Soma</th>
+                                <th>Rec. Paralela</th>
+                                <th>Resultado Final</th>
+                                <th>Status</th>
+                                <th class="col-save"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Alunos.Count; i++)
+                            {
+                                var linha = Model.Alunos[i];
+                                var somenteLeitura = !Model.PodeEditar;
+                                <tr data-linha data-aluno-id="@linha.AlunoId">
+                                    <td class="col-num">@(i + 1)</td>
+                                    <td class="col-aluno">
+                                        <span class="aluno-cell">
+                                            <span class="aluno-nome">@linha.NomeCompleto</span>
+                                            <span class="aluno-matricula">Mat. @linha.Matricula</span>
+                                        </span>
+                                    </td>
+                                    <td><input class="cell-input" type="text" inputmode="decimal" name="avaliacao1" value="@linha.Avaliacao1" data-campo @(somenteLeitura ? "readonly" : null) /></td>
+                                    <td><input class="cell-input" type="text" inputmode="decimal" name="avaliacao2" value="@linha.Avaliacao2" data-campo @(somenteLeitura ? "readonly" : null) /></td>
+                                    <td><input class="cell-input" type="text" inputmode="decimal" name="avaliacao3" value="@linha.Avaliacao3" data-campo @(somenteLeitura ? "readonly" : null) /></td>
+                                    <td><span data-soma>@linha.Soma</span></td>
+                                    <td><input class="cell-input" type="text" inputmode="decimal" name="recuperacaoParalela" value="@linha.RecuperacaoParalela" data-campo data-recuperacao @(somenteLeitura || !linha.PodeRecuperar ? "disabled" : null) /></td>
+                                    <td><span data-final>@linha.ResultadoFinal</span></td>
+                                    <td><span class="@linha.StatusClass" data-status-pill>@linha.StatusLabel</span></td>
+                                    <td class="col-save">
+                                        <span class="grid-saved-tag" data-saved-tag title="Salvo">
+                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.485 1.929a1 1 0 0 1 0 1.415l-7.07 7.07a1 1 0 0 1-1.415 0L2.121 7.536a1 1 0 1 1 1.415-1.415L6 8.586l6.364-6.364a1 1 0 0 1 1.414 0Z" /></svg>
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <p class="rec-hint text-danger mt-2" data-erro-geral hidden></p>
+        }
+    </div>
+</section>
+
+<partial name="_LancamentoMassaModal" model="Model.LancamentoMassaModal" />
+
+@if (Model.PodeEditar && Model.Alunos.Count > 0 && Model.ProfessorId.HasValue)
+{
+    <form id="antiforgery-form" style="display:none">@Html.AntiForgeryToken()</form>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const table = document.getElementById("grade-sheet");
+                if (!table) return;
+
+                const disciplinaId = table.dataset.disciplinaId;
+                const professorId = table.dataset.professorId;
+                const periodoId = table.dataset.periodoId;
+                const token = document.querySelector('#antiforgery-form input[name="__RequestVerificationToken"]').value;
+                const erroGeral = document.querySelector("[data-erro-geral]");
+
+                function toNumber(value) {
+                    const s = (value || "").trim().replace(",", ".");
+                    if (s === "") return null;
+                    const n = parseFloat(s);
+                    return Number.isNaN(n) ? null : n;
+                }
+
+                table.querySelectorAll("tr[data-linha]").forEach((linha) => {
+                    const alunoId = linha.dataset.alunoId;
+                    const av1 = linha.querySelector('[name="avaliacao1"]');
+                    const av2 = linha.querySelector('[name="avaliacao2"]');
+                    const av3 = linha.querySelector('[name="avaliacao3"]');
+                    const recuperacaoInput = linha.querySelector("[data-recuperacao]");
+                    const somaEl = linha.querySelector("[data-soma]");
+                    const finalEl = linha.querySelector("[data-final]");
+                    const statusPill = linha.querySelector("[data-status-pill]");
+                    const savedTag = linha.querySelector("[data-saved-tag]");
+                    let savedTagTimeout = null;
+                    let agendamentoSalvar = null;
+
+                    function atualizarSoma() {
+                        const valores = [av1, av2, av3].map((i) => toNumber(i.value)).filter((v) => v !== null);
+                        if (valores.length === 0) {
+                            recuperacaoInput.disabled = true;
+                            recuperacaoInput.value = "";
+                            return;
+                        }
+                        const soma = valores.reduce((total, v) => total + v, 0);
+                        const podeRecuperar = soma < 5;
+                        recuperacaoInput.disabled = !podeRecuperar;
+                        if (!podeRecuperar) {
+                            recuperacaoInput.value = "";
+                        }
+                    }
+
+                    async function salvar() {
+                        const formData = new FormData();
+                        formData.append("alunoId", alunoId);
+                        formData.append("disciplinaId", disciplinaId);
+                        formData.append("professorId", professorId);
+                        formData.append("periodoLancamentoId", periodoId);
+                        formData.append("avaliacao1", av1.value);
+                        formData.append("avaliacao2", av2.value);
+                        formData.append("avaliacao3", av3.value);
+                        formData.append("recuperacaoParalela", recuperacaoInput.value);
+                        formData.append("__RequestVerificationToken", token);
+
+                        try {
+                            const resposta = await fetch("?handler=Salvar", {
+                                method: "POST",
+                                body: formData,
+                                headers: { "X-Requested-With": "XMLHttpRequest" },
+                            });
+                            const dados = await resposta.json();
+
+                            if (!dados.succeeded) {
+                                if (erroGeral) {
+                                    erroGeral.textContent = dados.error || "Não foi possível salvar a nota.";
+                                    erroGeral.hidden = false;
+                                }
+                                return;
+                            }
+
+                            if (erroGeral) erroGeral.hidden = true;
+
+                            if (somaEl) somaEl.textContent = dados.soma;
+                            if (finalEl) finalEl.textContent = dados.final;
+                            if (statusPill) {
+                                statusPill.textContent = dados.statusLabel;
+                                statusPill.className = dados.statusClass;
+                            }
+                            recuperacaoInput.disabled = !dados.podeRecuperar;
+
+                            if (savedTag) {
+                                savedTag.classList.add("show");
+                                clearTimeout(savedTagTimeout);
+                                savedTagTimeout = setTimeout(() => savedTag.classList.remove("show"), 2000);
+                            }
+                        } catch (erro) {
+                            console.error(erro);
+                        }
+                    }
+
+                    function agendarSalvar() {
+                        clearTimeout(agendamentoSalvar);
+                        agendamentoSalvar = setTimeout(salvar, 500);
+                    }
+
+                    [av1, av2, av3, recuperacaoInput].forEach((input) => {
+                        input.addEventListener("input", atualizarSoma);
+                        input.addEventListener("change", agendarSalvar);
+                    });
+                });
+            })();
+        </script>
+    }
+}
