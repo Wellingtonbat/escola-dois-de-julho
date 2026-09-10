@@ -90,16 +90,25 @@
             </div>
         </form>
 
-        <div class="row g-2 mb-3">
-            <div class="col-12 col-md-4">
-                <div class="alert alert-success py-2 mb-0">Aprovados: <strong>@Model.TotalAprovados</strong></div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="alert alert-danger py-2 mb-0">Reprovados: <strong>@Model.TotalReprovados</strong></div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="alert alert-warning py-2 mb-0">Pendentes: <strong>@Model.TotalPendentes</strong></div>
-            </div>
+        <div class="kpi-grid mb-3" style="grid-template-columns:repeat(3, minmax(0, 1fr))">
+            <article class="kpi-card kpi-card-icon">
+                <div><span class="kpi-label">Aprovados</span><strong class="kpi-value">@Model.TotalAprovados</strong></div>
+                <span class="kpi-icon" style="background:linear-gradient(135deg, var(--accent-green), #17a06f)">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm3.36-9.14-4 4a.5.5 0 0 1-.72 0l-2-2a.5.5 0 1 1 .72-.72L7 8.79l3.64-3.65a.5.5 0 0 1 .72.72Z" /></svg>
+                </span>
+            </article>
+            <article class="kpi-card kpi-card-icon">
+                <div><span class="kpi-label">Reprovados</span><strong class="kpi-value">@Model.TotalReprovados</strong></div>
+                <span class="kpi-icon" style="background:linear-gradient(135deg, var(--accent-pink), #d6338c)">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14Zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16Z" /><path d="M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646Z" /></svg>
+                </span>
+            </article>
+            <article class="kpi-card kpi-card-icon">
+                <div><span class="kpi-label">Pendentes</span><strong class="kpi-value">@Model.TotalPendentes</strong></div>
+                <span class="kpi-icon" style="background:linear-gradient(135deg, var(--accent-orange), #ff7014)">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
+                </span>
+            </article>
         </div>
 
         <div class="panel-table-wrap">
@@ -134,8 +143,11 @@
 
                         foreach (var grupo in gruposDisciplina)
                         {
-                            <tr class="table-light">
-                                <td colspan="11" class="fw-semibold">Disciplina: @grupo.Key</td>
+                            <tr class="disciplina-group-row">
+                                <td colspan="11">
+                                    <span class="disciplina-group-title">@grupo.Key</span>
+                                    <span class="meta-tag">@grupo.Count() aluno(s)</span>
+                                </td>
                             </tr>
 
                             @foreach (var item in grupo)
@@ -179,7 +191,7 @@
                                     <td>@item.ResultadoFinalAno.ToString("0.00")</td>
                                     <td>
                                         <span
-                                            class="status-pill @(item.Situacao == "Aprovado" ? "status-open" : item.Situacao == "Reprovado" ? "status-warn" : "status-pending")">
+                                            class="status-pill @(item.Situacao == "Aprovado" ? "status-open" : item.Situacao == "Reprovado" ? "status-danger" : "status-warn")">
                                             @item.Situacao
                                         </span>
                                     </td>

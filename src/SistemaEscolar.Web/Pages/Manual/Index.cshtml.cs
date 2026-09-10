@@ -89,9 +89,18 @@ public sealed class IndexModel : PageModel
 
                     Titulo(column, "4. O Painel Inicial (Dashboard)");
                     Paragrafo(column,
-                        "É a primeira tela que você vê depois de entrar. Funciona como um resumo rápido: quantos alunos, professores, " +
-                        "turmas, disciplinas e séries existem cadastrados, além de avisar se existe alguma nota pendente de lançamento.");
-                    Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Coordenador ou Secretária.");
+                        "É a primeira tela que você vê depois de entrar. Para o Diretor, o Coordenador e a Secretária, ela é um painel " +
+                        "de controle bem completo e colorido: lá em cima ficam os filtros — Professor, Turma, Disciplina e Ano/Trimestre. " +
+                        "Escolha o que quiser conferir e clique em \"Filtrar\": todos os gráficos da tela se atualizam na hora, sem precisar " +
+                        "recarregar a página.");
+                    Bullet(column, "Cartões coloridos no topo — sempre mostram números da escola inteira: quantos alunos, o percentual geral de aprovação, quantas notas ainda estão pendentes de lançamento e quantos trimestres estão abertos.");
+                    Bullet(column, "Gráfico \"Aprovados x Reprovados x Pendentes\" — um gráfico de rosca que mostra a proporção de cada situação, considerando os filtros escolhidos.");
+                    Bullet(column, "Gráfico \"Média por disciplina\" — aparece depois que você escolhe uma turma, comparando a média de cada matéria dentro dela.");
+                    Bullet(column, "Gráfico \"Evolução por trimestre\" — mostra se a média está subindo ou caindo ao longo do ano.");
+                    Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação.");
+                    Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
+                    Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 15.");
+                    Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
 
                     column.Item().PageBreak();
                     Titulo(column, "5. Alunos");
@@ -148,18 +157,43 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["notas-diretor"], "Tela de Notas vista pelo Diretor: mostra os lançamentos de todos os professores.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "11. Resultados");
+                    Titulo(column, "11. Boletim do Aluno e Lançamento de Notas em Massa");
+                    Paragrafo(column,
+                        "Clicando em qualquer lançamento da lista de Notas, você abre o Boletim completo daquele aluno: todas as " +
+                        "disciplinas do ano, lado a lado, com a situação (Aprovado, Reprovado ou Em andamento) em cada uma. É a forma " +
+                        "mais rápida de ver — ou lançar — todas as notas de um único aluno de uma vez só.");
+                    Print(column, imagens["boletim-aluno"], "Boletim do Aluno: todas as disciplinas do ano, com a situação em cada uma.");
+                    Paragrafo(column,
+                        "Se você é Diretor, Coordenador ou Secretária, o botão \"Baixar Boletim (PDF)\" gera esse boletim no mesmo modelo " +
+                        "impresso usado pela escola — pronto para imprimir ou anexar em processos.");
+                    Paragrafo(column,
+                        "E quando é preciso lançar a nota de uma turma inteira, aluno por aluno, um de cada vez fica trabalhoso. Por isso " +
+                        "existe o botão \"Lançamento em Massa\", no topo da tela de Notas: você escolhe o trimestre, a turma e a disciplina " +
+                        "uma única vez, e o sistema abre uma planilha com todos os alunos daquela turma, um em cada linha.");
+                    Bullet(column, "Digite as notas e aperte Tab para pular de campo em campo — cada nota é salva sozinha assim que você sai do campo, sem precisar clicar em nenhum botão de salvar.");
+                    Bullet(column, "A coluna \"Status\" muda de cor na hora, mostrando se aquele aluno já está Aprovado, Reprovado ou ainda Não lançado.");
+                    Bullet(column, "O Professor só enxerga, também aqui, as turmas e disciplinas que ele mesmo leciona — a mesma regra de sempre.");
+                    Print(column, imagens["notas-lancamento-massa"], "Lançamento em Massa: uma planilha com todos os alunos da turma, notas salvando sozinhas.");
+
+                    column.Item().PageBreak();
+                    Titulo(column, "13. Resultados");
                     Paragrafo(column,
                         "É o boletim final. Junta as notas de todas as disciplinas de um aluno no ano e mostra a situação dele:");
                     Bullet(column, "Aprovado — média final igual ou maior que 5,0, com todas as notas do ano lançadas.");
-                    Bullet(column, "Reprovado — média final menor que 5,0.");
+                    Bullet(column, "Reprovado — média final menor que 5,0, mesmo depois de considerar a Recuperação Final (quando existir).");
                     Bullet(column, "Pendente — ainda falta lançar alguma nota do ano; o sistema ainda não consegue calcular o resultado final.");
                     Paragrafo(column,
-                        "Nesta tela também dá para filtrar por turma, série e situação, e exportar a lista em CSV, Excel (XLSX) ou PDF.");
+                        "Quando um aluno fica com média abaixo de 5,0 em alguma disciplina, esta tela mostra um campinho para lançar a " +
+                        "\"Recuperação Final\" dele — a última chance de recuperar no ano. Se a nota da recuperação for maior que a média, " +
+                        "ela passa a valer, e a situação do aluno muda automaticamente para Aprovado.");
+                    Paragrafo(column,
+                        "Nesta tela também dá para filtrar por turma, série e situação, buscar por aluno, disciplina ou professor, e " +
+                        "exportar a lista em CSV, Excel (XLSX) ou PDF. Na exportação em Excel, cada disciplina ganha sua própria aba, " +
+                        "já no mesmo formato de planilha usado pela escola.");
                     Print(column, imagens["resultados-diretor"], "Tela de Resultados vista pelo Diretor: todos os alunos da escola.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "12. Usuários (só para Diretor, Coordenador e Secretária)");
+                    Titulo(column, "14. Usuários (só para Diretor, Coordenador e Secretária)");
                     Paragrafo(column,
                         "Essa tela serve para criar os logins de Diretor, Coordenador e Secretária (os logins de Professor são criados " +
                         "automaticamente lá na tela de Professores). Quem cria um usuário novo escolhe uma senha padrão, e o sistema obriga " +
@@ -168,7 +202,7 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["trocar-senha"], "Tela mostrada automaticamente no primeiro acesso, obrigando a criar uma nova senha.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "13. O que o Professor enxerga (visão simplificada)");
+                    Titulo(column, "15. O que o Professor enxerga (visão simplificada)");
                     Paragrafo(column,
                         "Quando um Professor entra no sistema, o menu lateral aparece bem mais curto: só Dashboard, Notas, Resultados e o botão " +
                         "para baixar este manual. Ele não vê Alunos, Disciplinas, Turmas, Séries, Períodos nem Usuários — essas telas ficam " +
@@ -182,19 +216,19 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["resultados-professor"], "Resultados vista por um Professor: aparecem só os alunos dele mesmo.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "14. Resumo: o que cada perfil pode fazer");
+                    Titulo(column, "16. Resumo: o que cada perfil pode fazer");
                     Paragrafo(column, "Uma tabela rápida para consultar sempre que tiver dúvida sobre alguma permissão:");
                     TabelaPermissoes(column);
 
                     column.Item().PageBreak();
-                    Titulo(column, "15. Problemas comuns e como resolver");
+                    Titulo(column, "17. Problemas comuns e como resolver");
                     Bullet(column, "\"Não consigo lançar nota\": confira se já existe um Período cadastrado para aquele ano/trimestre, e se ele está Aberto.");
                     Bullet(column, "\"O botão de editar a nota sumiu\": o período dela provavelmente está Fechado — só o Diretor pode reabrir o período ou editar a nota.");
                     Bullet(column, "\"CPF ou senha inválidos\": confira se digitou o CPF certo e a senha corretamente (maiúsculas/minúsculas importam). Se persistir, peça para o Diretor redefinir sua senha.");
                     Bullet(column, "\"Esqueci a senha\": qualquer Diretor, Coordenador ou Secretária pode redefinir a sua senha na tela de Usuários (ou de Professores, se você for professor).");
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
-                    Titulo(column, "16. Controle de versão");
+                    Titulo(column, "18. Controle de versão");
                     Paragrafo(column, $"Este manual acompanha a versão {appVersion} do Sistema Escolar, desenvolvido por Well Tech.");
                 });
 
@@ -280,8 +314,11 @@ public sealed class IndexModel : PageModel
             Linha("Ver Períodos de Lançamento", "Sim", "Sim", "Sim", "Não");
             Linha("Abrir/Fechar um Período", "Sim", "Não", "Não", "Não");
             Linha("Lançar/ver Notas", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
+            Linha("Usar o Lançamento de Notas em Massa", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
             Linha("Editar/excluir Nota em período Fechado", "Sim", "Não", "Não", "Não");
             Linha("Ver/exportar Resultados", "Sim (todos)", "Sim (todos)", "Sim (todos)", "Só os seus alunos");
+            Linha("Lançar a Recuperação Final", "Sim", "Sim", "Sim", "Só os seus alunos");
+            Linha("Baixar o Boletim do Aluno em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Gerenciar Usuários (Diretor/Coord./Secretária)", "Sim", "Sim", "Sim", "Não");
             Linha("Baixar este Manual", "Sim", "Sim", "Sim", "Sim");
         });
@@ -293,8 +330,8 @@ public sealed class IndexModel : PageModel
         var nomes = new[]
         {
             "login", "dashboard-admin", "alunos", "disciplinas", "professores", "turmas", "series",
-            "periodos-diretor", "periodos-coordenador", "notas-diretor", "resultados-diretor",
-            "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
+            "periodos-diretor", "periodos-coordenador", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
+            "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
         };
 
         return nomes.ToDictionary(nome => nome, nome => System.IO.File.ReadAllBytes(Path.Combine(pasta, $"{nome}.png")));

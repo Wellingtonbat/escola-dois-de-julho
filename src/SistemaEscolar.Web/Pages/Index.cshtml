@@ -1,53 +1,169 @@
-﻿@page
+@page
 @model IndexModel
 @{
     ViewData["Title"] = "Painel Inicial";
 }
 
-<section class="panel">
-    <div class="panel-header d-flex align-items-center justify-content-between">
-        <div>
-            <h1 class="h5 mb-1">Visão Geral</h1>
-            <p class="text-muted mb-0">Acompanhamento rápido dos principais indicadores acadêmicos.</p>
+@if (!Model.PodeVerDashboardCompleto)
+{
+    <section class="panel">
+        <div class="panel-header d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="h5 mb-1">Visão Geral</h1>
+                <p class="text-muted mb-0">Acompanhamento rápido dos principais indicadores acadêmicos.</p>
+            </div>
+            <span class="badge text-bg-primary">Ambiente de desenvolvimento</span>
         </div>
-        <span class="badge text-bg-primary">Ambiente de desenvolvimento</span>
-    </div>
-    <div class="panel-body">
-        <div class="kpi-grid">
-            <article class="kpi-card">
-                <span class="kpi-label">Alunos</span>
-                <strong class="kpi-value">@Model.TotalAlunos</strong>
-            </article>
-            <article class="kpi-card">
-                <span class="kpi-label">Professores</span>
-                <strong class="kpi-value">@Model.TotalProfessores</strong>
-            </article>
-            <article class="kpi-card">
-                <span class="kpi-label">Turmas</span>
-                <strong class="kpi-value">@Model.TotalTurmas</strong>
-            </article>
-            <article class="kpi-card">
-                <span class="kpi-label">Pendências de Nota</span>
-                <strong class="kpi-value">@Model.TotalPendenciasNota</strong>
-            </article>
-        </div>
+        <div class="panel-body">
+            <div class="kpi-grid">
+                <article class="kpi-card">
+                    <span class="kpi-label">Alunos</span>
+                    <strong class="kpi-value">@Model.TotalAlunos</strong>
+                </article>
+                <article class="kpi-card">
+                    <span class="kpi-label">Professores</span>
+                    <strong class="kpi-value">@Model.TotalProfessores</strong>
+                </article>
+                <article class="kpi-card">
+                    <span class="kpi-label">Turmas</span>
+                    <strong class="kpi-value">@Model.TotalTurmas</strong>
+                </article>
+                <article class="kpi-card">
+                    <span class="kpi-label">Pendências de Nota</span>
+                    <strong class="kpi-value">@Model.TotalPendenciasNota</strong>
+                </article>
+            </div>
 
-        <div class="kpi-grid mt-3">
-            <article class="kpi-card">
-                <span class="kpi-label">Disciplinas</span>
-                <strong class="kpi-value">@Model.TotalDisciplinas</strong>
-            </article>
-            <article class="kpi-card">
-                <span class="kpi-label">Séries</span>
-                <strong class="kpi-value">@Model.TotalSeries</strong>
-            </article>
+            <div class="kpi-grid mt-3">
+                <article class="kpi-card">
+                    <span class="kpi-label">Disciplinas</span>
+                    <strong class="kpi-value">@Model.TotalDisciplinas</strong>
+                </article>
+                <article class="kpi-card">
+                    <span class="kpi-label">Séries</span>
+                    <strong class="kpi-value">@Model.TotalSeries</strong>
+                </article>
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+}
+else
+{
+    <section class="panel mb-3">
+        <div class="panel-header d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="h5 mb-1">Visão Geral</h1>
+                <p class="text-muted mb-0 small">Escolha um professor, turma, disciplina ou período para detalhar os indicadores abaixo.</p>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="dashboard-filter-bar">
+                <div class="dashboard-filter-field">
+                    <label for="dash-professor">Professor</label>
+                    <select id="dash-professor" class="form-select">
+                        <option value="">Todos os professores</option>
+                        @foreach (var professor in Model.Professores)
+                        {
+                            <option value="@professor.Value" selected="@(Model.ProfessorId.HasValue && professor.Value == Model.ProfessorId.Value.ToString())">@professor.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="dashboard-filter-field">
+                    <label for="dash-turma">Turma</label>
+                    <select id="dash-turma" class="form-select">
+                        <option value="">Todas as turmas</option>
+                        @foreach (var turma in Model.Turmas)
+                        {
+                            <option value="@turma.Value" selected="@(Model.TurmaId.HasValue && turma.Value == Model.TurmaId.Value.ToString())">@turma.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="dashboard-filter-field">
+                    <label for="dash-disciplina">Disciplina</label>
+                    <select id="dash-disciplina" class="form-select">
+                        <option value="">Todas as disciplinas</option>
+                        @foreach (var disciplina in Model.Disciplinas)
+                        {
+                            <option value="@disciplina.Value" selected="@(Model.DisciplinaId.HasValue && disciplina.Value == Model.DisciplinaId.Value.ToString())">@disciplina.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="dashboard-filter-field">
+                    <label for="dash-ano">Ano letivo</label>
+                    <select id="dash-ano" class="form-select">
+                        @foreach (var ano in Model.AnosDisponiveis)
+                        {
+                            <option value="@ano" selected="@(Model.Dados != null && ano == Model.Dados.AnoLetivo)">@ano</option>
+                        }
+                    </select>
+                </div>
+                <div class="dashboard-filter-field">
+                    <label for="dash-trimestre">Trimestre</label>
+                    <select id="dash-trimestre" class="form-select">
+                        <option value="">Ano completo</option>
+                        <option value="1" selected="@(Model.Trimestre == 1)">1º Trimestre</option>
+                        <option value="2" selected="@(Model.Trimestre == 2)">2º Trimestre</option>
+                        <option value="3" selected="@(Model.Trimestre == 3)">3º Trimestre</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2" style="margin-left:auto">
+                    <button type="button" id="dash-filtrar" class="btn btn-primary">Filtrar</button>
+                    <button type="button" id="dash-limpar" class="btn btn-outline-secondary">Limpar</button>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<section class="panel mt-3">
-    <div class="panel-body">
-        <h2 class="h6">Próximas Entregas</h2>
-        <p class="text-muted mb-0">Consolidar vínculos acadêmicos de séries com alunos, disciplinas e professores.</p>
+    <p class="chart-card-caption mb-2" id="dash-kpis-caption"></p>
+    <div id="dash-kpis" class="kpi-grid mb-3"></div>
+
+    <div class="charts-row cols-2 mb-3">
+        <section class="panel">
+            <div class="panel-header">
+                <p class="chart-card-title">Média por disciplina</p>
+                <p class="chart-card-caption" id="dash-barras-caption"></p>
+            </div>
+            <div class="panel-body" id="dash-barras"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <p class="chart-card-title">Aprovados x Reprovados x Pendentes</p>
+                <p class="chart-card-caption" id="dash-donut-caption"></p>
+            </div>
+            <div class="panel-body" id="dash-donut"></div>
+        </section>
     </div>
-</section>
+
+    <div class="charts-row cols-2 mb-3">
+        <section class="panel">
+            <div class="panel-header">
+                <p class="chart-card-title">Evolução por trimestre</p>
+                <p class="chart-card-caption" id="dash-linha-caption"></p>
+            </div>
+            <div class="panel-body" id="dash-linha"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <p class="chart-card-title">Turmas por índice de aprovação</p>
+                <p class="chart-card-caption" id="dash-ranking-caption"></p>
+            </div>
+            <div class="panel-body" id="dash-ranking"></div>
+        </section>
+    </div>
+
+    <section class="panel">
+        <div class="panel-header">
+            <p class="chart-card-title">Mapa de pendências — turma x disciplina</p>
+            <p class="chart-card-caption" id="dash-heatmap-caption"></p>
+        </div>
+        <div class="panel-body" id="dash-heatmap"></div>
+    </section>
+
+    <script id="dash-dados-iniciais" type="application/json">@Html.Raw(Model.DadosIniciaisJson)</script>
+
+    @section Scripts {
+        <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    }
+}
