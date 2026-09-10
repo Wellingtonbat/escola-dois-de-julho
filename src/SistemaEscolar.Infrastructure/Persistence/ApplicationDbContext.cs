@@ -206,6 +206,7 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.Property(x => x.Descricao).HasMaxLength(120).IsRequired();
             entity.Property(x => x.DataInicial).HasColumnType("timestamp without time zone").IsRequired();
             entity.Property(x => x.DataFinal).HasColumnType("timestamp without time zone").IsRequired();
+            entity.Property(x => x.AbertoManualmente).HasDefaultValue(false);
             entity.Property(x => x.IsDeleted).HasDefaultValue(false);
             entity.HasIndex(x => new { x.AnoLetivo, x.Bimestre }).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.HasIndex(x => new { x.DataInicial, x.DataFinal });

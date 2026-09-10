@@ -101,9 +101,9 @@ public sealed class PeriodoService : IPeriodoService
 
     public async Task<PeriodoCreateResult> AbrirAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.IsInRole("Diretor"))
+        if (!PodeAbrirFechar())
         {
-            return PeriodoCreateResult.Fail("Somente diretores podem abrir períodos.");
+            return PeriodoCreateResult.Fail("Somente Diretor ou Coordenador podem abrir períodos.");
         }
 
         var periodo = await _periodoRepository.GetByIdAsync(id, cancellationToken);
@@ -112,16 +112,19 @@ public sealed class PeriodoService : IPeriodoService
             return PeriodoCreateResult.Fail("Período não encontrado.");
         }
 
+        // Toda abertura pelo botão é tratada como uma exceção manual: o período fica disponível
+        // mesmo que a janela de datas já tenha passado, até que alguém feche de volta.
         periodo.IsAberto = true;
+        periodo.AbertoManualmente = true;
         await _periodoRepository.UpdateAsync(periodo, cancellationToken);
         return PeriodoCreateResult.Success();
     }
 
     public async Task<PeriodoCreateResult> FecharAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.IsInRole("Diretor"))
+        if (!PodeAbrirFechar())
         {
-            return PeriodoCreateResult.Fail("Somente diretores podem fechar períodos.");
+            return PeriodoCreateResult.Fail("Somente Diretor ou Coordenador podem fechar períodos.");
         }
 
         var periodo = await _periodoRepository.GetByIdAsync(id, cancellationToken);
@@ -136,6 +139,7 @@ public sealed class PeriodoService : IPeriodoService
         }
 
         periodo.IsAberto = false;
+        periodo.AbertoManualmente = false;
         await _periodoRepository.UpdateAsync(periodo, cancellationToken);
         return PeriodoCreateResult.Success();
     }
@@ -187,6 +191,11 @@ public sealed class PeriodoService : IPeriodoService
         return PeriodoCreateResult.Success();
     }
 
+    private bool PodeAbrirFechar() =>
+        _currentUserService.IsInRole("Diretor")
+        || _currentUserService.IsInRole("Coordenador")
+        || _currentUserService.IsInRole("Cordenador");
+
     private static PeriodoListItemDto Map(Domain.Entities.PeriodoLancamento periodo)
     {
         return new PeriodoListItemDto(
@@ -196,6 +205,7 @@ public sealed class PeriodoService : IPeriodoService
             periodo.Descricao,
             periodo.DataInicial,
             periodo.DataFinal,
-            periodo.IsAberto);
+            periodo.IsAberto,
+            periodo.AbertoManualmente);
     }
 }

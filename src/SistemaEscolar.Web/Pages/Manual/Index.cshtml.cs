@@ -99,7 +99,7 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Gráfico \"Evolução por trimestre\" — mostra se a média está subindo ou caindo ao longo do ano.");
                     Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação.");
                     Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
-                    Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 15.");
+                    Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 14.");
                     Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
 
                     column.Item().PageBreak();
@@ -134,13 +134,18 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column,
                         "Um período representa um trimestre de um ano letivo (exemplo: \"2º Trimestre 2026\"). Só é possível lançar notas " +
                         "dentro de um período que já foi cadastrado. Cada período também tem um status: Aberto (dá para lançar/editar notas) " +
-                        "ou Fechado (as notas ficam travadas).");
+                        "ou Fechado (as notas ficam travadas). Por padrão, isso acontece sozinho: o período fica Aberto automaticamente entre " +
+                        "a Data Inicial e a Data Final cadastradas, e fecha sozinho quando a Data Final passa.");
                     Paragrafo(column,
-                        "Aqui está a primeira grande diferença entre os perfis: só o Diretor tem os botões \"Abrir\" e \"Fechar\" período. " +
-                        "Coordenador e Secretária conseguem cadastrar e editar períodos, mas não conseguem trocar o status de aberto/fechado " +
-                        "— compare as duas fotos abaixo, tiradas da mesma tela, com perfis diferentes:");
-                    Print(column, imagens["periodos-diretor"], "Períodos visto pelo Diretor: repare nos botões \"Abrir\"/\"Fechar\".");
-                    Print(column, imagens["periodos-coordenador"], "A mesma tela vista por um Coordenador: os botões \"Abrir\"/\"Fechar\" não existem.");
+                        "Precisa lançar uma nota de um trimestre que já encerrou? O botão \"Abrir\" força uma exceção manual: o período fica " +
+                        "aberto mesmo depois da Data Final, até que alguém feche ele de novo — o fechamento deixa de ser automático nesse caso, " +
+                        "então é preciso lembrar de fechar quando terminar. Para ajudar a não esquecer, o Painel Inicial mostra um aviso em " +
+                        "vermelho para Diretor, Coordenador e Secretária sempre que existir um período aberto assim, além da data.");
+                    Paragrafo(column,
+                        "Aqui está a primeira grande diferença entre os perfis: Diretor e Coordenador têm os botões \"Abrir\" e \"Fechar\" " +
+                        "período (mostrados na foto abaixo). A Secretária consegue cadastrar e editar períodos, mas não consegue trocar o " +
+                        "status de aberto/fechado — esses botões não aparecem para ela (ela só vê o aviso no Painel Inicial, caso exista).");
+                    Print(column, imagens["periodos-diretor"], "Períodos visto pelo Diretor ou Coordenador: repare nos botões \"Abrir\"/\"Fechar\".");
 
                     column.Item().PageBreak();
                     Titulo(column, "10. Notas");
@@ -167,6 +172,11 @@ public sealed class IndexModel : PageModel
                         "Se você é Diretor, Coordenador ou Secretária, o botão \"Baixar Boletim (PDF)\" gera esse boletim no mesmo modelo " +
                         "impresso usado pela escola — pronto para imprimir ou anexar em processos.");
                     Paragrafo(column,
+                        "E quando é preciso entregar o boletim de uma turma inteira de uma vez — no fechamento do trimestre, por exemplo — " +
+                        "o botão \"Baixar Boletins da Turma\", no topo da tela de Notas, gera um único PDF com o boletim de todos os alunos " +
+                        "ativos daquela turma, um por página, pronto para imprimir e distribuir. Esse botão também é exclusivo de Diretor, " +
+                        "Coordenador e Secretária.");
+                    Paragrafo(column,
                         "E quando é preciso lançar a nota de uma turma inteira, aluno por aluno, um de cada vez fica trabalhoso. Por isso " +
                         "existe o botão \"Lançamento em Massa\", no topo da tela de Notas: você escolhe o trimestre, a turma e a disciplina " +
                         "uma única vez, e o sistema abre uma planilha com todos os alunos daquela turma, um em cada linha.");
@@ -176,7 +186,7 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["notas-lancamento-massa"], "Lançamento em Massa: uma planilha com todos os alunos da turma, notas salvando sozinhas.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "13. Resultados");
+                    Titulo(column, "12. Resultados");
                     Paragrafo(column,
                         "É o boletim final. Junta as notas de todas as disciplinas de um aluno no ano e mostra a situação dele:");
                     Bullet(column, "Aprovado — média final igual ou maior que 5,0, com todas as notas do ano lançadas.");
@@ -193,7 +203,7 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["resultados-diretor"], "Tela de Resultados vista pelo Diretor: todos os alunos da escola.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "14. Usuários (só para Diretor, Coordenador e Secretária)");
+                    Titulo(column, "13. Usuários (só para Diretor, Coordenador e Secretária)");
                     Paragrafo(column,
                         "Essa tela serve para criar os logins de Diretor, Coordenador e Secretária (os logins de Professor são criados " +
                         "automaticamente lá na tela de Professores). Quem cria um usuário novo escolhe uma senha padrão, e o sistema obriga " +
@@ -202,7 +212,7 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["trocar-senha"], "Tela mostrada automaticamente no primeiro acesso, obrigando a criar uma nova senha.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "15. O que o Professor enxerga (visão simplificada)");
+                    Titulo(column, "14. O que o Professor enxerga (visão simplificada)");
                     Paragrafo(column,
                         "Quando um Professor entra no sistema, o menu lateral aparece bem mais curto: só Dashboard, Notas, Resultados e o botão " +
                         "para baixar este manual. Ele não vê Alunos, Disciplinas, Turmas, Séries, Períodos nem Usuários — essas telas ficam " +
@@ -216,19 +226,19 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["resultados-professor"], "Resultados vista por um Professor: aparecem só os alunos dele mesmo.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "16. Resumo: o que cada perfil pode fazer");
+                    Titulo(column, "15. Resumo: o que cada perfil pode fazer");
                     Paragrafo(column, "Uma tabela rápida para consultar sempre que tiver dúvida sobre alguma permissão:");
                     TabelaPermissoes(column);
 
                     column.Item().PageBreak();
-                    Titulo(column, "17. Problemas comuns e como resolver");
+                    Titulo(column, "16. Problemas comuns e como resolver");
                     Bullet(column, "\"Não consigo lançar nota\": confira se já existe um Período cadastrado para aquele ano/trimestre, e se ele está Aberto.");
                     Bullet(column, "\"O botão de editar a nota sumiu\": o período dela provavelmente está Fechado — só o Diretor pode reabrir o período ou editar a nota.");
                     Bullet(column, "\"CPF ou senha inválidos\": confira se digitou o CPF certo e a senha corretamente (maiúsculas/minúsculas importam). Se persistir, peça para o Diretor redefinir sua senha.");
                     Bullet(column, "\"Esqueci a senha\": qualquer Diretor, Coordenador ou Secretária pode redefinir a sua senha na tela de Usuários (ou de Professores, se você for professor).");
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
-                    Titulo(column, "18. Controle de versão");
+                    Titulo(column, "17. Controle de versão");
                     Paragrafo(column, $"Este manual acompanha a versão {appVersion} do Sistema Escolar, desenvolvido por Well Tech.");
                 });
 
@@ -312,13 +322,14 @@ public sealed class IndexModel : PageModel
             Linha("Cadastrar/editar Professores", "Sim", "Sim", "Sim", "Não");
             Linha("Cadastrar/editar Turmas e Séries", "Sim", "Sim", "Sim", "Não");
             Linha("Ver Períodos de Lançamento", "Sim", "Sim", "Sim", "Não");
-            Linha("Abrir/Fechar um Período", "Sim", "Não", "Não", "Não");
+            Linha("Abrir/Fechar um Período", "Sim", "Sim", "Não", "Não");
             Linha("Lançar/ver Notas", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
             Linha("Usar o Lançamento de Notas em Massa", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
             Linha("Editar/excluir Nota em período Fechado", "Sim", "Não", "Não", "Não");
             Linha("Ver/exportar Resultados", "Sim (todos)", "Sim (todos)", "Sim (todos)", "Só os seus alunos");
             Linha("Lançar a Recuperação Final", "Sim", "Sim", "Sim", "Só os seus alunos");
             Linha("Baixar o Boletim do Aluno em PDF", "Sim", "Sim", "Sim", "Não");
+            Linha("Baixar os Boletins de uma Turma em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Gerenciar Usuários (Diretor/Coord./Secretária)", "Sim", "Sim", "Sim", "Não");
             Linha("Baixar este Manual", "Sim", "Sim", "Sim", "Sim");
         });
@@ -330,7 +341,7 @@ public sealed class IndexModel : PageModel
         var nomes = new[]
         {
             "login", "dashboard-admin", "alunos", "disciplinas", "professores", "turmas", "series",
-            "periodos-diretor", "periodos-coordenador", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
+            "periodos-diretor", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
             "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
         };
 

@@ -10,6 +10,7 @@ using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Resultados;
+using SistemaEscolar.Application.Turmas;
 
 namespace SistemaEscolar.Web.Pages.Notas;
 
@@ -23,6 +24,7 @@ public sealed class BoletimModel : PageModel
     private readonly IPeriodoService _periodoService;
     private readonly INotaService _notaService;
     private readonly IRecuperacaoFinalService _recuperacaoFinalService;
+    private readonly ITurmaService _turmaService;
 
     public BoletimModel(
         IAlunoService alunoService,
@@ -30,7 +32,8 @@ public sealed class BoletimModel : PageModel
         IProfessorService professorService,
         IPeriodoService periodoService,
         INotaService notaService,
-        IRecuperacaoFinalService recuperacaoFinalService)
+        IRecuperacaoFinalService recuperacaoFinalService,
+        ITurmaService turmaService)
     {
         _alunoService = alunoService;
         _disciplinaService = disciplinaService;
@@ -38,6 +41,7 @@ public sealed class BoletimModel : PageModel
         _periodoService = periodoService;
         _notaService = notaService;
         _recuperacaoFinalService = recuperacaoFinalService;
+        _turmaService = turmaService;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -348,6 +352,65 @@ public sealed class BoletimModel : PageModel
         return File(pdfBytes, "application/pdf", nomeArquivo);
     }
 
+    public async Task<IActionResult> OnGetBaixarPdfTurmaAsync(Guid turmaId, CancellationToken cancellationToken)
+    {
+        if (!PodeGerarBoletimPdf())
+        {
+            TempData["ErrorMessage"] = "Somente Diretor, Coordenador ou Secretaria podem baixar boletins em PDF.";
+            return RedirectToPage("/Notas/Index");
+        }
+
+        var turma = await _turmaService.ObterPorIdAsync(turmaId, cancellationToken);
+        if (turma is null)
+        {
+            TempData["ErrorMessage"] = "Turma não encontrada.";
+            return RedirectToPage("/Notas/Index");
+        }
+
+        var alunosDaTurma = (await _alunoService.ListarAsync(new AlunoListFilter(null, null, turmaId, true), cancellationToken))
+            .OrderBy(x => x.NomeCompleto, StringComparer.Create(PtBr, ignoreCase: true))
+            .ToList();
+
+        if (alunosDaTurma.Count == 0)
+        {
+            TempData["ErrorMessage"] = "Esta turma não possui alunos ativos.";
+            return RedirectToPage("/Notas/Index");
+        }
+
+        var anoLetivo = alunosDaTurma[0].AnoLetivo;
+
+        var periodosDoAno = (await _periodoService.ListarAsync(null, cancellationToken))
+            .Where(x => x.AnoLetivo == anoLetivo)
+            .OrderBy(x => x.Trimestre)
+            .ToList();
+
+        var todasDisciplinas = (await _disciplinaService.ListarAsync(null, cancellationToken))
+            .Where(x => x.IsAtiva && x.Series.Any(s => s.SerieId == turma.SerieId))
+            .OrderBy(x => x.Nome)
+            .ToList();
+
+        var todasNotas = await _notaService.ListarAsync(null, cancellationToken);
+        var recuperacoesTodas = await _recuperacaoFinalService.ListarPorAnoAsync(anoLetivo, cancellationToken);
+
+        var itens = alunosDaTurma.Select((aluno, indice) =>
+        {
+            var notasDoAluno = todasNotas.Where(x => x.AlunoId == aluno.Id).ToList();
+            var recuperacoesDoAluno = recuperacoesTodas
+                .Where(kv => kv.Key.AlunoId == aluno.Id)
+                .ToDictionary(kv => kv.Key.DisciplinaId, kv => kv.Value);
+
+            var linhas = todasDisciplinas
+                .Select(disciplina => ConstruirLinhaBoletim(disciplina, periodosDoAno, notasDoAluno, recuperacoesDoAluno))
+                .ToList();
+
+            return (Aluno: aluno, NumeroChamada: indice + 1, Linhas: (IReadOnlyList<BoletimLinhaVm>)linhas);
+        }).ToList();
+
+        var pdfBytes = GerarPdfBoletimTurma(itens);
+        var nomeArquivo = $"boletins-{turma.Nome}-{anoLetivo}.pdf".Replace(' ', '-');
+        return File(pdfBytes, "application/pdf", nomeArquivo);
+    }
+
     private static BoletimLinhaVm ConstruirLinhaBoletim(
         DisciplinaListItemDto disciplina,
         IReadOnlyList<PeriodoListItemDto> periodosDoAno,
@@ -373,7 +436,23 @@ public sealed class BoletimModel : PageModel
     private static byte[] GerarPdfBoletim(AlunoListItemDto aluno, int numeroChamada, IReadOnlyList<BoletimLinhaVm> linhas)
     {
         QuestPDF.Settings.License = LicenseType.Community;
+        return Document.Create(container => AdicionarPaginaBoletim(container, aluno, numeroChamada, linhas)).GeneratePdf();
+    }
 
+    private static byte[] GerarPdfBoletimTurma(IReadOnlyList<(AlunoListItemDto Aluno, int NumeroChamada, IReadOnlyList<BoletimLinhaVm> Linhas)> itens)
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+        return Document.Create(container =>
+        {
+            foreach (var item in itens)
+            {
+                AdicionarPaginaBoletim(container, item.Aluno, item.NumeroChamada, item.Linhas);
+            }
+        }).GeneratePdf();
+    }
+
+    private static void AdicionarPaginaBoletim(IDocumentContainer container, AlunoListItemDto aluno, int numeroChamada, IReadOnlyList<BoletimLinhaVm> linhas)
+    {
         var aprovadas = linhas.Count(x => x.Situacao == "AP");
         var reprovadas = linhas.Count(x => x.Situacao == "RP");
         var semResultado = linhas.Count - aprovadas - reprovadas;
@@ -381,11 +460,9 @@ public sealed class BoletimModel : PageModel
         const int totalTrimestres = 3;
         const int colunasResumo = 4;
 
-        return Document.Create(container =>
+        container.Page(page =>
         {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4.Landscape());
+            page.Size(PageSizes.A4.Landscape());
                 page.Margin(24);
                 page.DefaultTextStyle(x => x.FontSize(8));
 
@@ -525,7 +602,6 @@ public sealed class BoletimModel : PageModel
                 });
                 });
             });
-        }).GeneratePdf();
     }
 
     private static IContainer PillStyle(IContainer container) =>

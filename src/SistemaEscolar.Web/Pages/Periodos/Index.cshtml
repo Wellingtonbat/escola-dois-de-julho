@@ -5,6 +5,7 @@
     ViewData["Title"] = "Períodos";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Períodos" };
     var podeGerenciar = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+    var podeAbrirFecharPeriodo = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador");
     var hoje = DateTime.UtcNow;
 }
 
@@ -74,6 +75,7 @@
                         @foreach (var periodo in Model.Periodos)
                         {
                             var estaAberto = PeriodoDisponibilidade.EstaAberto(periodo, hoje);
+                            var excecaoManualComDataVencida = PeriodoDisponibilidade.EstaForaDaJanelaPorExcecaoManual(periodo, hoje);
                             <tr class="@(podeGerenciar ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-periodo">
                                 <td>@periodo.AnoLetivo</td>
                                 <td>@periodo.Trimestre</td>
@@ -87,6 +89,13 @@
                                     @if (!estaAberto)
                                     {
                                         <div class="small text-muted mt-1">@PeriodoDisponibilidade.ObterMotivoFechado(periodo, hoje)</div>
+                                    }
+                                    @if (excecaoManualComDataVencida)
+                                    {
+                                        <div class="small text-danger mt-1 d-flex align-items-center gap-1">
+                                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
+                                            Aberto manualmente — data final já passou
+                                        </div>
                                     }
                                 </td>
                                 <td>
@@ -102,15 +111,18 @@
                                                     title="Editar">
                                                 <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
                                             </button>
-                                            @if (User.IsInRole("Diretor"))
+                                            @if (podeAbrirFecharPeriodo)
                                             {
-                                                <form method="post" asp-page-handler="@(periodo.IsAberto ? "Fechar" : "Abrir")"
+                                                <form method="post" asp-page-handler="@(estaAberto ? "Fechar" : "Abrir")"
                                                       asp-route-id="@periodo.Id" class="m-0">
-                                                    <button type="submit" class="icon-btn toggle" title="@(periodo.IsAberto ? "Fechar antecipadamente" : "Reabrir")"
-                                                            onclick="return confirm('Tem certeza que deseja @(periodo.IsAberto ? "fechar antecipadamente" : "reabrir") este período?');">
+                                                    <button type="submit" class="icon-btn toggle" title="@(estaAberto ? "Fechar" : "Abrir")"
+                                                            onclick="return confirm('Tem certeza que deseja @(estaAberto ? "fechar" : "abrir") este período?');">
                                                         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
                                                     </button>
                                                 </form>
+                                            }
+                                            @if (User.IsInRole("Diretor"))
+                                            {
                                                 <form method="post" asp-page-handler="Delete" asp-route-id="@periodo.Id" class="m-0">
                                                     <button type="submit" class="icon-btn delete" title="Excluir"
                                                             onclick="return confirm('Tem certeza que deseja excluir este período?');">
@@ -188,7 +200,9 @@
                             </div>
                         </div>
                         <p class="small text-muted mt-2 mb-0">
-                            O período fica disponível para lançamento de notas automaticamente entre a Data Inicial e a Data Final.
+                            O período fica disponível para lançamento de notas automaticamente entre a Data Inicial e a Data Final. Se
+                            precisar liberar o lançamento fora dessa janela, use o botão Abrir na lista — nesse caso o fechamento passa a
+                            ser manual, então lembre-se de fechar o período quando terminar.
                         </p>
                     </div>
                     <div class="modal-footer">

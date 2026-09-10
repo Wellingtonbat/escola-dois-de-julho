@@ -41,6 +41,7 @@ public sealed class IndexModel : PageModel
     public IReadOnlyList<SelectListItem> Periodos { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<int> AnosDisponiveis { get; private set; } = Array.Empty<int>();
     public LancamentoMassaModalVm LancamentoMassaModal { get; private set; } = new();
+    public IReadOnlyList<SelectListItem> TurmasParaBoletim { get; private set; } = Array.Empty<SelectListItem>();
 
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
@@ -181,6 +182,14 @@ public sealed class IndexModel : PageModel
             TurmaDisciplinaJson = turmaDisciplinaJson,
             MostrarAvisoEscopo = IsProfessorOnly(),
         };
+
+        if (!IsProfessorOnly())
+        {
+            TurmasParaBoletim = (await _turmaService.ListarAsync(new TurmaListFilter(null, null, null, true), cancellationToken))
+                .OrderBy(t => t.Nome)
+                .Select(t => new SelectListItem($"{t.Nome} ({t.SerieNome})", t.Id.ToString()))
+                .ToList();
+        }
     }
 
     private bool CanManageNotas()

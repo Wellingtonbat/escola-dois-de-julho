@@ -7,4 +7,5 @@ public sealed record PeriodoListItemDto(
     string Descricao,
     DateTime DataInicial,
     DateTime DataFinal,
-    bool IsAberto);
+    bool IsAberto,
+    bool AbertoManualmente);

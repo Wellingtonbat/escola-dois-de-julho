@@ -99,6 +99,12 @@ public sealed class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAbrirAsync(Guid id, CancellationToken cancellationToken)
     {
+        if (!CanAbrirFecharPeriodo())
+        {
+            TempData["ErrorMessage"] = "Somente Diretor ou Coordenador podem abrir períodos.";
+            return RedirectToPage();
+        }
+
         var result = await _periodoService.AbrirAsync(id, cancellationToken);
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
             ? "Período aberto com sucesso."
@@ -108,6 +114,12 @@ public sealed class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostFecharAsync(Guid id, CancellationToken cancellationToken)
     {
+        if (!CanAbrirFecharPeriodo())
+        {
+            TempData["ErrorMessage"] = "Somente Diretor ou Coordenador podem fechar períodos.";
+            return RedirectToPage();
+        }
+
         var result = await _periodoService.FecharAsync(id, cancellationToken);
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
             ? "Período fechado com sucesso."
@@ -132,6 +144,8 @@ public sealed class IndexModel : PageModel
     }
 
     private bool CanManagePeriodos() => User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+
+    private bool CanAbrirFecharPeriodo() => User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador");
 
     private bool IsProfessorOnly() => User.IsInRole("Professor") && !CanManagePeriodos();
 }

@@ -76,6 +76,7 @@ public class IndexModel : PageModel
     public IReadOnlyList<SelectListItem> Turmas { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> Disciplinas { get; private set; } = Array.Empty<SelectListItem>();
     public DashboardDadosDto? Dados { get; private set; }
+    public IReadOnlyList<PeriodoListItemDto> PeriodosAbertosComDataVencida { get; private set; } = Array.Empty<PeriodoListItemDto>();
 
     public string DadosIniciaisJson => Dados is null
         ? "null"
@@ -104,6 +105,11 @@ public class IndexModel : PageModel
         }
 
         var periodos = await _periodoService.ListarAsync(null, cancellationToken);
+        var hoje = DateTime.UtcNow;
+        PeriodosAbertosComDataVencida = periodos
+            .Where(p => PeriodoDisponibilidade.EstaForaDaJanelaPorExcecaoManual(p, hoje))
+            .OrderBy(p => p.AnoLetivo).ThenBy(p => p.Trimestre)
+            .ToList();
         AnosDisponiveis = periodos.Select(p => p.AnoLetivo).Distinct().OrderByDescending(x => x).ToList();
         var anoLetivo = AnoLetivo ?? AnosDisponiveis.FirstOrDefault(DateTime.Now.Year);
 
