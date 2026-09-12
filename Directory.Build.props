@@ -3,7 +3,7 @@
     <!-- Atualize esta versão a cada publicação. Ela aparece no rodapé da aplicação (Web) e se aplica a
          todos os projetos da solução. AssemblyVersion/FileVersion/InformationalVersion são derivadas
          automaticamente dela pelo SDK — não defina-as separadamente, senão ficam dessincronizadas. -->
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <!-- Sem isto, o SDK anexa o hash do commit git atual à versão (ex.: "1.0.1+4086df1..."). -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

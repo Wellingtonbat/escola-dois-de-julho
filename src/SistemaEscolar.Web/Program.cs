@@ -20,6 +20,7 @@ builder.Services
         options.Conventions.AllowAnonymousToPage("/Error");
     })
     .AddMvcOptions(options => options.Filters.Add<DbExceptionFilter>());
+builder.Services.AddHealthChecks();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddApplication();
@@ -81,6 +82,11 @@ app.Use(async (context, next) =>
 app.UseRouting();
 
 app.UseAuthorization();
+
+// Endpoint leve para pings de keep-alive (ex.: cron-job.org) — sem autenticação, sem tocar no
+// banco, só confirma que o processo está no ar. Fica fora da pasta de Razor Pages de propósito,
+// para não herdar o AuthorizeFolder("/") aplicado a todas as páginas.
+app.MapHealthChecks("/health");
 
 app.MapStaticAssets();
 app.MapRazorPages()
