@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using SistemaEscolar.Application.Alunos;
+using SistemaEscolar.Application.Auditoria;
 using SistemaEscolar.Application.Dashboard;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Notas;
@@ -16,6 +17,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAlunoService, AlunoService>();
+        services.AddScoped<IAuditoriaService, AuditoriaService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IDisciplinaService, DisciplinaService>();
         services.AddScoped<INotaService, NotaService>();

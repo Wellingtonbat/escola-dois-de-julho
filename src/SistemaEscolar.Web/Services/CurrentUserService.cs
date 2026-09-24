@@ -16,6 +16,8 @@ public sealed class CurrentUserService : ICurrentUserService
 
     public string? UserName => _httpContextAccessor.HttpContext?.User.Identity?.Name;
 
+    public string? FullName => _httpContextAccessor.HttpContext?.User.FindFirstValue(AppClaimTypes.FullName);
+
     public bool IsInRole(string role)
     {
         if (string.IsNullOrWhiteSpace(role))

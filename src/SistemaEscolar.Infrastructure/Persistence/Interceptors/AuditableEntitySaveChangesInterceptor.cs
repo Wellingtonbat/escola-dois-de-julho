@@ -10,6 +10,38 @@ namespace SistemaEscolar.Infrastructure.Persistence.Interceptors;
 
 public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
 {
+    // Tabelas do Identity que só geram ruído (tokens, logins externos, claims e cadastro de perfis).
+    // Ficam registradas as tabelas AspNetUsers (contas) e AspNetUserRoles (perfis de cada conta).
+    private static readonly HashSet<string> TabelasIgnoradas = new(StringComparer.Ordinal)
+    {
+        "AspNetUserTokens", "AspNetUserLogins", "AspNetUserClaims", "AspNetRoleClaims", "AspNetRoles"
+    };
+
+    // Campos técnicos: mudam em toda gravação e não representam uma alteração de negócio.
+    private static readonly HashSet<string> CamposTecnicos = new(StringComparer.Ordinal)
+    {
+        nameof(BaseEntity.CreatedAtUtc), nameof(BaseEntity.CreatedBy),
+        nameof(BaseEntity.UpdatedAtUtc), nameof(BaseEntity.UpdatedBy)
+    };
+
+    // Campos de controle do Identity (contadores de login, carimbos de segurança). Nunca são gravados:
+    // um login bem-sucedido ou falho os altera e encheria a auditoria de eventos sem valor.
+    private static readonly HashSet<string> CamposIgnoradosDoIdentity = new(StringComparer.Ordinal)
+    {
+        "SecurityStamp", "ConcurrencyStamp", "AccessFailedCount", "LockoutEnd", "LockoutEnabled",
+        // Derivados ou sem valor de auditoria: normalizações de login/e-mail e confirmações padrão da conta.
+        "NormalizedUserName", "NormalizedEmail", "EmailConfirmed", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled"
+    };
+
+    // Campos sensíveis: a auditoria registra que houve troca, mas nunca o conteúdo.
+    private static readonly HashSet<string> CamposSensiveis = new(StringComparer.Ordinal)
+    {
+        "PasswordHash"
+    };
+
+    public const string ValorOculto = "[oculto]";
+    public const string ValorAlterado = "[alterado]";
+
     private readonly ICurrentUserService _currentUserService;
 
     public AuditableEntitySaveChangesInterceptor(ICurrentUserService currentUserService)
@@ -66,7 +98,7 @@ public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesIntercept
         }
     }
 
-    private static void CreateAuditEntries(ChangeTracker changeTracker)
+    private void CreateAuditEntries(ChangeTracker changeTracker)
     {
         var trackedEntries = changeTracker
             .Entries()
@@ -74,19 +106,66 @@ public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesIntercept
             .Where(x => x.Entity is not AuditLog)
             .ToList();
 
+        var userId = Truncate(_currentUserService.UserId, 128);
+        var userName = Truncate(_currentUserService.UserName, 64);
+        var userFullName = Truncate(_currentUserService.FullName, 200);
+
         foreach (var entry in trackedEntries)
         {
+            var tableName = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name;
+            if (TabelasIgnoradas.Contains(tableName))
+            {
+                continue;
+            }
+
+            var changedProperties = entry.State == EntityState.Modified
+                ? GetChangedProperties(entry)
+                : null;
+
+            // Gravação sem nenhuma alteração real (só os campos técnicos mudaram): não há o que auditar.
+            if (changedProperties is { Count: 0 })
+            {
+                continue;
+            }
+
             var audit = new AuditLog
             {
-                TableName = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name,
+                TableName = tableName,
                 Action = entry.State.ToString().ToUpperInvariant(),
                 KeyValues = SerializePrimaryKey(entry),
-                OldValues = SerializeValues(entry, useOriginalValues: true),
-                NewValues = SerializeValues(entry, useOriginalValues: false)
+                OldValues = SerializeValues(entry, useOriginalValues: true, changedProperties),
+                NewValues = SerializeValues(entry, useOriginalValues: false, changedProperties),
+                CreatedBy = userId,
+                UserName = userName,
+                UserFullName = userFullName
             };
 
             changeTracker.Context?.Set<AuditLog>().Add(audit);
         }
+    }
+
+    // Nomes das propriedades cujo valor realmente mudou, sem contar campos técnicos nem de controle do Identity.
+    private static HashSet<string> GetChangedProperties(EntityEntry entry)
+    {
+        var changed = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var property in entry.Properties)
+        {
+            var name = property.Metadata.Name;
+            if (property.Metadata.IsPrimaryKey()
+                || CamposTecnicos.Contains(name)
+                || CamposIgnoradosDoIdentity.Contains(name))
+            {
+                continue;
+            }
+
+            if (!Equals(property.OriginalValue, property.CurrentValue))
+            {
+                changed.Add(name);
+            }
+        }
+
+        return changed;
     }
 
     private static string? SerializePrimaryKey(EntityEntry entry)
@@ -106,7 +185,7 @@ public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesIntercept
         return JsonSerializer.Serialize(dict);
     }
 
-    private static string? SerializeValues(EntityEntry entry, bool useOriginalValues)
+    private static string? SerializeValues(EntityEntry entry, bool useOriginalValues, HashSet<string>? changedProperties)
     {
         if (entry.State == EntityState.Added && useOriginalValues)
         {
@@ -123,14 +202,27 @@ public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesIntercept
 
         foreach (var property in entry.Properties)
         {
-            if (property.Metadata.IsPrimaryKey())
+            var name = property.Metadata.Name;
+            if (property.Metadata.IsPrimaryKey() || CamposIgnoradosDoIdentity.Contains(name))
             {
                 continue;
             }
 
-            dict[property.Metadata.Name] = values[property.Metadata.Name];
+            if (CamposSensiveis.Contains(name))
+            {
+                var houveTroca = changedProperties?.Contains(name) == true;
+                dict[name] = values[name] is null
+                    ? null
+                    : (houveTroca && !useOriginalValues ? ValorAlterado : ValorOculto);
+                continue;
+            }
+
+            dict[name] = values[name];
         }
 
         return JsonSerializer.Serialize(dict);
     }
+
+    private static string? Truncate(string? value, int maxLength) =>
+        string.IsNullOrWhiteSpace(value) ? null : (value.Length <= maxLength ? value : value[..maxLength]);
 }

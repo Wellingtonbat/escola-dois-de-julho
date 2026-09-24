@@ -30,6 +30,7 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
     var notasActive = currentPath.StartsWith("/Notas", StringComparison.OrdinalIgnoreCase);
     var resultadosActive = currentPath.StartsWith("/Resultados", StringComparison.OrdinalIgnoreCase);
     var usuariosActive = currentPath.StartsWith("/Usuarios", StringComparison.OrdinalIgnoreCase);
+    var auditoriaActive = currentPath.StartsWith("/Auditoria", StringComparison.OrdinalIgnoreCase);
     var podeGerenciarUsuarios = User.EhGestao();
     var isProfessorOnly = User.EhApenasProfessor();
     var successMessage = TempData["SuccessMessage"]?.ToString();
@@ -137,6 +138,15 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm5-1.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM0 13c0-1.9 2.5-3.5 5.5-3.5S11 11.1 11 13v1H0v-1Zm12.5-2c-.3 0-.6.02-.9.06.9.7 1.4 1.7 1.4 2.94v1H16v-1c0-1.6-1.6-3-3.5-3Z" /></svg>
                         </span>
                         <span class="sidebar-link-label">Usuários</span>
+                    </a>
+                }
+                @if (User.PodeVerAuditoria())
+                {
+                    <a asp-page="/Auditoria/Index" class="sidebar-link @(auditoriaActive ? "active" : null)">
+                        <span class="sidebar-link-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1 2 3.5V8c0 3.3 2.3 5.9 6 7 3.7-1.1 6-3.7 6-7V3.5L8 1Zm-.7 9.6L5 8.3l.9-.9 1.4 1.4 3-3 .9.9-3.9 3.9Z" /></svg>
+                        </span>
+                        <span class="sidebar-link-label">Auditoria</span>
                     </a>
                 }
                 <a asp-page="/Manual/Index" asp-page-handler="DownloadPdf" class="sidebar-link">

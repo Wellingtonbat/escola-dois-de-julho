@@ -252,6 +252,9 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.Property(x => x.KeyValues).HasColumnType("TEXT");
             entity.Property(x => x.OldValues).HasColumnType("TEXT");
             entity.Property(x => x.NewValues).HasColumnType("TEXT");
+            entity.Property(x => x.UserName).HasMaxLength(64);
+            entity.Property(x => x.UserFullName).HasMaxLength(200);
+            entity.HasIndex(x => x.CreatedAtUtc);
             entity.Property(x => x.IsDeleted).HasDefaultValue(false);
             entity.Property(x => x.CreatedBy).HasMaxLength(128);
             entity.Property(x => x.UpdatedBy).HasMaxLength(128);

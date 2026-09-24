@@ -16,6 +16,8 @@ internal sealed class FakeCurrentUserService : ICurrentUserService
 
     public string? UserName { get; }
 
+    public string? FullName => null;
+
     public bool IsInRole(string role)
     {
         return _roles.Contains(role);

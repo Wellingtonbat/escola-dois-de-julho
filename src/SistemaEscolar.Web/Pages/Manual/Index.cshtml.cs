@@ -102,7 +102,7 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Gráfico \"Evolução por trimestre\" — mostra se a média está subindo ou caindo ao longo do ano.");
                     Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação.");
                     Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
-                    Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 14.");
+                    Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 15.");
                     Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Vice-Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
 
                     column.Item().PageBreak();
@@ -227,8 +227,18 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["usuarios"], "Tela de Usuários: cadastro de Diretor, Vice-Diretor, Coordenador e Secretária.");
                     Print(column, imagens["trocar-senha"], "Tela mostrada automaticamente no primeiro acesso, obrigando a criar uma nova senha.");
 
+                    Titulo(column, "14. Auditoria (só para Diretor e Vice-Diretor)");
+                    Paragrafo(column,
+                        "A tela de Auditoria responde a pergunta \"quem mexeu nisso e quando?\". Toda vez que alguém cadastra, altera ou exclui " +
+                        "algo no sistema (uma nota, um aluno, um período, um usuário, o perfil de alguém...), fica um registro com o dia e a hora " +
+                        "(horário de Brasília), o nome e o CPF de quem fez, o que foi mexido e, nas alterações, o valor de antes e o de depois.");
+                    Bullet(column, "Filtros — período (por padrão, os últimos 30 dias), usuário (por nome ou CPF), o que foi alterado (notas, alunos, professores, usuários...) e o tipo de ação (criado, alterado ou excluído).");
+                    Bullet(column, "Detalhes — clique em \"campo(s)\" na última coluna para ver, campo a campo, o que mudou. Por exemplo: 1ª avaliação: 5,5 → 7,25.");
+                    Bullet(column, "Privacidade — senhas nunca aparecem: uma troca de senha é registrada apenas como \"Senha: alterada\". Logins e tentativas de login não entram na lista.");
+                    Bullet(column, "Acesso — somente Diretor e Vice-Diretor veem esta tela; para os demais perfis o menu \"Auditoria\" nem aparece. Registros anteriores a esta função podem aparecer como \"Sistema / não identificado\", pois na época o sistema ainda não guardava quem fez a ação.");
+
                     column.Item().PageBreak();
-                    Titulo(column, "14. O que o Professor enxerga (visão simplificada)");
+                    Titulo(column, "15. O que o Professor enxerga (visão simplificada)");
                     Paragrafo(column,
                         "Quando um Professor entra no sistema, o menu lateral aparece bem mais curto: só Dashboard, Notas, Resultados e o botão " +
                         "para baixar este manual. Ele não vê Alunos, Disciplinas, Turmas, Séries, Períodos nem Usuários — essas telas ficam " +
@@ -245,19 +255,19 @@ public sealed class IndexModel : PageModel
                         "vê o sistema completo, como o Diretor.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "15. Resumo: o que cada perfil pode fazer");
+                    Titulo(column, "16. Resumo: o que cada perfil pode fazer");
                     Paragrafo(column, "Uma tabela rápida para consultar sempre que tiver dúvida sobre alguma permissão:");
                     TabelaPermissoes(column);
 
                     column.Item().PageBreak();
-                    Titulo(column, "16. Problemas comuns e como resolver");
+                    Titulo(column, "17. Problemas comuns e como resolver");
                     Bullet(column, "\"Não consigo lançar nota\": confira se já existe um Período cadastrado para aquele ano/trimestre, e se ele está Aberto.");
                     Bullet(column, "\"O botão de editar a nota sumiu\": o período dela provavelmente está Fechado — só o Diretor ou o Vice-Diretor podem editar a nota (ou o Diretor, Vice-Diretor ou Coordenador podem reabrir o período). Se o seu perfil é Coordenador ou Secretária, as notas são somente de consulta.");
                     Bullet(column, "\"CPF ou senha inválidos\": confira se digitou o CPF certo e a senha corretamente (maiúsculas/minúsculas importam). Se persistir, peça para o Diretor redefinir sua senha.");
                     Bullet(column, "\"Esqueci a senha\": qualquer Diretor, Vice-Diretor, Coordenador ou Secretária pode redefinir a sua senha na tela de Usuários (ou de Professores, se você for professor). Contas de Diretor e Vice-Diretor só podem ser redefinidas por outro Diretor ou Vice-Diretor.");
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
-                    Titulo(column, "17. Controle de versão");
+                    Titulo(column, "18. Controle de versão");
                     Paragrafo(column, $"Este manual acompanha a versão {appVersion} do Sistema Escolar, desenvolvido por Well Tech.");
                 });
 
@@ -354,6 +364,7 @@ public sealed class IndexModel : PageModel
             Linha("Gerenciar Usuários (Coord./Secretária)", "Sim", "Sim", "Sim", "Não");
             Linha("Gerenciar contas de Diretor e Vice-Diretor", "Sim", "Não", "Não", "Não");
             Linha("Marcar um Professor como Vice-Diretor", "Sim", "Não", "Não", "Não");
+            Linha("Consultar a Auditoria", "Sim", "Não", "Não", "Não");
             Linha("Baixar este Manual", "Sim", "Sim", "Sim", "Sim");
         });
     }

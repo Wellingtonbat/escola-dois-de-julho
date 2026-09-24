@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Alunos;
+using SistemaEscolar.Application.Auditoria;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
@@ -30,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<AuditableEntitySaveChangesInterceptor>();
         services.AddScoped<ApplicationDbInitializer>();
         services.AddScoped<IAlunoRepository, AlunoRepository>();
+        services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
         services.AddScoped<IDisciplinaRepository, DisciplinaRepository>();
         services.AddScoped<IDisciplinaSerieRepository, DisciplinaSerieRepository>();
         services.AddScoped<INotaRepository, NotaRepository>();
@@ -61,6 +63,7 @@ public static class DependencyInjection
                 options.Password.RequiredLength = 8;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>()
             .AddDefaultTokenProviders();
 
         // Perfis ficam no cookie de login. Reavaliar a sessão a cada minuto (o padrão é 30) faz com que a
