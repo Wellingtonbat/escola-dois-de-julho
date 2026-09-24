@@ -103,7 +103,7 @@ public sealed class PeriodoService : IPeriodoService
     {
         if (!PodeAbrirFechar())
         {
-            return PeriodoCreateResult.Fail("Somente Diretor ou Coordenador podem abrir períodos.");
+            return PeriodoCreateResult.Fail("Somente Diretor, Vice-Diretor ou Coordenador podem abrir períodos.");
         }
 
         var periodo = await _periodoRepository.GetByIdAsync(id, cancellationToken);
@@ -124,7 +124,7 @@ public sealed class PeriodoService : IPeriodoService
     {
         if (!PodeAbrirFechar())
         {
-            return PeriodoCreateResult.Fail("Somente Diretor ou Coordenador podem fechar períodos.");
+            return PeriodoCreateResult.Fail("Somente Diretor, Vice-Diretor ou Coordenador podem fechar períodos.");
         }
 
         var periodo = await _periodoRepository.GetByIdAsync(id, cancellationToken);
@@ -146,6 +146,11 @@ public sealed class PeriodoService : IPeriodoService
 
     public async Task<bool> ExcluirAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        if (!PermissoesPerfil.PodeExcluirPeriodo(_currentUserService.IsInRole))
+        {
+            return false;
+        }
+
         var periodo = await _periodoRepository.GetByIdAsync(id, cancellationToken);
         if (periodo is null)
         {
@@ -191,10 +196,7 @@ public sealed class PeriodoService : IPeriodoService
         return PeriodoCreateResult.Success();
     }
 
-    private bool PodeAbrirFechar() =>
-        _currentUserService.IsInRole("Diretor")
-        || _currentUserService.IsInRole("Coordenador")
-        || _currentUserService.IsInRole("Cordenador");
+    private bool PodeAbrirFechar() => PermissoesPerfil.PodeAbrirFecharPeriodo(_currentUserService.IsInRole);
 
     private static PeriodoListItemDto Map(Domain.Entities.PeriodoLancamento periodo)
     {

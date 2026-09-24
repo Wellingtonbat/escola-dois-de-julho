@@ -32,6 +32,11 @@ public sealed class RecuperacaoFinalService : IRecuperacaoFinalService
 
     public async Task<RecuperacaoFinalSaveResult> SalvarAsync(RecuperacaoFinalSaveRequest request, CancellationToken cancellationToken = default)
     {
+        if (!PermissoesPerfil.PodeAlterarNotas(_currentUserService.IsInRole))
+        {
+            return RecuperacaoFinalSaveResult.Fail("Seu perfil tem acesso somente de consulta às notas.");
+        }
+
         if (request.Valor < 0m || request.Valor > 10m)
         {
             return RecuperacaoFinalSaveResult.Fail("A nota deve estar entre 0 e 10.");
@@ -43,7 +48,9 @@ public sealed class RecuperacaoFinalService : IRecuperacaoFinalService
             return RecuperacaoFinalSaveResult.Fail("Aluno não encontrado.");
         }
 
-        if (IsProfessorOnly())
+        // Quem lança como Professor fica restrito às suas turmas/disciplinas; a Diretoria (inclusive o
+        // professor que também é Vice-Diretor) lança para qualquer aluno.
+        if (PermissoesPerfil.AlteracaoDeNotasRestritaAoEscopo(_currentUserService.IsInRole))
         {
             var escopo = await _professorService.ObterEscopoPorUsuarioAsync(_currentUserService.UserName, cancellationToken);
             if (escopo is null || !escopo.DisciplinaIds.Contains(request.DisciplinaId)
@@ -77,11 +84,4 @@ public sealed class RecuperacaoFinalService : IRecuperacaoFinalService
 
     public Task<IReadOnlyDictionary<(Guid AlunoId, Guid DisciplinaId), decimal>> ListarPorAnoAsync(int anoLetivo, CancellationToken cancellationToken = default) =>
         _recuperacaoFinalRepository.ListarPorAnoAsync(anoLetivo, cancellationToken);
-
-    private bool IsProfessorOnly() =>
-        _currentUserService.IsInRole("Professor")
-        && !_currentUserService.IsInRole("Diretor")
-        && !_currentUserService.IsInRole("Coordenador")
-        && !_currentUserService.IsInRole("Cordenador")
-        && !_currentUserService.IsInRole("Secretaria");
 }

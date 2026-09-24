@@ -5,6 +5,7 @@ using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Alunos;
 
@@ -317,9 +318,9 @@ public sealed class IndexModel : PageModel
     }
 
     private bool CanManageAlunos() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        User.EhGestao();
 
-    private bool IsProfessorOnly() => User.IsInRole("Professor") && !CanManageAlunos();
+    private bool IsProfessorOnly() => User.EhApenasProfessor();
 
     private async Task LoadSeriesAsync(CancellationToken cancellationToken)
     {

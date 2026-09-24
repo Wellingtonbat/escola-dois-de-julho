@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaEscolar.Application.Usuarios;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Usuarios;
 
@@ -167,7 +168,7 @@ public sealed class IndexModel : PageModel
         var updated = await _usuarioService.AlternarStatusAsync(id, cancellationToken);
         if (!updated)
         {
-            TempData["ErrorMessage"] = "Usuário não encontrado para atualização de status.";
+            TempData["ErrorMessage"] = "Usuário não encontrado para atualização de status, ou conta de Diretor/Vice-Diretor (somente a Diretoria gerencia).";
             return RedirectToPage("/Usuarios/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
         }
 
@@ -198,7 +199,7 @@ public sealed class IndexModel : PageModel
         var deleted = await _usuarioService.ExcluirAsync(id, cancellationToken);
         if (!deleted)
         {
-            TempData["ErrorMessage"] = "Usuário não encontrado para exclusão.";
+            TempData["ErrorMessage"] = "Usuário não encontrado para exclusão, ou conta de Diretor/Vice-Diretor (somente a Diretoria gerencia).";
             return RedirectToPage("/Usuarios/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
         }
 
@@ -233,7 +234,7 @@ public sealed class IndexModel : PageModel
     }
 
     private bool CanManageUsuarios() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        User.EhGestao();
 
     private bool EhUsuarioAtual(Guid id)
     {
@@ -241,9 +242,6 @@ public sealed class IndexModel : PageModel
         return Guid.TryParse(usuarioAtualId, out var atualId) && atualId == id;
     }
 
-    private static string TraduzirPerfil(string perfil) => perfil switch
-    {
-        "Secretaria" => "Secretária",
-        _ => perfil
-    };
+    private static string TraduzirPerfil(string perfil) =>
+        SistemaEscolar.Application.Abstractions.Perfis.Descrever(perfil);
 }

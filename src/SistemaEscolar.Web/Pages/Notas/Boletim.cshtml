@@ -13,7 +13,7 @@
         </a>
         <h1 class="h5 mb-0">Boletim — @Model.Aluno?.NomeCompleto</h1>
     </div>
-    @if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+    @if (User.EhGestao())
     {
         <a asp-page="/Notas/Boletim" asp-page-handler="BaixarPdf" asp-route-AlunoId="@Model.AlunoId" asp-route-PeriodoId="@Model.PeriodoSelecionadoId"
            class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">
@@ -71,11 +71,18 @@
             Edite as notas abaixo — salva automaticamente ao sair do campo.
         </div>
     }
+    else if (!Model.PodeAlterarNotas)
+    {
+        <div class="hint-inline">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm.93-9.412-2 .25-.07.328.392.073c.255.06.302.15.244.422l-.628 2.96c-.164.771.087 1.132.685 1.132.464 0 1.002-.213 1.246-.508l.078-.375c-.171.15-.42.21-.588.21-.238 0-.324-.166-.262-.463zM9 5.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" /></svg>
+            Somente consulta — seu perfil não altera notas.
+        </div>
+    }
     else
     {
         <div class="hint-inline text-danger">
             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
-            Período fechado — somente o Diretor pode alterar notas deste trimestre.
+            Período fechado — somente o Diretor ou o Vice-Diretor podem alterar notas deste trimestre.
         </div>
     }
 </div>

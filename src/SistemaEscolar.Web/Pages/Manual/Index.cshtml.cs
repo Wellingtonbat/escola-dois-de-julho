@@ -78,18 +78,21 @@ public sealed class IndexModel : PageModel
                     Titulo(column, "3. Quem pode fazer o quê? (Perfis de acesso)");
                     Paragrafo(column,
                         "Cada pessoa que usa o sistema tem um \"crachá\" chamado perfil. O crachá decide quais portas (telas) essa " +
-                        "pessoa pode abrir. Existem 4 crachás diferentes:");
-                    Bullet(column, "Diretor(a) — o crachá mais completo. Pode fazer absolutamente tudo no sistema, inclusive coisas que mais ninguém pode, como abrir e fechar um trimestre.");
-                    Bullet(column, "Coordenador(a) — quase tão completo quanto o do Diretor. Cuida do dia a dia acadêmico (alunos, turmas, professores, notas), mas não pode abrir nem fechar trimestres.");
-                    Bullet(column, "Secretária — tem exatamente as mesmas permissões do Coordenador: cuida dos cadastros e das notas, mas também não abre nem fecha trimestres.");
-                    Bullet(column, "Professor(a) — o crachá mais simples. Só enxerga as suas próprias turmas e disciplinas, e só pode lançar as notas dos alunos que ele mesmo dá aula.");
+                        "pessoa pode abrir. Existem 5 crachás diferentes:");
+                    Bullet(column, "Diretor(a) — o crachá mais completo. Pode fazer absolutamente tudo no sistema, inclusive coisas que mais ninguém pode, como alterar notas com o trimestre fechado e excluir um período.");
+                    Bullet(column, "Vice-Diretor(a) — tem exatamente as mesmas permissões do Diretor. Na escola, costuma ser um professor: ele continua com as turmas e disciplinas dele, como qualquer professor, mas enxerga e faz tudo o que o Diretor faz. Quem marca um professor como Vice-Diretor é o Diretor (ou outro Vice-Diretor), na tela de Professores.");
+                    Bullet(column, "Coordenador(a) — cuida do dia a dia acadêmico (alunos, turmas, professores) e pode abrir e fechar trimestres. As notas são só de consulta: o Coordenador vê tudo, mas não altera nenhuma nota.");
+                    Bullet(column, "Secretária — cuida dos cadastros e consulta as notas, mas não altera nenhuma nota e também não abre nem fecha trimestres.");
+                    Bullet(column, "Professor(a) — o crachá mais simples. Só enxerga as suas próprias turmas e disciplinas, e só pode lançar as notas dos alunos que ele mesmo dá aula, enquanto o trimestre estiver aberto.");
                     Paragrafo(column,
-                        "Guarde essa ideia: Diretor, Coordenador e Secretária enxergam o sistema quase do mesmo jeito (menu completo). " +
-                        "Já o Professor enxerga um sistema bem mais enxuto, com menos botões — isso é de propósito, para simplificar o dia a dia dele.");
+                        "Guarde essa ideia: Diretor, Vice-Diretor, Coordenador e Secretária enxergam o sistema quase do mesmo jeito (menu completo). " +
+                        "Já o Professor enxerga um sistema bem mais enxuto, com menos botões — isso é de propósito, para simplificar o dia a dia dele. " +
+                        "Sobre notas: quem altera são o Diretor, o Vice-Diretor (em qualquer período) e o Professor (só com o trimestre aberto, nas suas turmas). " +
+                        "Coordenador e Secretária apenas consultam.");
 
                     Titulo(column, "4. O Painel Inicial (Dashboard)");
                     Paragrafo(column,
-                        "É a primeira tela que você vê depois de entrar. Para o Diretor, o Coordenador e a Secretária, ela é um painel " +
+                        "É a primeira tela que você vê depois de entrar. Para o Diretor, o Vice-Diretor, o Coordenador e a Secretária, ela é um painel " +
                         "de controle bem completo e colorido: lá em cima ficam os filtros — Professor, Turma, Disciplina e Ano/Trimestre. " +
                         "Escolha o que quiser conferir e clique em \"Filtrar\": todos os gráficos da tela se atualizam na hora, sem precisar " +
                         "recarregar a página.");
@@ -100,13 +103,13 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação.");
                     Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
                     Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 14.");
-                    Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
+                    Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Vice-Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
 
                     column.Item().PageBreak();
                     Titulo(column, "5. Alunos");
                     Paragrafo(column,
                         "Aqui ficam cadastrados todos os alunos da escola: nome, CPF, data de nascimento, série e turma. " +
-                        "Diretor, Coordenador e Secretária podem cadastrar, editar, ativar/desativar e excluir alunos. " +
+                        "Diretor, Vice-Diretor, Coordenador e Secretária podem cadastrar, editar, ativar/desativar e excluir alunos. " +
                         "Também é possível baixar um modelo de planilha e importar uma lista inteira de alunos de uma vez.");
                     Print(column, imagens["alunos"], "Tela de Alunos: lista, filtros e ações de cadastro.");
 
@@ -120,6 +123,11 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column,
                         "Aqui ficam os dados dos professores e, o mais importante, quais turmas e disciplinas cada um leciona. " +
                         "É esse vínculo que decide o que aparece para o professor quando ele entra no sistema com o próprio login.");
+                    Paragrafo(column,
+                        "Quando o professor também é Vice-Diretor, o Diretor (ou outro Vice-Diretor) marca a opção \"Também é Vice-Diretor\" " +
+                        "no cadastro dele. As turmas e disciplinas dele continuam valendo normalmente, mas ele passa a ter as permissões do Diretor: " +
+                        "vê o menu completo e as notas e resultados de toda a escola. Essa opção só aparece para Diretor e Vice-Diretor, e a conta " +
+                        "de um Vice-Diretor (senha, exclusão) também só é gerenciada por eles. O novo perfil vale a partir do próximo login da pessoa.");
                     Print(column, imagens["professores"], "Tela de Professores.");
 
                     Titulo(column, "8. Turmas e Séries");
@@ -140,12 +148,12 @@ public sealed class IndexModel : PageModel
                         "Precisa lançar uma nota de um trimestre que já encerrou? O botão \"Abrir\" força uma exceção manual: o período fica " +
                         "aberto mesmo depois da Data Final, até que alguém feche ele de novo — o fechamento deixa de ser automático nesse caso, " +
                         "então é preciso lembrar de fechar quando terminar. Para ajudar a não esquecer, o Painel Inicial mostra um aviso em " +
-                        "vermelho para Diretor, Coordenador e Secretária sempre que existir um período aberto assim, além da data.");
+                        "vermelho para Diretor, Vice-Diretor, Coordenador e Secretária sempre que existir um período aberto assim, além da data.");
                     Paragrafo(column,
-                        "Aqui está a primeira grande diferença entre os perfis: Diretor e Coordenador têm os botões \"Abrir\" e \"Fechar\" " +
+                        "Aqui está a primeira grande diferença entre os perfis: Diretor, Vice-Diretor e Coordenador têm os botões \"Abrir\" e \"Fechar\" " +
                         "período (mostrados na foto abaixo). A Secretária consegue cadastrar e editar períodos, mas não consegue trocar o " +
                         "status de aberto/fechado — esses botões não aparecem para ela (ela só vê o aviso no Painel Inicial, caso exista).");
-                    Print(column, imagens["periodos-diretor"], "Períodos visto pelo Diretor ou Coordenador: repare nos botões \"Abrir\"/\"Fechar\".");
+                    Print(column, imagens["periodos-diretor"], "Períodos visto pelo Diretor, Vice-Diretor ou Coordenador: repare nos botões \"Abrir\"/\"Fechar\".");
 
                     column.Item().PageBreak();
                     Titulo(column, "10. Notas");
@@ -157,8 +165,12 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Resultado da Unidade = a média das 3 avaliações.");
                     Bullet(column, "Resultado Final da Unidade = o maior valor entre o Resultado da Unidade e a Recuperação Paralela (quando ela existir).");
                     Paragrafo(column,
-                        "Importante: se o período estiver Fechado, somente o Diretor consegue editar ou excluir uma nota já lançada nele. " +
-                        "Os outros perfis conseguem apenas consultar.");
+                        "Importante: se o período estiver Fechado, somente o Diretor ou o Vice-Diretor conseguem editar ou excluir uma nota já lançada nele. " +
+                        "O Professor só altera notas com o período Aberto, e apenas as das suas turmas e disciplinas.");
+                    Paragrafo(column,
+                        "Coordenador e Secretária têm acesso somente de consulta às notas: eles veem a lista, abrem o boletim e baixam os PDFs, " +
+                        "mas os botões de lançar, finalizar e excluir não aparecem para eles (e o sistema também recusa a alteração, " +
+                        "mesmo que alguém tente por outro caminho).");
                     Print(column, imagens["notas-diretor"], "Tela de Notas vista pelo Diretor: mostra os lançamentos de todos os professores.");
 
                     column.Item().PageBreak();
@@ -169,13 +181,13 @@ public sealed class IndexModel : PageModel
                         "mais rápida de ver — ou lançar — todas as notas de um único aluno de uma vez só.");
                     Print(column, imagens["boletim-aluno"], "Boletim do Aluno: todas as disciplinas do ano, com a situação em cada uma.");
                     Paragrafo(column,
-                        "Se você é Diretor, Coordenador ou Secretária, o botão \"Baixar Boletim (PDF)\" gera esse boletim no mesmo modelo " +
+                        "Se você é Diretor, Vice-Diretor, Coordenador ou Secretária, o botão \"Baixar Boletim (PDF)\" gera esse boletim no mesmo modelo " +
                         "impresso usado pela escola — pronto para imprimir ou anexar em processos.");
                     Paragrafo(column,
                         "E quando é preciso entregar o boletim de uma turma inteira de uma vez — no fechamento do trimestre, por exemplo — " +
                         "o botão \"Baixar Boletins da Turma\", no topo da tela de Notas, gera um único PDF com o boletim de todos os alunos " +
                         "ativos daquela turma, um por página, pronto para imprimir e distribuir. Esse botão também é exclusivo de Diretor, " +
-                        "Coordenador e Secretária.");
+                        "Vice-Diretor, Coordenador e Secretária.");
                     Paragrafo(column,
                         "E quando é preciso lançar a nota de uma turma inteira, aluno por aluno, um de cada vez fica trabalhoso. Por isso " +
                         "existe o botão \"Lançamento em Massa\", no topo da tela de Notas: você escolhe o trimestre, a turma e a disciplina " +
@@ -203,12 +215,16 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["resultados-diretor"], "Tela de Resultados vista pelo Diretor: todos os alunos da escola.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "13. Usuários (só para Diretor, Coordenador e Secretária)");
+                    Titulo(column, "13. Usuários (só para Diretor, Vice-Diretor, Coordenador e Secretária)");
                     Paragrafo(column,
-                        "Essa tela serve para criar os logins de Diretor, Coordenador e Secretária (os logins de Professor são criados " +
+                        "Essa tela serve para criar os logins de Diretor, Vice-Diretor, Coordenador e Secretária (os logins de Professor são criados " +
                         "automaticamente lá na tela de Professores). Quem cria um usuário novo escolhe uma senha padrão, e o sistema obriga " +
                         "a pessoa a trocar essa senha assim que ela entrar pela primeira vez — é uma proteção extra.");
-                    Print(column, imagens["usuarios"], "Tela de Usuários: cadastro de Diretor, Coordenador e Secretária.");
+                    Paragrafo(column,
+                        "Por segurança, as contas de Diretor e de Vice-Diretor só podem ser criadas, editadas, ativadas/desativadas, excluídas " +
+                        "ou ter a senha redefinida por outro Diretor ou Vice-Diretor. Para Coordenador e Secretária essas opções aparecem para " +
+                        "todos os perfis administrativos.");
+                    Print(column, imagens["usuarios"], "Tela de Usuários: cadastro de Diretor, Vice-Diretor, Coordenador e Secretária.");
                     Print(column, imagens["trocar-senha"], "Tela mostrada automaticamente no primeiro acesso, obrigando a criar uma nova senha.");
 
                     column.Item().PageBreak();
@@ -224,6 +240,9 @@ public sealed class IndexModel : PageModel
                         "de outro professor.");
                     Print(column, imagens["notas-professor"], "Notas vista por um Professor: aparecem só os lançamentos dele mesmo.");
                     Print(column, imagens["resultados-professor"], "Resultados vista por um Professor: aparecem só os alunos dele mesmo.");
+                    Paragrafo(column,
+                        "Atenção: essa visão simplificada vale só para quem é apenas Professor. Um professor que também é Vice-Diretor " +
+                        "vê o sistema completo, como o Diretor.");
 
                     column.Item().PageBreak();
                     Titulo(column, "15. Resumo: o que cada perfil pode fazer");
@@ -233,9 +252,9 @@ public sealed class IndexModel : PageModel
                     column.Item().PageBreak();
                     Titulo(column, "16. Problemas comuns e como resolver");
                     Bullet(column, "\"Não consigo lançar nota\": confira se já existe um Período cadastrado para aquele ano/trimestre, e se ele está Aberto.");
-                    Bullet(column, "\"O botão de editar a nota sumiu\": o período dela provavelmente está Fechado — só o Diretor pode reabrir o período ou editar a nota.");
+                    Bullet(column, "\"O botão de editar a nota sumiu\": o período dela provavelmente está Fechado — só o Diretor ou o Vice-Diretor podem editar a nota (ou o Diretor, Vice-Diretor ou Coordenador podem reabrir o período). Se o seu perfil é Coordenador ou Secretária, as notas são somente de consulta.");
                     Bullet(column, "\"CPF ou senha inválidos\": confira se digitou o CPF certo e a senha corretamente (maiúsculas/minúsculas importam). Se persistir, peça para o Diretor redefinir sua senha.");
-                    Bullet(column, "\"Esqueci a senha\": qualquer Diretor, Coordenador ou Secretária pode redefinir a sua senha na tela de Usuários (ou de Professores, se você for professor).");
+                    Bullet(column, "\"Esqueci a senha\": qualquer Diretor, Vice-Diretor, Coordenador ou Secretária pode redefinir a sua senha na tela de Usuários (ou de Professores, se você for professor). Contas de Diretor e Vice-Diretor só podem ser redefinidas por outro Diretor ou Vice-Diretor.");
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
                     Titulo(column, "17. Controle de versão");
@@ -296,7 +315,7 @@ public sealed class IndexModel : PageModel
                 .Padding(4).Text(texto).FontColor(Colors.White).SemiBold().FontSize(8.5f);
 
             CabecalhoCelula("Tela / Ação");
-            CabecalhoCelula("Diretor");
+            CabecalhoCelula("Diretor / Vice-Diretor");
             CabecalhoCelula("Coordenador");
             CabecalhoCelula("Secretária");
             CabecalhoCelula("Professor");
@@ -323,14 +342,18 @@ public sealed class IndexModel : PageModel
             Linha("Cadastrar/editar Turmas e Séries", "Sim", "Sim", "Sim", "Não");
             Linha("Ver Períodos de Lançamento", "Sim", "Sim", "Sim", "Não");
             Linha("Abrir/Fechar um Período", "Sim", "Sim", "Não", "Não");
-            Linha("Lançar/ver Notas", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
-            Linha("Usar o Lançamento de Notas em Massa", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
+            Linha("Excluir um Período", "Sim", "Não", "Não", "Não");
+            Linha("Ver Notas (consulta)", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
+            Linha("Lançar/editar/excluir Notas (período Aberto)", "Sim (todas)", "Não", "Não", "Só as suas turmas");
+            Linha("Usar o Lançamento de Notas em Massa", "Sim (todas)", "Não", "Não", "Só as suas turmas");
             Linha("Editar/excluir Nota em período Fechado", "Sim", "Não", "Não", "Não");
             Linha("Ver/exportar Resultados", "Sim (todos)", "Sim (todos)", "Sim (todos)", "Só os seus alunos");
-            Linha("Lançar a Recuperação Final", "Sim", "Sim", "Sim", "Só os seus alunos");
+            Linha("Lançar a Recuperação Final", "Sim", "Não", "Não", "Só os seus alunos");
             Linha("Baixar o Boletim do Aluno em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Baixar os Boletins de uma Turma em PDF", "Sim", "Sim", "Sim", "Não");
-            Linha("Gerenciar Usuários (Diretor/Coord./Secretária)", "Sim", "Sim", "Sim", "Não");
+            Linha("Gerenciar Usuários (Coord./Secretária)", "Sim", "Sim", "Sim", "Não");
+            Linha("Gerenciar contas de Diretor e Vice-Diretor", "Sim", "Não", "Não", "Não");
+            Linha("Marcar um Professor como Vice-Diretor", "Sim", "Não", "Não", "Não");
             Linha("Baixar este Manual", "Sim", "Sim", "Sim", "Sim");
         });
     }

@@ -30,8 +30,8 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
     var notasActive = currentPath.StartsWith("/Notas", StringComparison.OrdinalIgnoreCase);
     var resultadosActive = currentPath.StartsWith("/Resultados", StringComparison.OrdinalIgnoreCase);
     var usuariosActive = currentPath.StartsWith("/Usuarios", StringComparison.OrdinalIgnoreCase);
-    var podeGerenciarUsuarios = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
-    var isProfessorOnly = User.IsInRole("Professor") && !podeGerenciarUsuarios;
+    var podeGerenciarUsuarios = User.EhGestao();
+    var isProfessorOnly = User.EhApenasProfessor();
     var successMessage = TempData["SuccessMessage"]?.ToString();
     var errorMessage = TempData["ErrorMessage"]?.ToString();
 

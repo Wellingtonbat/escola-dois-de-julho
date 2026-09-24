@@ -10,4 +10,7 @@ public interface IProfessorService
     Task<bool> ExcluirAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ProfessorEscopoDto?> ObterEscopoPorUsuarioAsync(string? userName, CancellationToken cancellationToken = default);
     Task<ProfessorCreateResult> RedefinirSenhaAsync(Guid id, string novaSenha, CancellationToken cancellationToken = default);
+
+    // CPFs dos professores que também têm o perfil de Vice-Diretor (para sinalizar na listagem).
+    Task<IReadOnlySet<string>> ListarCpfsViceDiretoresAsync(CancellationToken cancellationToken = default);
 }

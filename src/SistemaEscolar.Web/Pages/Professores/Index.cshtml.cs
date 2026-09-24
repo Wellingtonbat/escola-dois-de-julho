@@ -5,6 +5,7 @@ using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Professores;
 
@@ -32,6 +33,7 @@ public sealed class IndexModel : PageModel
     public IReadOnlyList<SelectListItem> Series { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> Disciplinas { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<TurmaListItemDto> TurmasAtivas { get; private set; } = Array.Empty<TurmaListItemDto>();
+    public IReadOnlySet<string> ViceDiretorCpfs { get; private set; } = new HashSet<string>();
 
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
@@ -58,6 +60,7 @@ public sealed class IndexModel : PageModel
         await LoadSeriesAsync(cancellationToken);
         await LoadDisciplinasAsync(cancellationToken);
         await LoadTurmasAsync(cancellationToken);
+        ViceDiretorCpfs = await _professorService.ListarCpfsViceDiretoresAsync(cancellationToken);
 
         bool? statusFilter = Status switch
         {
@@ -88,6 +91,7 @@ public sealed class IndexModel : PageModel
         List<AtribuicaoInputModel> atribuicoes,
         string senha,
         bool isAtivo,
+        bool? isViceDiretor,
         string? busca,
         string? status,
         int pageNumber,
@@ -107,7 +111,8 @@ public sealed class IndexModel : PageModel
                 usuarioCpf,
                 MapearAtribuicoes(atribuicoes),
                 isAtivo,
-                senha),
+                senha,
+                ObterViceDiretorInformado(isViceDiretor)),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -127,6 +132,7 @@ public sealed class IndexModel : PageModel
         string usuarioCpf,
         List<AtribuicaoInputModel> atribuicoes,
         bool isAtivo,
+        bool? isViceDiretor,
         string? busca,
         string? status,
         int pageNumber,
@@ -141,7 +147,13 @@ public sealed class IndexModel : PageModel
 
         var result = await _professorService.AtualizarAsync(
             id,
-            new ProfessorCreateRequest(nomeCompleto, email, usuarioCpf, MapearAtribuicoes(atribuicoes), isAtivo),
+            new ProfessorCreateRequest(
+                nomeCompleto,
+                email,
+                usuarioCpf,
+                MapearAtribuicoes(atribuicoes),
+                isAtivo,
+                IsViceDiretor: ObterViceDiretorInformado(isViceDiretor)),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -196,7 +208,7 @@ public sealed class IndexModel : PageModel
         var deleted = await _professorService.ExcluirAsync(id, cancellationToken);
         if (!deleted)
         {
-            TempData["ErrorMessage"] = "Professor não encontrado para exclusão.";
+            TempData["ErrorMessage"] = "Professor não encontrado para exclusão, ou o perfil de Vice-Diretor dele só pode ser removido pela Diretoria.";
             return RedirectToPage("/Professores/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
         }
 
@@ -231,9 +243,13 @@ public sealed class IndexModel : PageModel
     }
 
     private bool CanManageProfessores() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        User.EhGestao();
 
-    private bool IsProfessorOnly() => User.IsInRole("Professor") && !CanManageProfessores();
+    private bool IsProfessorOnly() => User.EhApenasProfessor();
+
+    // O marcador de Vice-Diretor só é enviado por quem pode defini-lo (Diretoria). Para os demais o
+    // valor fica nulo ("não alterar"), para que editar um professor nunca revogue esse perfil sem querer.
+    private bool? ObterViceDiretorInformado(bool? isViceDiretor) => User.EhDiretoria() ? isViceDiretor : null;
 
     private static List<ProfessorAtribuicaoInput> MapearAtribuicoes(List<AtribuicaoInputModel>? atribuicoes) =>
         (atribuicoes ?? new List<AtribuicaoInputModel>())

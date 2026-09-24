@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Turmas;
 
@@ -76,7 +77,7 @@ public sealed class CreateModel : PageModel
     }
 
     private bool CanManageTurmas() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        User.EhGestao();
 
     public sealed class InputModel
     {

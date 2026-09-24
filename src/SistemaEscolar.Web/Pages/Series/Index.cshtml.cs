@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Series;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Series;
 
@@ -122,7 +123,7 @@ public sealed class IndexModel : PageModel
         return RedirectToPage("/Series/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
     }
 
-    private bool CanManageSeries() => User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+    private bool CanManageSeries() => User.EhGestao();
 
-    private bool IsProfessorOnly() => User.IsInRole("Professor") && !CanManageSeries();
+    private bool IsProfessorOnly() => User.EhApenasProfessor();
 }

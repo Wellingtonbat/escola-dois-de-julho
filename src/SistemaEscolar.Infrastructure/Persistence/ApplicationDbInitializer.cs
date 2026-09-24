@@ -39,7 +39,7 @@ public sealed class ApplicationDbInitializer
 
     public async Task SeedAsync(bool seedSampleData, CancellationToken cancellationToken = default)
     {
-        var roles = new[] { "Diretor", "Coordenador", "Secretaria", "Professor" };
+        var roles = new[] { Perfis.Diretor, Perfis.ViceDiretor, Perfis.Coordenador, Perfis.Secretaria, Perfis.Professor };
 
         foreach (var roleName in roles)
         {

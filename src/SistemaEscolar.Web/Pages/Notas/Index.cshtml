@@ -3,8 +3,11 @@
 @{
     ViewData["Title"] = "Notas";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Notas" };
-    var podeGerenciar = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") || User.IsInRole("Professor");
-    var podeGerarBoletimTurma = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+    // Consulta (ver lista e abrir boletins) x alteração (lançar, finalizar, excluir). Coordenador e
+    // Secretária só consultam; Diretor/Vice-Diretor e Professor também alteram.
+    var podeGerenciar = User.PodeAcessarNotas();
+    var podeAlterar = User.PodeAlterarNotas();
+    var podeGerarBoletimTurma = User.EhGestao();
 }
 
 <section class="panel">
@@ -25,10 +28,13 @@
                         Baixar Boletins da Turma
                     </button>
                 }
-                <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#lancamentoMassaModal">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z" /></svg>
-                    Lançamento em Massa
-                </button>
+                @if (podeAlterar)
+                {
+                    <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#lancamentoMassaModal">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z" /></svg>
+                        Lançamento em Massa
+                    </button>
+                }
             </div>
         }
     </div>
@@ -115,7 +121,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if (podeGerenciar)
+                                    @if (podeAlterar)
                                     {
                                         <div class="actions-cell">
                                             <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@nota.Id" class="m-0">
@@ -289,5 +295,8 @@
         </div>
     }
 
-    <partial name="_LancamentoMassaModal" model="Model.LancamentoMassaModal" />
+    @if (podeAlterar)
+    {
+        <partial name="_LancamentoMassaModal" model="Model.LancamentoMassaModal" />
+    }
 }

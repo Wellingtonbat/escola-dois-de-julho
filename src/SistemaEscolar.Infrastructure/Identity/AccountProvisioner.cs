@@ -74,6 +74,53 @@ public sealed class AccountProvisioner : IAccountProvisioner
         return AccountProvisionResult.Success();
     }
 
+    public async Task<AccountProvisionResult> DefinirPerfilAsync(
+        string cpf,
+        string role,
+        bool possuiPerfil,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByNameAsync(cpf);
+        if (user is null)
+        {
+            return AccountProvisionResult.Fail("Conta de acesso não encontrada para o CPF informado.");
+        }
+
+        var jaPossui = await _userManager.IsInRoleAsync(user, role);
+        if (jaPossui == possuiPerfil)
+        {
+            return AccountProvisionResult.Success();
+        }
+
+        var result = possuiPerfil
+            ? await _userManager.AddToRoleAsync(user, role)
+            : await _userManager.RemoveFromRoleAsync(user, role);
+
+        if (!result.Succeeded)
+        {
+            return AccountProvisionResult.Fail(DescreverErros(result));
+        }
+
+        // Os perfis ficam gravados no cookie de login. Renovar o carimbo de segurança faz o sistema
+        // reavaliar a sessão do usuário, para que a mudança de perfil (principalmente a revogação)
+        // não fique valendo até ele sair sozinho.
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        return AccountProvisionResult.Success();
+    }
+
+    public async Task<IReadOnlySet<string>> ListarCpfsPorPerfilAsync(
+        string role,
+        CancellationToken cancellationToken = default)
+    {
+        var usuarios = await _userManager.GetUsersInRoleAsync(role);
+        return usuarios
+            .Select(x => x.UserName)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .ToHashSet();
+    }
+
     private static string DescreverErros(IdentityResult result) =>
         string.Join(" ", result.Errors.Select(e => e.Description));
 }

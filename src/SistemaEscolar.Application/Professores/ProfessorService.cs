@@ -13,6 +13,9 @@ public sealed class ProfessorService : IProfessorService
     private readonly IDisciplinaRepository _disciplinaRepository;
     private readonly ISerieRepository _serieRepository;
     private readonly IAccountProvisioner _accountProvisioner;
+    private readonly ICurrentUserService _currentUserService;
+
+    private const string MensagemSomenteDiretoria = "Somente Diretor ou Vice-Diretor podem gerenciar o perfil e o acesso de um Vice-Diretor.";
 
     public ProfessorService(
         IProfessorRepository professorRepository,
@@ -20,7 +23,8 @@ public sealed class ProfessorService : IProfessorService
         ITurmaRepository turmaRepository,
         IDisciplinaRepository disciplinaRepository,
         ISerieRepository serieRepository,
-        IAccountProvisioner accountProvisioner)
+        IAccountProvisioner accountProvisioner,
+        ICurrentUserService currentUserService)
     {
         _professorRepository = professorRepository;
         _atribuicaoRepository = atribuicaoRepository;
@@ -28,6 +32,7 @@ public sealed class ProfessorService : IProfessorService
         _disciplinaRepository = disciplinaRepository;
         _serieRepository = serieRepository;
         _accountProvisioner = accountProvisioner;
+        _currentUserService = currentUserService;
     }
 
     public async Task<IReadOnlyList<ProfessorListItemDto>> ListarAsync(ProfessorListFilter? filter = null, CancellationToken cancellationToken = default)
@@ -81,12 +86,35 @@ public sealed class ProfessorService : IProfessorService
             return ProfessorCreateResult.Fail("Defina a senha padrão do professor.");
         }
 
+        if (request.IsViceDiretor == true && !EhDiretoria())
+        {
+            return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
+        }
+
+        // Criar o professor reaproveita (e redefine a senha de) uma conta que já exista para o CPF.
+        // Se essa conta for de Diretor ou Vice-Diretor, só a Diretoria pode fazer isso.
+        if (!EhDiretoria() && await ContaTemPerfilDeDiretoriaAsync(validation.UsuarioCpf, cancellationToken))
+        {
+            return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
+        }
+
         var contaResult = await _accountProvisioner.CriarOuReiniciarContaAsync(
-            validation.UsuarioCpf, validation.NomeCompleto, validation.Email, request.Senha, "Professor", cancellationToken);
+            validation.UsuarioCpf, validation.NomeCompleto, validation.Email, request.Senha, Perfis.Professor, cancellationToken);
 
         if (!contaResult.Succeeded)
         {
             return ProfessorCreateResult.Fail(contaResult.ErrorMessage ?? "Não foi possível criar o acesso do professor.");
+        }
+
+        if (request.IsViceDiretor == true)
+        {
+            var perfilResult = await _accountProvisioner.DefinirPerfilAsync(
+                validation.UsuarioCpf, Perfis.ViceDiretor, true, cancellationToken);
+
+            if (!perfilResult.Succeeded)
+            {
+                return ProfessorCreateResult.Fail(perfilResult.ErrorMessage ?? "Não foi possível definir o perfil de Vice-Diretor.");
+            }
         }
 
         var professor = new Domain.Entities.Professor
@@ -118,6 +146,17 @@ public sealed class ProfessorService : IProfessorService
             return validation.Result;
         }
 
+        // A conta de acesso é identificada pelo CPF que o professor tinha antes desta edição.
+        var cpfDaConta = professor.UsuarioCpf;
+        var definirViceDiretor = request.IsViceDiretor.HasValue
+            && request.IsViceDiretor.Value != (await _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.ViceDiretor, cancellationToken))
+                .Contains(cpfDaConta);
+
+        if (definirViceDiretor && !EhDiretoria())
+        {
+            return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
+        }
+
         professor.NomeCompleto = validation.NomeCompleto;
         professor.Email = validation.Email;
         professor.UsuarioCpf = validation.UsuarioCpf;
@@ -125,6 +164,17 @@ public sealed class ProfessorService : IProfessorService
 
         await _professorRepository.UpdateAsync(professor, cancellationToken);
         await _atribuicaoRepository.SubstituirAsync(professor.Id, validation.AtribuicoesValidas, cancellationToken);
+
+        if (definirViceDiretor)
+        {
+            var perfilResult = await _accountProvisioner.DefinirPerfilAsync(
+                cpfDaConta, Perfis.ViceDiretor, request.IsViceDiretor!.Value, cancellationToken);
+
+            if (!perfilResult.Succeeded)
+            {
+                return ProfessorCreateResult.Fail(perfilResult.ErrorMessage ?? "Não foi possível atualizar o perfil de Vice-Diretor.");
+            }
+        }
 
         return ProfessorCreateResult.Success();
     }
@@ -151,7 +201,22 @@ public sealed class ProfessorService : IProfessorService
             return false;
         }
 
+        // Excluir um Vice-Diretor revoga as permissões de Diretoria dele, então é ação da Diretoria.
+        var ehViceDiretor = (await _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.ViceDiretor, cancellationToken))
+            .Contains(professor.UsuarioCpf);
+        if (ehViceDiretor && !EhDiretoria())
+        {
+            return false;
+        }
+
         await _professorRepository.SoftDeleteAsync(professor, cancellationToken);
+
+        // O professor excluído não pode manter permissões de Diretoria.
+        if (ehViceDiretor)
+        {
+            await _accountProvisioner.DefinirPerfilAsync(professor.UsuarioCpf, Perfis.ViceDiretor, false, cancellationToken);
+        }
+
         return true;
     }
 
@@ -168,8 +233,14 @@ public sealed class ProfessorService : IProfessorService
             return ProfessorCreateResult.Fail("Informe a nova senha padrão.");
         }
 
+        // Redefinir a senha de quem tem permissões de Diretoria daria acesso a essas permissões.
+        if (!EhDiretoria() && await ContaTemPerfilDeDiretoriaAsync(professor.UsuarioCpf, cancellationToken))
+        {
+            return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
+        }
+
         var contaResult = await _accountProvisioner.CriarOuReiniciarContaAsync(
-            professor.UsuarioCpf, professor.NomeCompleto, professor.Email, novaSenha, "Professor", cancellationToken);
+            professor.UsuarioCpf, professor.NomeCompleto, professor.Email, novaSenha, Perfis.Professor, cancellationToken);
 
         if (!contaResult.Succeeded)
         {
@@ -177,6 +248,23 @@ public sealed class ProfessorService : IProfessorService
         }
 
         return ProfessorCreateResult.Success();
+    }
+
+    public Task<IReadOnlySet<string>> ListarCpfsViceDiretoresAsync(CancellationToken cancellationToken = default) =>
+        _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.ViceDiretor, cancellationToken);
+
+    private bool EhDiretoria() => PermissoesPerfil.EhDiretoria(_currentUserService.IsInRole);
+
+    private async Task<bool> ContaTemPerfilDeDiretoriaAsync(string cpf, CancellationToken cancellationToken)
+    {
+        var diretores = await _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.Diretor, cancellationToken);
+        if (diretores.Contains(cpf))
+        {
+            return true;
+        }
+
+        var vices = await _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.ViceDiretor, cancellationToken);
+        return vices.Contains(cpf);
     }
 
     public async Task<ProfessorEscopoDto?> ObterEscopoPorUsuarioAsync(string? userName, CancellationToken cancellationToken = default)

@@ -161,7 +161,7 @@
                                     <td>@item.AnoLetivo</td>
                                     <td>@item.MediaFinal.ToString("0.00")</td>
                                     <td>
-                                        @if (item.RecuperacaoFinalDisponivel)
+                                        @if (item.RecuperacaoFinalDisponivel && User.PodeAlterarNotas())
                                         {
                                             <form method="post" asp-page-handler="SalvarRecuperacaoFinal" class="d-flex gap-1 align-items-center">
                                                 <input type="hidden" name="alunoId" value="@item.AlunoId" />

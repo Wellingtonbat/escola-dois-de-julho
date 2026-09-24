@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Turmas";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Turmas" };
-    var podeGerenciar = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+    var podeGerenciar = User.EhGestao();
 }
 
 <section class="panel">
@@ -172,7 +172,7 @@
     </div>
 </section>
 
-@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+@if (User.EhGestao())
 {
     <div class="modal fade" id="editTurmaModal" tabindex="-1" aria-labelledby="editTurmaModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-tall">

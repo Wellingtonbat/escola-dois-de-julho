@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SistemaEscolar.Application.Periodos;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Periodos;
 
@@ -101,7 +102,7 @@ public sealed class IndexModel : PageModel
     {
         if (!CanAbrirFecharPeriodo())
         {
-            TempData["ErrorMessage"] = "Somente Diretor ou Coordenador podem abrir períodos.";
+            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor ou Coordenador podem abrir períodos.";
             return RedirectToPage();
         }
 
@@ -116,7 +117,7 @@ public sealed class IndexModel : PageModel
     {
         if (!CanAbrirFecharPeriodo())
         {
-            TempData["ErrorMessage"] = "Somente Diretor ou Coordenador podem fechar períodos.";
+            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor ou Coordenador podem fechar períodos.";
             return RedirectToPage();
         }
 
@@ -129,9 +130,9 @@ public sealed class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        if (!CanManagePeriodos())
+        if (!User.PodeExcluirPeriodo())
         {
-            TempData["ErrorMessage"] = "Você não tem permissão para excluir períodos.";
+            TempData["ErrorMessage"] = "Somente Diretor ou Vice-Diretor podem excluir períodos.";
             return RedirectToPage();
         }
 
@@ -143,9 +144,9 @@ public sealed class IndexModel : PageModel
         return RedirectToPage();
     }
 
-    private bool CanManagePeriodos() => User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+    private bool CanManagePeriodos() => User.EhGestao();
 
-    private bool CanAbrirFecharPeriodo() => User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador");
+    private bool CanAbrirFecharPeriodo() => User.PodeAbrirFecharPeriodo();
 
-    private bool IsProfessorOnly() => User.IsInRole("Professor") && !CanManagePeriodos();
+    private bool IsProfessorOnly() => User.EhApenasProfessor();
 }

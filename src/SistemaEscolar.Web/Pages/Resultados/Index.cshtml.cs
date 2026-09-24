@@ -12,6 +12,7 @@ using SistemaEscolar.Application.Resultados;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
 using System.Text;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Resultados;
 
@@ -115,7 +116,7 @@ public sealed class IndexModel : PageModel
     {
         if (!CanLancarRecuperacao())
         {
-            TempData["ErrorMessage"] = "Você não tem permissão para lançar a Recuperação Final.";
+            TempData["ErrorMessage"] = "Seu perfil tem acesso somente de consulta às notas.";
             return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
         }
 
@@ -152,8 +153,9 @@ public sealed class IndexModel : PageModel
         });
     }
 
+    // Coordenador e Secretária consultam os resultados, mas não lançam a Recuperação Final.
     private bool CanLancarRecuperacao() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") || User.IsInRole("Professor");
+        User.PodeAlterarNotas();
 
     private static bool TryParseNota(string? rawValue, out decimal? value)
     {

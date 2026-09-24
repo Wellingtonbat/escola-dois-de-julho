@@ -9,7 +9,7 @@
     <div class="panel-header d-flex justify-content-between align-items-center">
         <div>
             <h1 class="h5 mb-1">Gestão de Usuários</h1>
-            <p class="text-muted mb-0">Cadastro de Diretor, Coordenador e Secretária, com as mesmas permissões administrativas.</p>
+            <p class="text-muted mb-0">Cadastro de Diretor, Vice-Diretor, Coordenador e Secretária. Professores são cadastrados em Professores (lá também se define quem é Vice-Diretor).</p>
         </div>
         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createUsuarioModal">
             Novo Usuário
@@ -57,8 +57,10 @@
                     {
                         @foreach (var usuario in Model.Usuarios)
                         {
-                            var perfilExibicao = usuario.Perfil == "Secretaria" ? "Secretária" : usuario.Perfil;
-                            <tr class="row-clicavel" data-edit-trigger=".btn-edit-usuario">
+                            var perfilExibicao = SistemaEscolar.Application.Abstractions.Perfis.Descrever(usuario.Perfil);
+                            // Contas de Diretor e Vice-Diretor só são gerenciadas pela Diretoria.
+                            var podeAgir = User.PodeGerenciarContaComPerfil(usuario.Perfil);
+                            <tr class="@(podeAgir ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-usuario">
                                 <td>@usuario.NomeCompleto</td>
                                 <td>@usuario.Email</td>
                                 <td>@usuario.Cpf</td>
@@ -69,6 +71,12 @@
                                     </span>
                                 </td>
                                 <td>
+                                    @if (!podeAgir)
+                                    {
+                                        <span class="text-muted">Somente Diretoria</span>
+                                    }
+                                    else
+                                    {
                                     <div class="actions-cell">
                                         <button type="button" class="icon-btn edit btn-edit-usuario"
                                                 data-bs-toggle="modal" data-bs-target="#editUsuarioModal" data-id="@usuario.Id"
@@ -106,6 +114,7 @@
                                             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
                                         </span>
                                     </div>
+                                    }
                                 </td>
                             </tr>
                         }

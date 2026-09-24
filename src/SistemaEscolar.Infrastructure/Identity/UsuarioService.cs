@@ -1,30 +1,50 @@
 using Microsoft.AspNetCore.Identity;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Usuarios;
 
 namespace SistemaEscolar.Infrastructure.Identity;
 
 public sealed class UsuarioService : IUsuarioService
 {
-    private static readonly string[] Perfis = { "Diretor", "Coordenador", "Secretaria" };
+    // Perfis administrativos gerenciados nesta tela. O perfil Professor não entra aqui: contas de
+    // professor são gerenciadas em Professores (inclusive o marcador de Vice-Diretor).
+    private static readonly string[] PerfisAdministrativos =
+    {
+        Perfis.Diretor, Perfis.ViceDiretor, Perfis.Coordenador, Perfis.Secretaria
+    };
+
+    private const string MensagemSomenteDiretoria = "Somente Diretor ou Vice-Diretor podem gerenciar contas de Diretor e Vice-Diretor.";
 
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UsuarioService(UserManager<ApplicationUser> userManager)
+    public UsuarioService(UserManager<ApplicationUser> userManager, ICurrentUserService currentUserService)
     {
         _userManager = userManager;
+        _currentUserService = currentUserService;
     }
 
-    public IReadOnlyList<string> PerfisDisponiveis => Perfis;
+    // Só oferece os perfis que o usuário atual pode conceder.
+    public IReadOnlyList<string> PerfisDisponiveis =>
+        PerfisAdministrativos.Where(PodeGerenciarPerfil).ToList();
 
     public async Task<IReadOnlyList<UsuarioListItemDto>> ListarAsync(CancellationToken cancellationToken = default)
     {
         var usuarios = new List<UsuarioListItemDto>();
+        var idsJaListados = new HashSet<Guid>();
 
-        foreach (var perfil in Perfis)
+        foreach (var perfil in PerfisAdministrativos)
         {
             var usuariosDoPerfil = await _userManager.GetUsersInRoleAsync(perfil);
             foreach (var usuario in usuariosDoPerfil)
             {
+                // Professor que também é Vice-Diretor aparece só em Professores, nunca aqui: editar ou
+                // excluir a conta por esta tela mexeria no acesso dele como professor.
+                if (!idsJaListados.Add(usuario.Id) || await EhContaDeProfessorAsync(usuario))
+                {
+                    continue;
+                }
+
                 usuarios.Add(MontarDto(usuario, perfil));
             }
         }
@@ -68,9 +88,14 @@ public sealed class UsuarioService : IUsuarioService
             return UsuarioCreateResult.Fail("O CPF é obrigatório.");
         }
 
-        if (!Perfis.Contains(perfil))
+        if (!PerfisAdministrativos.Contains(perfil))
         {
             return UsuarioCreateResult.Fail("Selecione um perfil válido.");
+        }
+
+        if (!PodeGerenciarPerfil(perfil))
+        {
+            return UsuarioCreateResult.Fail(MensagemSomenteDiretoria);
         }
 
         if (string.IsNullOrWhiteSpace(request.Senha))
@@ -148,9 +173,15 @@ public sealed class UsuarioService : IUsuarioService
             return UsuarioCreateResult.Fail("O CPF é obrigatório.");
         }
 
-        if (!Perfis.Contains(perfil))
+        if (!PerfisAdministrativos.Contains(perfil))
         {
             return UsuarioCreateResult.Fail("Selecione um perfil válido.");
+        }
+
+        // Vale para o perfil atual (não editar a conta de um Diretor) e para o novo (não promover ninguém).
+        if (!PodeGerenciarPerfil(perfilAtual) || !PodeGerenciarPerfil(perfil))
+        {
+            return UsuarioCreateResult.Fail(MensagemSomenteDiretoria);
         }
 
         var usuarioComMesmoCpf = await _userManager.FindByNameAsync(cpf);
@@ -190,6 +221,7 @@ public sealed class UsuarioService : IUsuarioService
         {
             await _userManager.RemoveFromRoleAsync(usuario, perfilAtual);
             await _userManager.AddToRoleAsync(usuario, perfil);
+            await _userManager.UpdateSecurityStampAsync(usuario);
         }
 
         return UsuarioCreateResult.Success();
@@ -198,7 +230,7 @@ public sealed class UsuarioService : IUsuarioService
     public async Task<bool> AlternarStatusAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var usuario = await _userManager.FindByIdAsync(id.ToString());
-        if (usuario is null || await ObterPerfilAsync(usuario) is null)
+        if (usuario is null || !await PodeGerenciarUsuarioAsync(usuario))
         {
             return false;
         }
@@ -211,7 +243,7 @@ public sealed class UsuarioService : IUsuarioService
     public async Task<bool> ExcluirAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var usuario = await _userManager.FindByIdAsync(id.ToString());
-        if (usuario is null || await ObterPerfilAsync(usuario) is null)
+        if (usuario is null || !await PodeGerenciarUsuarioAsync(usuario))
         {
             return false;
         }
@@ -226,6 +258,11 @@ public sealed class UsuarioService : IUsuarioService
         if (usuario is null || await ObterPerfilAsync(usuario) is null)
         {
             return UsuarioCreateResult.Fail("Usuário não encontrado.");
+        }
+
+        if (!await PodeGerenciarUsuarioAsync(usuario))
+        {
+            return UsuarioCreateResult.Fail(MensagemSomenteDiretoria);
         }
 
         if (string.IsNullOrWhiteSpace(novaSenha))
@@ -246,10 +283,30 @@ public sealed class UsuarioService : IUsuarioService
         return UsuarioCreateResult.Success();
     }
 
+    // Perfil administrativo da conta, ou null se ela não é gerenciada nesta tela (não tem perfil
+    // administrativo ou é uma conta de professor).
     private async Task<string?> ObterPerfilAsync(ApplicationUser usuario)
     {
         var roles = await _userManager.GetRolesAsync(usuario);
-        return Perfis.FirstOrDefault(roles.Contains);
+        if (roles.Contains(Perfis.Professor))
+        {
+            return null;
+        }
+
+        return PerfisAdministrativos.FirstOrDefault(roles.Contains);
+    }
+
+    private async Task<bool> EhContaDeProfessorAsync(ApplicationUser usuario) =>
+        await _userManager.IsInRoleAsync(usuario, Perfis.Professor);
+
+    private bool PodeGerenciarPerfil(string perfil) =>
+        PermissoesPerfil.PodeGerenciarContaComPerfil(_currentUserService.IsInRole, perfil);
+
+    // Conta existente, gerenciada nesta tela e cujo perfil o usuário atual pode administrar.
+    private async Task<bool> PodeGerenciarUsuarioAsync(ApplicationUser usuario)
+    {
+        var perfil = await ObterPerfilAsync(usuario);
+        return perfil is not null && PodeGerenciarPerfil(perfil);
     }
 
     private static UsuarioListItemDto MontarDto(ApplicationUser usuario, string perfil) =>

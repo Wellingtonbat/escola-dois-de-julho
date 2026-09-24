@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Series;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Disciplinas;
 
@@ -88,7 +89,7 @@ public sealed class CreateModel : PageModel
     }
 
     private bool CanManageDisciplinas() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        User.EhGestao();
 
     public sealed class InputModel
     {

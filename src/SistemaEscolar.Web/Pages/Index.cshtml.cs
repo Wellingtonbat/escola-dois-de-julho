@@ -10,6 +10,7 @@ using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages;
 
@@ -153,5 +154,5 @@ public class IndexModel : PageModel
     }
 
     private bool CanVerDashboardCompleto() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        User.EhGestao();
 }

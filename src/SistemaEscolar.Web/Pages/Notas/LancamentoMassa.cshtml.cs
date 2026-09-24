@@ -8,6 +8,7 @@ using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Notas;
 
@@ -62,7 +63,7 @@ public sealed class LancamentoMassaModel : PageModel
     {
         if (!CanManageNotas())
         {
-            TempData["ErrorMessage"] = "Você não tem permissão para lançar notas.";
+            TempData["ErrorMessage"] = "Seu perfil tem acesso somente de consulta às notas.";
             return RedirectToPage("/Notas/Index");
         }
 
@@ -121,7 +122,8 @@ public sealed class LancamentoMassaModel : PageModel
             .FirstOrDefault();
 
         var hoje = DateTime.UtcNow;
-        PodeEditar = PeriodoDisponibilidade.EstaAberto(periodo, hoje) || User.IsInRole("Diretor");
+        // Fora do período aberto, somente a Diretoria (Diretor ou Vice-Diretor) altera notas.
+        PodeEditar = PeriodoDisponibilidade.EstaAberto(periodo, hoje) || User.EhDiretoria();
 
         var alunosDaTurma = (await _alunoService.ListarAsync(new AlunoListFilter(null, null, TurmaId, true), cancellationToken))
             .OrderBy(x => x.NomeCompleto)
@@ -172,7 +174,7 @@ public sealed class LancamentoMassaModel : PageModel
     {
         if (!CanManageNotas())
         {
-            return new JsonResult(new { succeeded = false, error = "Você não tem permissão para lançar notas." });
+            return new JsonResult(new { succeeded = false, error = "Seu perfil tem acesso somente de consulta às notas." });
         }
 
         if (!TryParseNota(avaliacao1, out var av1)
@@ -230,15 +232,12 @@ public sealed class LancamentoMassaModel : PageModel
         });
     }
 
+    // Esta tela é só de lançamento: Coordenador e Secretária (somente consulta) não a utilizam.
     private bool CanManageNotas() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") || User.IsInRole("Professor");
+        User.PodeAlterarNotas();
 
     private bool IsProfessorOnly() =>
-        User.IsInRole("Professor")
-        && !User.IsInRole("Diretor")
-        && !User.IsInRole("Coordenador")
-        && !User.IsInRole("Cordenador")
-        && !User.IsInRole("Secretaria");
+        User.EhApenasProfessor();
 
     private static string FormatarEntrada(decimal? valor) =>
         valor.HasValue ? valor.Value.ToString("0.##", PtBr) : string.Empty;

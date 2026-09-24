@@ -4,8 +4,8 @@
 @{
     ViewData["Title"] = "Períodos";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Períodos" };
-    var podeGerenciar = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
-    var podeAbrirFecharPeriodo = User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador");
+    var podeGerenciar = User.EhGestao();
+    var podeAbrirFecharPeriodo = User.PodeAbrirFecharPeriodo();
     var hoje = DateTime.UtcNow;
 }
 
@@ -121,7 +121,7 @@
                                                     </button>
                                                 </form>
                                             }
-                                            @if (User.IsInRole("Diretor"))
+                                            @if (User.PodeExcluirPeriodo())
                                             {
                                                 <form method="post" asp-page-handler="Delete" asp-route-id="@periodo.Id" class="m-0">
                                                     <button type="submit" class="icon-btn delete" title="Excluir"
@@ -149,7 +149,7 @@
     </div>
 </section>
 
-@if (User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria"))
+@if (User.EhGestao())
 {
     <div class="modal fade" id="createPeriodoModal" tabindex="-1" aria-labelledby="createPeriodoModalLabel"
          aria-hidden="true">

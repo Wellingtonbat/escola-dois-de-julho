@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SistemaEscolar.Application.Series;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Series;
 
@@ -52,7 +53,7 @@ public sealed class CreateModel : PageModel
         return RedirectToPage("/Series/Index");
     }
 
-    private bool CanManageSeries() => User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+    private bool CanManageSeries() => User.EhGestao();
 
     public sealed class InputModel
     {

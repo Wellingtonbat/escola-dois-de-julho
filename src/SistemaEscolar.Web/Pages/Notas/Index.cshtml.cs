@@ -7,6 +7,7 @@ using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Notas;
 
@@ -192,15 +193,12 @@ public sealed class IndexModel : PageModel
         }
     }
 
+    // Finalizar/reabrir e excluir lançamentos exigem permissão de alteração; Coordenador e Secretária só consultam.
     private bool CanManageNotas()
     {
-        return User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") || User.IsInRole("Professor");
+        return User.PodeAlterarNotas();
     }
 
     private bool IsProfessorOnly() =>
-        User.IsInRole("Professor")
-        && !User.IsInRole("Diretor")
-        && !User.IsInRole("Coordenador")
-        && !User.IsInRole("Cordenador")
-        && !User.IsInRole("Secretaria");
+        User.EhApenasProfessor();
 }

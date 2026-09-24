@@ -11,6 +11,7 @@ using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Resultados;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Notas;
 
@@ -55,6 +56,7 @@ public sealed class BoletimModel : PageModel
     public Guid PeriodoSelecionadoId { get; private set; }
     public bool PeriodoSelecionadoAberto { get; private set; }
     public bool PodeEditar { get; private set; }
+    public bool PodeAlterarNotas { get; private set; }
     public IReadOnlyList<DisciplinaCardVm> Disciplinas { get; private set; } = Array.Empty<DisciplinaCardVm>();
     public IReadOnlyList<ArcoVm> Arcos { get; private set; } = Array.Empty<ArcoVm>();
     public int EmDiaCount { get; private set; }
@@ -107,7 +109,10 @@ public sealed class BoletimModel : PageModel
 
         PeriodoSelecionadoId = periodoSelecionado.Id;
         PeriodoSelecionadoAberto = PeriodoDisponibilidade.EstaAberto(periodoSelecionado, hoje);
-        PodeEditar = PeriodoSelecionadoAberto || User.IsInRole("Diretor");
+        // Só quem pode alterar notas edita (Coordenador e Secretária apenas consultam); fora do período
+        // aberto, somente a Diretoria (Diretor ou Vice-Diretor).
+        PodeAlterarNotas = User.PodeAlterarNotas();
+        PodeEditar = PodeAlterarNotas && (PeriodoSelecionadoAberto || User.EhDiretoria());
 
         Tabs = periodosDoAno
             .Select(x => new PeriodoTabVm(x.Id, x.Trimestre, $"{x.Trimestre}º Trimestre", x.Id == periodoSelecionado.Id))
@@ -214,9 +219,9 @@ public sealed class BoletimModel : PageModel
         string? recuperacaoParalela,
         CancellationToken cancellationToken)
     {
-        if (!CanManageNotas())
+        if (!CanAlterarNotas())
         {
-            return new JsonResult(new { succeeded = false, error = "Você não tem permissão para lançar notas." });
+            return new JsonResult(new { succeeded = false, error = "Seu perfil tem acesso somente de consulta às notas." });
         }
 
         if (!TryParseNota(avaliacao1, out var av1)
@@ -276,7 +281,7 @@ public sealed class BoletimModel : PageModel
 
     public async Task<IActionResult> OnPostFinalizarAsync(Guid id, Guid alunoId, Guid periodoId, CancellationToken cancellationToken)
     {
-        if (!CanManageNotas())
+        if (!CanAlterarNotas())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para alterar o status de notas.";
             return RedirectToPage("/Notas/Boletim", new { AlunoId = alunoId, PeriodoId = periodoId });
@@ -288,7 +293,7 @@ public sealed class BoletimModel : PageModel
 
     public async Task<IActionResult> OnPostExcluirAsync(Guid id, Guid alunoId, Guid periodoId, CancellationToken cancellationToken)
     {
-        if (!CanManageNotas())
+        if (!CanAlterarNotas())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para excluir notas.";
             return RedirectToPage("/Notas/Boletim", new { AlunoId = alunoId, PeriodoId = periodoId });
@@ -306,7 +311,7 @@ public sealed class BoletimModel : PageModel
     {
         if (!PodeGerarBoletimPdf())
         {
-            TempData["ErrorMessage"] = "Somente Diretor, Coordenador ou Secretaria podem baixar o boletim em PDF.";
+            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor, Coordenador ou Secretaria podem baixar o boletim em PDF.";
             return RedirectToPage("/Notas/Boletim", new { AlunoId, PeriodoId });
         }
 
@@ -356,7 +361,7 @@ public sealed class BoletimModel : PageModel
     {
         if (!PodeGerarBoletimPdf())
         {
-            TempData["ErrorMessage"] = "Somente Diretor, Coordenador ou Secretaria podem baixar boletins em PDF.";
+            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor, Coordenador ou Secretaria podem baixar boletins em PDF.";
             return RedirectToPage("/Notas/Index");
         }
 
@@ -641,7 +646,7 @@ public sealed class BoletimModel : PageModel
     };
 
     private bool PodeGerarBoletimPdf() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        User.EhGestao();
 
     public sealed record BoletimTrimestreVm(string Av1, string Av2, string Av3, string ResUnidade, string RecParalela, string ResFinal);
 
@@ -654,15 +659,15 @@ public sealed class BoletimModel : PageModel
         string RecuperacaoFinal,
         string Situacao);
 
+    // Ver o boletim (consulta) x lançar, finalizar ou excluir notas.
     private bool CanManageNotas() =>
-        User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria") || User.IsInRole("Professor");
+        User.PodeAcessarNotas();
+
+    private bool CanAlterarNotas() =>
+        User.PodeAlterarNotas();
 
     private bool IsProfessorOnly() =>
-        User.IsInRole("Professor")
-        && !User.IsInRole("Diretor")
-        && !User.IsInRole("Coordenador")
-        && !User.IsInRole("Cordenador")
-        && !User.IsInRole("Secretaria");
+        User.EhApenasProfessor();
 
     private static NotaCalculo.Resultado Calcular(NotaListItemDto? nota) => NotaCalculo.Calcular(nota);
 

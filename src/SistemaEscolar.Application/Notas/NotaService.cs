@@ -87,6 +87,11 @@ public sealed class NotaService : INotaService
 
     public async Task<NotaCreateResult> CriarAsync(NotaCreateRequest request, CancellationToken cancellationToken = default)
     {
+        if (!PodeAlterarNotas())
+        {
+            return NotaCreateResult.Fail(MensagemSomenteConsulta);
+        }
+
         var escopo = await AplicarEscopoDoProfessorAsync(request, cancellationToken);
         if (!escopo.Result.Succeeded)
         {
@@ -129,6 +134,11 @@ public sealed class NotaService : INotaService
 
     public async Task<NotaCreateResult> AtualizarAsync(Guid id, NotaCreateRequest request, CancellationToken cancellationToken = default)
     {
+        if (!PodeAlterarNotas())
+        {
+            return NotaCreateResult.Fail(MensagemSomenteConsulta);
+        }
+
         var nota = await _notaRepository.GetByIdAsync(id, cancellationToken);
         if (nota is null)
         {
@@ -173,6 +183,11 @@ public sealed class NotaService : INotaService
 
     public async Task<bool> AlternarFinalizacaoAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        if (!PodeAlterarNotas())
+        {
+            return false;
+        }
+
         var nota = await _notaRepository.GetByIdAsync(id, cancellationToken);
         if (nota is null)
         {
@@ -185,7 +200,7 @@ public sealed class NotaService : INotaService
         }
 
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !_currentUserService.IsInRole("Diretor"))
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !EhDiretoria())
         {
             return false;
         }
@@ -197,6 +212,11 @@ public sealed class NotaService : INotaService
 
     public async Task<bool> ExcluirAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        if (!PodeAlterarNotas())
+        {
+            return false;
+        }
+
         var nota = await _notaRepository.GetByIdAsync(id, cancellationToken);
         if (nota is null)
         {
@@ -209,7 +229,7 @@ public sealed class NotaService : INotaService
         }
 
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !_currentUserService.IsInRole("Diretor"))
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !EhDiretoria())
         {
             return false;
         }
@@ -224,7 +244,7 @@ public sealed class NotaService : INotaService
     // o perfil (Professor) e não o vínculo com aquele lançamento específico.
     private async Task<bool> ProfessorTemAcessoAoLancamentoAsync(Domain.Entities.Nota nota, CancellationToken cancellationToken)
     {
-        if (!IsProfessorOnly())
+        if (!AlteracaoRestritaAoEscopo())
         {
             return true;
         }
@@ -293,7 +313,7 @@ public sealed class NotaService : INotaService
             return NotaCreateResult.Fail("Não há período de lançamento configurado com este identificador.");
         }
 
-        if (!PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !_currentUserService.IsInRole("Diretor"))
+        if (!PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !EhDiretoria())
         {
             return NotaCreateResult.Fail(PeriodoDisponibilidade.ObterMotivoFechado(periodo, DateTime.UtcNow));
         }
@@ -335,16 +355,23 @@ public sealed class NotaService : INotaService
         return NotaCreateResult.Success();
     }
 
-    private bool IsProfessorOnly() =>
-        _currentUserService.IsInRole("Professor")
-        && !_currentUserService.IsInRole("Diretor")
-        && !_currentUserService.IsInRole("Coordenador")
-        && !_currentUserService.IsInRole("Cordenador")
-        && !_currentUserService.IsInRole("Secretaria");
+    private const string MensagemSomenteConsulta = "Seu perfil tem acesso somente de consulta às notas.";
+
+    private bool EhDiretoria() => PermissoesPerfil.EhDiretoria(_currentUserService.IsInRole);
+
+    private bool PodeAlterarNotas() => PermissoesPerfil.PodeAlterarNotas(_currentUserService.IsInRole);
+
+    // Visibilidade da lista: só o Professor "puro" enxerga apenas os próprios lançamentos.
+    private bool IsProfessorOnly() => PermissoesPerfil.EhApenasProfessor(_currentUserService.IsInRole);
+
+    // Alteração de notas: quem edita como Professor fica restrito às suas turmas/disciplinas, mesmo que
+    // também tenha um perfil de gestão que não seja Diretoria (ver PermissoesPerfil).
+    private bool AlteracaoRestritaAoEscopo() =>
+        PermissoesPerfil.AlteracaoDeNotasRestritaAoEscopo(_currentUserService.IsInRole);
 
     private async Task<(NotaCreateResult Result, NotaCreateRequest Request)> AplicarEscopoDoProfessorAsync(NotaCreateRequest request, CancellationToken cancellationToken)
     {
-        if (!IsProfessorOnly())
+        if (!AlteracaoRestritaAoEscopo())
         {
             return (NotaCreateResult.Success(), request);
         }

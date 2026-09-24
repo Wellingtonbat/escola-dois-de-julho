@@ -63,6 +63,11 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+        // Perfis ficam no cookie de login. Reavaliar a sessão a cada minuto (o padrão é 30) faz com que a
+        // revogação de um perfil, como o de Vice-Diretor, passe a valer rapidamente para quem já está logado.
+        services.Configure<SecurityStampValidatorOptions>(options =>
+            options.ValidationInterval = TimeSpan.FromMinutes(1));
+
         services.ConfigureApplicationCookie(options =>
         {
             options.LoginPath = "/Login";
@@ -71,9 +76,11 @@ public static class DependencyInjection
 
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("DiretorOnly", policy => policy.RequireRole("Diretor"));
-            options.AddPolicy("DiretorOrCoordenador", policy => policy.RequireRole("Diretor", "Coordenador", "Cordenador", "Secretaria"));
-            options.AddPolicy("ProfessorOrDiretor", policy => policy.RequireRole("Professor", "Diretor"));
+            // Diretor e Vice-Diretor têm as mesmas permissões (ver PermissoesPerfil).
+            options.AddPolicy("DiretorOnly", policy => policy.RequireRole(Perfis.Diretor, Perfis.ViceDiretor));
+            options.AddPolicy("DiretorOrCoordenador", policy => policy.RequireRole(
+                Perfis.Diretor, Perfis.ViceDiretor, Perfis.Coordenador, Perfis.CoordenadorLegado, Perfis.Secretaria));
+            options.AddPolicy("ProfessorOrDiretor", policy => policy.RequireRole(Perfis.Professor, Perfis.Diretor, Perfis.ViceDiretor));
         });
 
         return services;

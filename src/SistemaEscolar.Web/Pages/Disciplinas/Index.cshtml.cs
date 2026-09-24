@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Series;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Disciplinas;
 
@@ -167,11 +168,11 @@ public sealed class IndexModel : PageModel
 
     private bool CanManageDisciplinas()
     {
-        return User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        return User.EhGestao();
     }
 
     private bool IsProfessorOnly() =>
-        User.IsInRole("Professor") && !CanManageDisciplinas();
+        User.EhApenasProfessor();
 
     private async Task LoadSeriesAsync(CancellationToken cancellationToken)
     {

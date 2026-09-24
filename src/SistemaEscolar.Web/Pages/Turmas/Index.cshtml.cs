@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Web.Extensions;
 
 namespace SistemaEscolar.Web.Pages.Turmas;
 
@@ -179,10 +180,10 @@ public sealed class IndexModel : PageModel
 
     private bool CanManageTurmas()
     {
-        return User.IsInRole("Diretor") || User.IsInRole("Coordenador") || User.IsInRole("Cordenador") || User.IsInRole("Secretaria");
+        return User.EhGestao();
     }
 
-    private bool IsProfessorOnly() => User.IsInRole("Professor") && !CanManageTurmas();
+    private bool IsProfessorOnly() => User.EhApenasProfessor();
 
     private async Task LoadSeriesAsync(CancellationToken cancellationToken)
     {
