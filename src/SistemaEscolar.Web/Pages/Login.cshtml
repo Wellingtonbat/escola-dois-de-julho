@@ -19,7 +19,7 @@
                         </a>
                     </div>
 
-                    <h4 class="mb-2">Bem-vindo ao Sistema Escolar</h4>
+                    <h4 class="mb-2">Bem-vindo ao Sistema Escolar<br /><span class="text-primary">Escola Dois de Julho</span></h4>
                     <p class="mb-4 text-muted">Entre com suas credenciais para acessar o painel.</p>
 
                     <form method="post" class="mb-3">
@@ -27,7 +27,7 @@
 
                         <div class="mb-3">
                             <label asp-for="Input.Cpf" class="form-label"></label>
-                            <input asp-for="Input.Cpf" class="form-control" placeholder="000.000.000-00" autocomplete="username" autofocus />
+                            <input asp-for="Input.Cpf" class="form-control" placeholder="Somente os 11 números do CPF" inputmode="numeric" autocomplete="username" autofocus data-cpf-somente-numeros />
                             <span asp-validation-for="Input.Cpf" class="text-danger"></span>
                         </div>
 
@@ -58,4 +58,19 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // CPF: aceita colar "025.452.775-25" (ou qualquer texto) e mantém só os 11 números.
+        // Não usamos maxlength de propósito: ele cortaria o texto colado antes de tirarmos a pontuação.
+        document.querySelectorAll("[data-cpf-somente-numeros]").forEach((input) => {
+            const limpar = () => {
+                const numeros = input.value.replace(/\D/g, "").slice(0, 11);
+                if (input.value !== numeros) {
+                    input.value = numeros;
+                }
+            };
+            input.addEventListener("input", limpar);
+            input.addEventListener("change", limpar);
+            limpar();
+        });
+    </script>
 }
