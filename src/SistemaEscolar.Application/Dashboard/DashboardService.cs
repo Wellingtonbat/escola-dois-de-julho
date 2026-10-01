@@ -10,6 +10,8 @@ namespace SistemaEscolar.Application.Dashboard;
 
 public sealed class DashboardService : IDashboardService
 {
+    private const decimal MediaAprovacao = 5.0m;
+
     private readonly IAlunoService _alunoService;
     private readonly ITurmaService _turmaService;
     private readonly IDisciplinaService _disciplinaService;
@@ -57,7 +59,7 @@ public sealed class DashboardService : IDashboardService
         var donut = CalcularDonut(resultados, turmaSelecionada, disciplinaSelecionada, professorSelecionado);
         var mediasPorDisciplina = CalcularMediasPorDisciplina(resultados, turmaSelecionada, professorSelecionado);
         var evolucao = CalcularEvolucaoTrimestres(alunos, notasAno, turmaSelecionada, disciplinaSelecionada, professorSelecionado);
-        var (rankingMelhores, rankingAtencao) = CalcularRankingTurmas(resultados, disciplinaSelecionada, professorSelecionado);
+        var (rankingMelhores, rankingAtencao) = CalcularRankingTurmas(filtro, alunos, turmas, notasAno, disciplinaSelecionada, professorSelecionado);
         var (heatmapTurmas, heatmapDisciplinas, heatmapCelulas) = CalcularHeatmap(
             filtro, alunos, turmas, disciplinas, professorSelecionado, notasAno, periodosAno);
 
@@ -170,28 +172,41 @@ public sealed class DashboardService : IDashboardService
         }).ToList();
     }
 
+    // Ranking de turmas por desempenho atual. Usa os lançamentos de nota (por trimestre), e não o resultado
+    // final do ano (ResultadoAcademicoDto): esse é "Pendente" até o aluno ter os 3 trimestres lançados, então
+    // no meio do ano quase ninguém está "Aprovado" ainda e o ranking apareceria com 0% para todas as turmas.
+    // Usar os lançamentos também é o que permite este card respeitar o filtro de trimestre, como o rótulo já indica.
     private static (IReadOnlyList<DashboardRankingTurmaDto> Melhores, IReadOnlyList<DashboardRankingTurmaDto> Atencao) CalcularRankingTurmas(
-        IReadOnlyList<ResultadoAcademicoDto> resultados,
+        DashboardFiltroDto filtro,
+        IReadOnlyList<AlunoListItemDto> alunos,
+        IReadOnlyList<TurmaListItemDto> turmas,
+        IReadOnlyList<NotaListItemDto> notasAno,
         DisciplinaListItemDto? disciplinaSelecionada,
         ProfessorListItemDto? professorSelecionado)
     {
-        IEnumerable<ResultadoAcademicoDto> baseParaRanking = resultados;
+        IEnumerable<NotaListItemDto> baseParaRanking = filtro.Trimestre.HasValue
+            ? notasAno.Where(n => n.Trimestre == filtro.Trimestre.Value)
+            : notasAno;
 
         if (disciplinaSelecionada is not null)
         {
-            baseParaRanking = baseParaRanking.Where(r => r.DisciplinaId == disciplinaSelecionada.Id);
+            baseParaRanking = baseParaRanking.Where(n => n.DisciplinaId == disciplinaSelecionada.Id);
         }
 
         if (professorSelecionado is not null)
         {
-            baseParaRanking = baseParaRanking.Where(r => string.Equals(r.ProfessorNome, professorSelecionado.NomeCompleto, StringComparison.OrdinalIgnoreCase));
+            baseParaRanking = baseParaRanking.Where(n => n.ProfessorId == professorSelecionado.Id);
         }
 
+        var turmaIdPorAluno = alunos.ToDictionary(a => a.Id, a => a.TurmaId);
+        var nomeTurmaPorId = turmas.ToDictionary(t => t.Id, t => t.Nome);
+
         var porTurma = baseParaRanking
-            .GroupBy(r => r.Turma)
+            .Where(n => turmaIdPorAluno.TryGetValue(n.AlunoId, out var turmaId) && turmaId.HasValue)
+            .GroupBy(n => turmaIdPorAluno[n.AlunoId]!.Value)
             .Select(g => new DashboardRankingTurmaDto(
-                g.Key,
-                Math.Round(100m * g.Count(x => x.Situacao == "Aprovado") / g.Count(), 1),
+                nomeTurmaPorId.TryGetValue(g.Key, out var nome) ? nome : "Turma não encontrada",
+                Math.Round(100m * g.Count(x => x.ResultadoFinalUnidade >= MediaAprovacao) / g.Count(), 1),
                 g.Select(x => x.AlunoId).Distinct().Count()))
             .OrderByDescending(x => x.PercentualAprovacao)
             .ToList();

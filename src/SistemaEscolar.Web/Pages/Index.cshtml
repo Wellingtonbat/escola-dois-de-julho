@@ -129,8 +129,15 @@ else
         </div>
     </section>
 
-    <p class="chart-card-caption mb-2" id="dash-kpis-caption"></p>
-    <div id="dash-kpis" class="kpi-grid mb-3"></div>
+    <div id="dash-charts-area" class="position-relative">
+        <div id="dash-loading-overlay" class="dashboard-loading-overlay d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+
+        <p class="chart-card-caption mb-2" id="dash-kpis-caption"></p>
+        <div id="dash-kpis" class="kpi-grid mb-3"></div>
 
     <div class="charts-row cols-2 mb-3">
         <section class="panel">
@@ -175,6 +182,7 @@ else
         </div>
         <div class="panel-body" id="dash-heatmap"></div>
     </section>
+    </div>
 
     <script id="dash-dados-iniciais" type="application/json">@Html.Raw(Model.DadosIniciaisJson)</script>
 

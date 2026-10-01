@@ -13,6 +13,7 @@ if (dashKpis) {
   const filtroTrimestre = document.getElementById("dash-trimestre");
   const botaoFiltrar = document.getElementById("dash-filtrar");
   const botaoLimpar = document.getElementById("dash-limpar");
+  const overlayCarregando = document.getElementById("dash-loading-overlay");
 
   const ICON_ALUNOS =
     '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1 15 4.5 8 8 1 4.5 8 1Z"/><path d="M4 6.2v3.3c0 .9 1.8 1.8 4 1.8s4-.9 4-1.8V6.2L8 8 4 6.2Z"/><path d="M14 6v3.5a.5.5 0 0 0 1 0V6h-1Z"/></svg>';
@@ -310,6 +311,10 @@ if (dashKpis) {
     if (filtroTurma.value) params.set("turmaId", filtroTurma.value);
     if (filtroDisciplina.value) params.set("disciplinaId", filtroDisciplina.value);
 
+    overlayCarregando?.classList.remove("d-none");
+    if (botaoFiltrar) botaoFiltrar.disabled = true;
+    if (botaoLimpar) botaoLimpar.disabled = true;
+
     try {
       const resposta = await fetch(`?handler=Dados&${params.toString()}`, {
         headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -319,6 +324,10 @@ if (dashKpis) {
       renderizarDashboard(dados);
     } catch (erro) {
       console.error(erro);
+    } finally {
+      overlayCarregando?.classList.add("d-none");
+      if (botaoFiltrar) botaoFiltrar.disabled = false;
+      if (botaoLimpar) botaoLimpar.disabled = false;
     }
   }
 
