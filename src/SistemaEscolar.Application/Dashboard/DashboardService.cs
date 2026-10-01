@@ -56,8 +56,8 @@ public sealed class DashboardService : IDashboardService
         var professorSelecionado = filtro.ProfessorId.HasValue ? professores.FirstOrDefault(p => p.Id == filtro.ProfessorId.Value) : null;
 
         var kpis = CalcularKpis(filtro, alunos, resultados, notasAno, periodosAno);
-        var donut = CalcularDonut(resultados, turmaSelecionada, disciplinaSelecionada, professorSelecionado);
-        var mediasPorDisciplina = CalcularMediasPorDisciplina(resultados, turmaSelecionada, professorSelecionado);
+        var donut = CalcularDonut(filtro, alunos, turmas, disciplinas, periodosAno, notasAno, turmaSelecionada, disciplinaSelecionada, professorSelecionado);
+        var mediasPorDisciplina = CalcularMediasPorDisciplina(filtro, alunos, disciplinas, notasAno, turmaSelecionada, professorSelecionado);
         var evolucao = CalcularEvolucaoTrimestres(alunos, notasAno, turmaSelecionada, disciplinaSelecionada, professorSelecionado);
         var (rankingMelhores, rankingAtencao) = CalcularRankingTurmas(filtro, alunos, turmas, notasAno, disciplinaSelecionada, professorSelecionado);
         var (heatmapTurmas, heatmapDisciplinas, heatmapCelulas) = CalcularHeatmap(
@@ -97,23 +97,96 @@ public sealed class DashboardService : IDashboardService
         return new DashboardKpisDto(totalAlunos, percentualAprovacaoGeral, pendenciasLancamento, periodosAbertos, periodosAno.Count);
     }
 
+    // "Aprovados x Reprovados x Pendentes": mesmo problema do ranking de turmas (ver CalcularRankingTurmas) —
+    // contava pelo resultado final do ano, que fica "Pendente" até o aluno ter os 3 trimestres lançados, e
+    // nunca levava o filtro de trimestre em conta mesmo a legenda do card anunciando o trimestre escolhido.
+    // Passa a contar os lançamentos de nota do período filtrado: aprovado/reprovado = lançamento feito, acima
+    // ou abaixo de 5,0; pendente = lançamento que ainda falta fazer. "Falta fazer" não é o campo IsFinalizada
+    // (na prática quase nenhuma escola usa o botão de finalizar — isso deixaria o card sempre 100% pendente),
+    // e sim a mesma comparação "esperado x lançado" já usada no Mapa de Pendências (CalcularHeatmap): quantos
+    // lançamentos de aluno+disciplina+trimestre deveriam existir no recorte filtrado versus quantos existem.
     private static DashboardDonutDto CalcularDonut(
-        IReadOnlyList<ResultadoAcademicoDto> resultados,
+        DashboardFiltroDto filtro,
+        IReadOnlyList<AlunoListItemDto> alunos,
+        IReadOnlyList<TurmaListItemDto> turmas,
+        IReadOnlyList<DisciplinaListItemDto> disciplinas,
+        IReadOnlyList<PeriodoListItemDto> periodosAno,
+        IReadOnlyList<NotaListItemDto> notasAno,
         TurmaListItemDto? turmaSelecionada,
         DisciplinaListItemDto? disciplinaSelecionada,
         ProfessorListItemDto? professorSelecionado)
     {
-        var filtrados = AplicarFiltrosResultado(resultados, turmaSelecionada, disciplinaSelecionada, professorSelecionado).ToList();
+        var (esperados, lancamentos) = CalcularEsperadosELancamentos(
+            filtro, alunos, turmas, disciplinas, periodosAno, notasAno, turmaSelecionada, disciplinaSelecionada, professorSelecionado);
 
-        return new DashboardDonutDto(
-            filtrados.Count(r => r.Situacao == "Aprovado"),
-            filtrados.Count(r => r.Situacao == "Reprovado"),
-            filtrados.Count(r => r.Situacao == "Pendente"),
-            filtrados.Count);
+        var aprovados = lancamentos.Count(n => n.ResultadoFinalUnidade >= MediaAprovacao);
+        var reprovados = lancamentos.Count - aprovados;
+        var pendentes = Math.Max(0, esperados - lancamentos.Count);
+
+        return new DashboardDonutDto(aprovados, reprovados, pendentes, aprovados + reprovados + pendentes);
     }
 
+    // Quantos lançamentos de aluno+disciplina+trimestre são esperados no recorte filtrado (turma, disciplina,
+    // professor, trimestre) e quais já existem. Mesma conta do Mapa de Pendências (CalcularHeatmap), só que
+    // somada em vez de célula por célula, e já considerando a turma/disciplina selecionadas no filtro.
+    private static (int Esperados, IReadOnlyList<NotaListItemDto> Lancamentos) CalcularEsperadosELancamentos(
+        DashboardFiltroDto filtro,
+        IReadOnlyList<AlunoListItemDto> alunos,
+        IReadOnlyList<TurmaListItemDto> turmas,
+        IReadOnlyList<DisciplinaListItemDto> disciplinas,
+        IReadOnlyList<PeriodoListItemDto> periodosAno,
+        IReadOnlyList<NotaListItemDto> notasAno,
+        TurmaListItemDto? turmaSelecionada,
+        DisciplinaListItemDto? disciplinaSelecionada,
+        ProfessorListItemDto? professorSelecionado)
+    {
+        var lancamentos = AplicarFiltrosNota(filtro, alunos, notasAno, turmaSelecionada, disciplinaSelecionada, professorSelecionado).ToList();
+
+        var turmasConsideradas = turmaSelecionada is not null ? new[] { turmaSelecionada } : turmas;
+        var disciplinasConsideradas = disciplinaSelecionada is not null ? new[] { disciplinaSelecionada } : disciplinas;
+        var periodosConsiderados = filtro.Trimestre.HasValue
+            ? periodosAno.Count(p => p.Trimestre == filtro.Trimestre.Value)
+            : periodosAno.Count;
+
+        var alunosPorTurma = alunos
+            .Where(a => a.IsAtivo && a.AnoLetivo == filtro.AnoLetivo && a.TurmaId.HasValue)
+            .GroupBy(a => a.TurmaId!.Value)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var esperados = 0;
+        foreach (var turma in turmasConsideradas)
+        {
+            var qtdAlunos = alunosPorTurma.TryGetValue(turma.Id, out var qtd) ? qtd : 0;
+            foreach (var disciplina in disciplinasConsideradas)
+            {
+                if (!disciplina.Series.Any(s => s.SerieId == turma.SerieId))
+                {
+                    continue;
+                }
+
+                if (professorSelecionado is not null
+                    && !professorSelecionado.Atribuicoes.Any(a => a.TurmaId == turma.Id && a.DisciplinaId == disciplina.Id))
+                {
+                    continue;
+                }
+
+                esperados += qtdAlunos * periodosConsiderados;
+            }
+        }
+
+        return (esperados, lancamentos);
+    }
+
+    // "Média por disciplina": mesmo ajuste de origem dos dados que os cards anteriores (usa os lançamentos do
+    // período filtrado, não o resultado final do ano). Além disso, antes só listava a disciplina que já tinha
+    // alguma nota lançada no recorte — uma disciplina da turma sem lançamento ainda simplesmente sumia do
+    // gráfico. Agora lista todas as disciplinas da série da turma (a mesma checagem de vínculo do Mapa de
+    // Pendências), com Media nula para quem ainda não tem lançamento nesse período.
     private static IReadOnlyList<DashboardBarraDisciplinaDto> CalcularMediasPorDisciplina(
-        IReadOnlyList<ResultadoAcademicoDto> resultados,
+        DashboardFiltroDto filtro,
+        IReadOnlyList<AlunoListItemDto> alunos,
+        IReadOnlyList<DisciplinaListItemDto> disciplinas,
+        IReadOnlyList<NotaListItemDto> notasAno,
         TurmaListItemDto? turmaSelecionada,
         ProfessorListItemDto? professorSelecionado)
     {
@@ -122,19 +195,60 @@ public sealed class DashboardService : IDashboardService
             return Array.Empty<DashboardBarraDisciplinaDto>();
         }
 
-        IEnumerable<ResultadoAcademicoDto> baseParaBarras = resultados
-            .Where(r => string.Equals(r.Turma, turmaSelecionada.Nome, StringComparison.OrdinalIgnoreCase));
+        var baseParaBarras = AplicarFiltrosNota(filtro, alunos, notasAno, turmaSelecionada, null, professorSelecionado)
+            .ToLookup(n => n.DisciplinaId);
+
+        var disciplinasDaSerie = disciplinas.Where(d => d.Series.Any(s => s.SerieId == turmaSelecionada.SerieId));
+        if (professorSelecionado is not null)
+        {
+            disciplinasDaSerie = disciplinasDaSerie.Where(d =>
+                professorSelecionado.Atribuicoes.Any(a => a.TurmaId == turmaSelecionada.Id && a.DisciplinaId == d.Id));
+        }
+
+        return disciplinasDaSerie
+            .Select(d =>
+            {
+                var notasDaDisciplina = baseParaBarras[d.Id];
+                var media = notasDaDisciplina.Any() ? Math.Round(notasDaDisciplina.Average(x => x.ResultadoFinalUnidade), 1) : (decimal?)null;
+                return new DashboardBarraDisciplinaDto(d.Nome, media);
+            })
+            .OrderByDescending(x => x.Media.HasValue)
+            .ThenByDescending(x => x.Media)
+            .ToList();
+    }
+
+    // Filtros compartilhados pelos cards que mostram o período selecionado (turma, disciplina, professor e
+    // trimestre) a partir dos lançamentos de nota do ano. O vínculo com a turma passa pelo aluno, porque
+    // NotaListItemDto não guarda o TurmaId diretamente.
+    private static IEnumerable<NotaListItemDto> AplicarFiltrosNota(
+        DashboardFiltroDto filtro,
+        IReadOnlyList<AlunoListItemDto> alunos,
+        IReadOnlyList<NotaListItemDto> notasAno,
+        TurmaListItemDto? turmaSelecionada,
+        DisciplinaListItemDto? disciplinaSelecionada,
+        ProfessorListItemDto? professorSelecionado)
+    {
+        IEnumerable<NotaListItemDto> filtradas = filtro.Trimestre.HasValue
+            ? notasAno.Where(n => n.Trimestre == filtro.Trimestre.Value)
+            : notasAno;
+
+        if (turmaSelecionada is not null)
+        {
+            var alunosDaTurma = alunos.Where(a => a.TurmaId == turmaSelecionada.Id).Select(a => a.Id).ToHashSet();
+            filtradas = filtradas.Where(n => alunosDaTurma.Contains(n.AlunoId));
+        }
+
+        if (disciplinaSelecionada is not null)
+        {
+            filtradas = filtradas.Where(n => n.DisciplinaId == disciplinaSelecionada.Id);
+        }
 
         if (professorSelecionado is not null)
         {
-            baseParaBarras = baseParaBarras.Where(r => string.Equals(r.ProfessorNome, professorSelecionado.NomeCompleto, StringComparison.OrdinalIgnoreCase));
+            filtradas = filtradas.Where(n => n.ProfessorId == professorSelecionado.Id);
         }
 
-        return baseParaBarras
-            .GroupBy(r => r.Disciplina)
-            .Select(g => new DashboardBarraDisciplinaDto(g.Key, Math.Round(g.Average(x => x.MediaFinal), 1)))
-            .OrderByDescending(x => x.Media)
-            .ToList();
+        return filtradas;
     }
 
     private static IReadOnlyList<DashboardEvolucaoTrimestreDto> CalcularEvolucaoTrimestres(
@@ -285,31 +399,5 @@ public sealed class DashboardService : IDashboardService
         var heatmapDisciplinas = pares.Select(p => p.Disciplina.Nome).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
 
         return (heatmapTurmas, heatmapDisciplinas, celulas);
-    }
-
-    private static IEnumerable<ResultadoAcademicoDto> AplicarFiltrosResultado(
-        IReadOnlyList<ResultadoAcademicoDto> resultados,
-        TurmaListItemDto? turmaSelecionada,
-        DisciplinaListItemDto? disciplinaSelecionada,
-        ProfessorListItemDto? professorSelecionado)
-    {
-        IEnumerable<ResultadoAcademicoDto> filtrados = resultados;
-
-        if (turmaSelecionada is not null)
-        {
-            filtrados = filtrados.Where(r => string.Equals(r.Turma, turmaSelecionada.Nome, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (disciplinaSelecionada is not null)
-        {
-            filtrados = filtrados.Where(r => r.DisciplinaId == disciplinaSelecionada.Id);
-        }
-
-        if (professorSelecionado is not null)
-        {
-            filtrados = filtrados.Where(r => string.Equals(r.ProfessorNome, professorSelecionado.NomeCompleto, StringComparison.OrdinalIgnoreCase));
-        }
-
-        return filtrados;
     }
 }

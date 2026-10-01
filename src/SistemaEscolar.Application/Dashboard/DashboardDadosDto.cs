@@ -13,9 +13,11 @@ public sealed record DashboardDonutDto(
     int Pendentes,
     int Total);
 
+// Media nula = disciplina da série da turma que ainda não tem nenhum lançamento no período filtrado
+// (sem isso, a disciplina simplesmente não apareceria no gráfico).
 public sealed record DashboardBarraDisciplinaDto(
     string Disciplina,
-    decimal Media);
+    decimal? Media);
 
 public sealed record DashboardEvolucaoTrimestreDto(
     int Trimestre,

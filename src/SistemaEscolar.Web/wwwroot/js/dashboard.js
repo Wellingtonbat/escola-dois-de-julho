@@ -86,6 +86,14 @@ if (dashKpis) {
 
     const barras = dados.mediasPorDisciplina
       .map((item, indice) => {
+        if (item.media === null || item.media === undefined) {
+          return `
+            <div class="bar-col">
+              <span class="bar-col-value text-muted">—</span>
+              <div class="bar-col-fill bar-col-fill-vazia"></div>
+              <span class="bar-col-label" title="Sem lançamento neste período">${escaparHtml(item.disciplina)}</span>
+            </div>`;
+        }
         const altura = Math.max(0, Math.min(100, (item.media / 10) * 100));
         const cor = PALETA_BARRAS[indice % PALETA_BARRAS.length];
         return `
