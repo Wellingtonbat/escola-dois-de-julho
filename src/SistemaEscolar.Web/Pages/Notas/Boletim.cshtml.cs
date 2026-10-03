@@ -203,7 +203,7 @@ public sealed class BoletimModel : PageModel
         AtencaoCount = categorias.Count(x => x == "atencao");
         NaoIniciadoCount = categorias.Count(x => x == "naoIniciado");
 
-        Arcos = ConstruirArcos(categorias);
+        Arcos = ConstruirArcos(categorias.Count, EmDiaCount, AtencaoCount, NaoIniciadoCount);
 
         return Page();
     }
@@ -671,25 +671,47 @@ public sealed class BoletimModel : PageModel
 
     private static NotaCalculo.Resultado Calcular(NotaListItemDto? nota) => NotaCalculo.Calcular(nota);
 
-    private static IReadOnlyList<ArcoVm> ConstruirArcos(IReadOnlyList<string> categorias)
+    // Um arco por categoria (Em dia / Atenção / Não iniciada), com comprimento proporcional à
+    // contagem de disciplinas em cada uma — não um arco por disciplina. Antes, cada disciplina virava
+    // uma fatia própria do mesmo tamanho, então o anel mostrava N fatias de cores misturadas (uma por
+    // disciplina) em vez de 3 arcos proporcionais às categorias, o que não deixava a proporção legível.
+    private static IReadOnlyList<ArcoVm> ConstruirArcos(int totalDisciplinas, int emDiaCount, int atencaoCount, int naoIniciadoCount)
     {
-        if (categorias.Count == 0)
+        if (totalDisciplinas == 0)
         {
             return Array.Empty<ArcoVm>();
         }
 
-        var cores = new Dictionary<string, string> { ["emDia"] = "#1fb980", ["atencao"] = "#ef4ea8", ["naoIniciado"] = "#d8dae6" };
+        var contagens = new (string Categoria, string Cor, int Quantidade)[]
+        {
+            ("emDia", "#1fb980", emDiaCount),
+            ("atencao", "#ef4ea8", atencaoCount),
+            ("naoIniciado", "#d8dae6", naoIniciadoCount),
+        }.Where(x => x.Quantidade > 0).ToList();
+
         const double raio = 42;
         var circunferencia = 2 * Math.PI * raio;
-        var segmento = circunferencia / categorias.Count;
         const double vao = 6;
+        var temMaisDeUmSegmento = contagens.Count > 1;
 
-        return categorias
-            .Select((categoria, indice) => new ArcoVm(
-                cores[categoria],
-                $"{Math.Max(segmento - vao, 4).ToString("0.0", CultureInfo.InvariantCulture)} {circunferencia.ToString("0.0", CultureInfo.InvariantCulture)}",
-                (-(indice * segmento)).ToString("0.0", CultureInfo.InvariantCulture)))
-            .ToList();
+        var arcos = new List<ArcoVm>();
+        var acumulado = 0.0;
+        foreach (var (_, cor, quantidade) in contagens)
+        {
+            var comprimentoProporcional = circunferencia * quantidade / totalDisciplinas;
+            var comprimentoDesenhado = temMaisDeUmSegmento
+                ? Math.Max(comprimentoProporcional - vao, 2)
+                : comprimentoProporcional;
+
+            arcos.Add(new ArcoVm(
+                cor,
+                $"{comprimentoDesenhado.ToString("0.0", CultureInfo.InvariantCulture)} {circunferencia.ToString("0.0", CultureInfo.InvariantCulture)}",
+                (-acumulado).ToString("0.0", CultureInfo.InvariantCulture)));
+
+            acumulado += comprimentoProporcional;
+        }
+
+        return arcos;
     }
 
     private static string FormatarEntrada(decimal? valor) =>
