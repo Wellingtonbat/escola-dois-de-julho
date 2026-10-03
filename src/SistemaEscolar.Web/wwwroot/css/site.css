@@ -1195,6 +1195,19 @@ table.grade-sheet {
   height: 1.2rem;
 }
 
+/* Cores semânticas para kpi-icon fora da sequência padrão (ex.: Resultados: Aprovados/Reprovados/Pendentes) */
+.kpi-icon-approved {
+  background: var(--status-approved-dot);
+}
+
+.kpi-icon-danger {
+  background: var(--status-failed-dot);
+}
+
+.kpi-icon-pending {
+  background: var(--status-pending-dot);
+}
+
 /* Painel de filtros padrão para telas de listagem (Alunos, Turmas, Notas, Resultados, Atas, etc.):
    cartão com cabeçalho de identidade (badge em gradiente + contagem de filtros ativos), campos
    compactos e chips removíveis dos filtros aplicados. */
@@ -1641,7 +1654,7 @@ table.grade-sheet {
 
 /* Resultados: cabeçalho de agrupamento por disciplina */
 .disciplina-group-row td {
-  background: linear-gradient(90deg, rgba(50, 103, 246, 0.06), rgba(31, 185, 128, 0.05));
+  background: linear-gradient(90deg, rgba(39, 72, 217, 0.06), rgba(11, 127, 114, 0.05));
   padding: 0.7rem 0.85rem;
 }
 

@@ -18,8 +18,8 @@
             <p class="text-muted mb-0">@(Model.Periodo?.Trimestre)º Trimestre — @Model.Periodo?.DataInicial.ToString("dd/MM/yyyy") a @Model.Periodo?.DataFinal.ToString("dd/MM/yyyy")</p>
             <div class="d-flex flex-wrap gap-2 mt-2">
                 <span class="meta-tag"><strong>@Model.TotalAlunos</strong>&nbsp;alunos</span>
-                <span class="meta-tag" style="display:inline-flex;align-items:center;gap:.35rem;"><span class="legend-dot" style="background:#1fb980"></span><strong>@Model.LancadosCount</strong>&nbsp;lançados</span>
-                <span class="meta-tag" style="display:inline-flex;align-items:center;gap:.35rem;"><span class="legend-dot" style="background:#f2b400"></span><strong>@Model.PendentesCount</strong>&nbsp;pendentes</span>
+                <span class="meta-tag" style="display:inline-flex;align-items:center;gap:.35rem;"><span class="legend-dot" style="background:var(--status-approved-dot)"></span><strong>@Model.LancadosCount</strong>&nbsp;lançados</span>
+                <span class="meta-tag" style="display:inline-flex;align-items:center;gap:.35rem;"><span class="legend-dot" style="background:var(--status-pending-dot)"></span><strong>@Model.PendentesCount</strong>&nbsp;pendentes</span>
             </div>
         </div>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#lancamentoMassaModal">Trocar seleção</button>
