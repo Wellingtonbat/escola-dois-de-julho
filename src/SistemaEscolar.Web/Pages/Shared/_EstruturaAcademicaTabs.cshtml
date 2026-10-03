@@ -1,0 +1,20 @@
+@* Faixa de abas do hub "Estrutura Acadêmica": cada aba é uma página própria (URL e dados
+   independentes); o Model indica qual delas está ativa. *@
+@model string
+@{
+    var abas = new (string Chave, string Rotulo, string Pagina)[]
+    {
+        ("Turmas", "Turmas", "/Turmas/Index"),
+        ("Series", "Séries", "/Series/Index"),
+        ("Disciplinas", "Disciplinas", "/Disciplinas/Index"),
+        ("Professores", "Professores", "/Professores/Index"),
+        ("Periodos", "Períodos", "/Periodos/Index"),
+    };
+}
+<p class="panel-tabs-eyebrow">Estrutura Acadêmica</p>
+<div class="panel-tabs mb-3">
+    @foreach (var aba in abas)
+    {
+        <a asp-page="@aba.Pagina" class="panel-tab @(aba.Chave == Model ? "active" : null)">@aba.Rotulo</a>
+    }
+</div>

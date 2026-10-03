@@ -451,6 +451,54 @@ body.app-body {
   box-shadow: 0 0.3rem 0.7rem rgba(50, 103, 246, 0.3);
 }
 
+/* Faixa de abas de um "hub" de páginas (ex.: Estrutura Acadêmica: Turmas/Séries/Disciplinas/
+   Professores/Períodos) — cada aba navega para uma página própria, com URL e dados independentes;
+   a navegação só parece uma aba única. Mesmo padrão visual do trimestre-tabs, generalizado. */
+.panel-tabs {
+  display: flex;
+  gap: 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0.7rem;
+  padding: 0.3rem;
+  box-shadow: var(--shadow-soft);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panel-tab {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-block;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.panel-tab:hover {
+  color: var(--text-main);
+}
+
+.panel-tab.active {
+  background: linear-gradient(135deg, var(--brand), var(--accent-cyan));
+  color: #fff;
+  box-shadow: 0 0.3rem 0.7rem rgba(50, 103, 246, 0.3);
+}
+
+.panel-tabs-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
 .hint-inline {
   font-size: 0.78rem;
   color: var(--text-muted);

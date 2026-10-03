@@ -27,6 +27,7 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
     var professoresActive = currentPath.StartsWith("/Professores", StringComparison.OrdinalIgnoreCase);
     var turmasActive = currentPath.StartsWith("/Turmas", StringComparison.OrdinalIgnoreCase);
     var seriesActive = currentPath.StartsWith("/Series", StringComparison.OrdinalIgnoreCase);
+    var estruturaAcademicaActive = disciplinasActive || periodosActive || professoresActive || turmasActive || seriesActive;
     var notasActive = currentPath.StartsWith("/Notas", StringComparison.OrdinalIgnoreCase);
     var resultadosActive = currentPath.StartsWith("/Resultados", StringComparison.OrdinalIgnoreCase);
     var usuariosActive = currentPath.StartsWith("/Usuarios", StringComparison.OrdinalIgnoreCase);
@@ -89,35 +90,11 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
                         </span>
                         <span class="sidebar-link-label">Alunos</span>
                     </a>
-                    <a asp-page="/Disciplinas/Index" class="sidebar-link @(disciplinasActive ? "active" : null)">
+                    <a asp-page="/Turmas/Index" class="sidebar-link @(estruturaAcademicaActive ? "active" : null)">
                         <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.75A1.75 1.75 0 0 1 3.75 1H8v14H3.75A1.75 1.75 0 0 1 2 13.25V2.75Z" /><path d="M8 1h4.25A1.75 1.75 0 0 1 14 2.75v10.5A1.75 1.75 0 0 1 12.25 15H8V1Z" opacity=".55" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0 1 3.5l7 3.5 7-3.5L8 0ZM1 6.5v5.4l7 3.6 7-3.6V6.5L8 10 1 6.5Z" /></svg>
                         </span>
-                        <span class="sidebar-link-label">Disciplinas</span>
-                    </a>
-                    <a asp-page="/Periodos/Index" class="sidebar-link @(periodosActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5ZM1 4h14v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Períodos</span>
-                    </a>
-                    <a asp-page="/Professores/Index" class="sidebar-link @(professoresActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2 1H6a4 4 0 0 0-4 4v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1a4 4 0 0 0-4-4Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Professores</span>
-                    </a>
-                    <a asp-page="/Turmas/Index" class="sidebar-link @(turmasActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M6 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm4.5-1a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 9c-2.5 0-5 1.2-5 3v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1c0-1.8-2.5-3-5-3Zm7 0c-.4 0-.9.05-1.3.15C12.5 9.8 13 10.8 13 12v1h2a1 1 0 0 0 1-1v-1c0-1.5-2-3-4-3Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Turmas</span>
-                    </a>
-                    <a asp-page="/Series/Index" class="sidebar-link @(seriesActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M1 13h2v2H1v-2Zm4-4h2v6H5V9Zm4-3h2v9H9V6Zm4-4h2v13h-2V2Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Séries</span>
+                        <span class="sidebar-link-label">Estrutura Acadêmica</span>
                     </a>
                 }
                 <a asp-page="/Notas/Index" class="sidebar-link @(notasActive ? "active" : null)">

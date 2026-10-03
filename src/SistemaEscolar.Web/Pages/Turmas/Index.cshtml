@@ -2,7 +2,7 @@
 @model SistemaEscolar.Web.Pages.Turmas.IndexModel
 @{
     ViewData["Title"] = "Turmas";
-    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Turmas" };
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Estrutura Acadêmica", "Turmas" };
     var podeGerenciar = User.EhGestao();
 
     var serieSelecionadaNome = Model.SerieId.HasValue
@@ -16,6 +16,8 @@
     if (Model.AnoLetivo.HasValue) { filtrosAtivos.Add(($"Ano: {Model.AnoLetivo}", "AnoLetivo")); }
     if (statusLabel is not null) { filtrosAtivos.Add((statusLabel, "Status")); }
 }
+
+<partial name="Shared/_EstruturaAcademicaTabs" model="@("Turmas")" />
 
 <section class="panel">
     <div class="panel-header d-flex justify-content-between align-items-center">

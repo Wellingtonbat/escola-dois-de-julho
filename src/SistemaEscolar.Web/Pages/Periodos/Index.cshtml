@@ -3,7 +3,7 @@
 @model SistemaEscolar.Web.Pages.Periodos.IndexModel
 @{
     ViewData["Title"] = "Períodos";
-    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Períodos" };
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Estrutura Acadêmica", "Períodos" };
     var podeGerenciar = User.EhGestao();
     var podeAbrirFecharPeriodo = User.PodeAbrirFecharPeriodo();
     var hoje = DateTime.UtcNow;
@@ -15,6 +15,8 @@
     if (trimestreLabel is not null) { filtrosAtivos.Add((trimestreLabel, "Trimestre")); }
     if (statusLabel is not null) { filtrosAtivos.Add((statusLabel, "Status")); }
 }
+
+<partial name="Shared/_EstruturaAcademicaTabs" model="@("Periodos")" />
 
 <section class="panel">
     <div class="panel-header d-flex justify-content-between align-items-center">

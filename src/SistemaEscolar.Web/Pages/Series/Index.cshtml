@@ -2,7 +2,7 @@
 @model SistemaEscolar.Web.Pages.Series.IndexModel
 @{
     ViewData["Title"] = "Séries";
-    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Séries" };
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Estrutura Acadêmica", "Séries" };
     var podeGerenciar = User.EhGestao();
 
     var statusLabel = Model.Status switch { "ativas" => "Apenas ativas", "inativas" => "Apenas inativas", _ => null };
@@ -10,6 +10,8 @@
     if (!string.IsNullOrWhiteSpace(Model.Busca)) { filtrosAtivos.Add(($"Busca: {Model.Busca}", "Busca")); }
     if (statusLabel is not null) { filtrosAtivos.Add((statusLabel, "Status")); }
 }
+
+<partial name="Shared/_EstruturaAcademicaTabs" model="@("Series")" />
 
 <section class="panel">
     <div class="panel-header d-flex justify-content-between align-items-center">
