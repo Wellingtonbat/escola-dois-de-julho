@@ -281,6 +281,14 @@ body.app-body {
     rgba(31, 185, 128, 0.05)
   );
   padding: 1rem 1.25rem;
+  /* Com vários botões de ação (ex.: "Abrir Boletim", "Lançamento em Massa"), o cabeçalho e o grupo
+     de botões precisam quebrar linha no mobile — sem isso eles estouram a largura da tela. */
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.panel-header .d-flex {
+  flex-wrap: wrap;
 }
 
 .panel-body {
