@@ -14,10 +14,12 @@ public sealed class DetalheModel : PageModel
     private static readonly CultureInfo PtBr = new("pt-BR");
 
     private readonly IAtaService _ataService;
+    private readonly IWebHostEnvironment _environment;
 
-    public DetalheModel(IAtaService ataService)
+    public DetalheModel(IAtaService ataService, IWebHostEnvironment environment)
     {
         _ataService = ataService;
+        _environment = environment;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -101,12 +103,16 @@ public sealed class DetalheModel : PageModel
             return RedirectToPage("/Atas/Detalhe", new { id = Id });
         }
 
-        var pdfBytes = GerarPdf(ata);
+        var brasaoPath = Path.Combine(_environment.WebRootPath, "pdf-assets", "brasao-prefeitura-salvador.jpg");
+        var brasaoBytes = System.IO.File.ReadAllBytes(brasaoPath);
+        var pdfBytes = GerarPdf(ata, brasaoBytes);
         var nomeArquivo = $"ata-{ata.TurmaNome}-{ata.AnoLetivo}.pdf".Replace(" ", "-").ToLowerInvariant();
         return File(pdfBytes, "application/pdf", nomeArquivo);
     }
 
-    private static byte[] GerarPdf(AtaDetalheDto ata)
+    private const string EscolaCodigoNome = "1046 - ESCOLA MUNICIPAL 2 DE JULHO";
+
+    private static byte[] GerarPdf(AtaDetalheDto ata, byte[] brasaoBytes)
     {
         QuestPDF.Settings.License = LicenseType.Community;
 
@@ -122,29 +128,44 @@ public sealed class DetalheModel : PageModel
                 {
                     col.Item().Row(row =>
                     {
-                        row.RelativeItem().Column(esquerda =>
-                        {
-                            esquerda.Item().Text("Escola Municipal 2 de Julho").Bold().FontSize(13);
-                            esquerda.Item().Text("Secretaria Municipal de Educação - Salvador, Bahia");
-                            esquerda.Item().Text("Ata de Resultados Finais");
-                        });
+                        row.ConstantItem(170).Image(brasaoBytes).FitWidth();
 
-                        row.RelativeItem().Column(direita =>
+                        row.RelativeItem().AlignRight().AlignMiddle().Column(direita =>
                         {
-                            direita.Item().AlignRight().Text($"{ata.TurmaNome}").Bold().FontSize(12);
-                            direita.Item().AlignRight().Row(pills =>
+                            if (ata.FinalizadaEmUtc.HasValue)
                             {
-                                pills.Spacing(4);
-                                pills.AutoItem().Element(PillStyle).Text(ata.SerieNome);
-                                pills.AutoItem().Element(PillStyle).Text($"Ano letivo {ata.AnoLetivo}");
-                                if (ata.FinalizadaEmUtc.HasValue)
-                                {
-                                    pills.AutoItem().Element(PillStyle).Text($"Finalizada em {ata.FinalizadaEmUtc.Value:dd/MM/yyyy}");
-                                }
-                            });
+                                direita.Item().AlignRight().Text($"Finalizada em {ata.FinalizadaEmUtc.Value:dd/MM/yyyy}")
+                                    .FontSize(7.5f).FontColor(Colors.Grey.Darken1);
+                            }
+                            direita.Item().AlignRight().Text("ATA DE RESULTADOS FINAIS").Bold().FontSize(13);
                         });
                     });
-                    col.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
+
+                    col.Item().PaddingTop(10).Row(row =>
+                    {
+                        row.RelativeItem().Text($"Escola: {EscolaCodigoNome}").FontSize(9);
+                        row.RelativeItem().AlignRight().Text($"Diretor/a: {ata.DiretorNome ?? string.Empty}").FontSize(9);
+                    });
+
+                    col.Item().PaddingTop(4).Row(row =>
+                    {
+                        row.RelativeItem().Text("Coordenador/a Pedagógico/a:").FontSize(9);
+                        row.RelativeItem().AlignRight().Text("Professor/a:").FontSize(9);
+                    });
+
+                    col.Item().PaddingTop(8).Text(t =>
+                    {
+                        t.DefaultTextStyle(x => x.FontSize(9));
+                        t.Span("Ao(s) ");
+                        t.Span("_______").Underline();
+                        t.Span(" dia(s) do mês de ");
+                        t.Span("_______________").Underline();
+                        t.Span(" do ano de ");
+                        t.Span(ata.AnoLetivo.ToString(CultureInfo.InvariantCulture)).Bold();
+                        t.Span($", encerrou-se o ano letivo programado para a turma do {ata.TurmaNome}, do Ensino Fundamental II Regular, turno {ata.Turno}, com os resultados constantes abaixo:");
+                    });
+
+                    col.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
                 });
 
                 page.Content().PaddingTop(10).Table(table =>
@@ -212,9 +233,6 @@ public sealed class DetalheModel : PageModel
             });
         }).GeneratePdf();
     }
-
-    private static IContainer PillStyle(IContainer container) =>
-        container.Background(Colors.Grey.Lighten3).PaddingVertical(2).PaddingHorizontal(6).DefaultTextStyle(x => x.FontSize(8).SemiBold());
 
     private static IContainer CabecalhoPrincipal(IContainer container) =>
         container.Background(Colors.Grey.Lighten2).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(3).DefaultTextStyle(x => x.Bold().FontSize(7.5f));

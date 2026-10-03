@@ -3,6 +3,7 @@ using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Resultados;
 using SistemaEscolar.Application.Turmas;
+using SistemaEscolar.Application.Usuarios;
 using SistemaEscolar.Domain.Entities;
 
 namespace SistemaEscolar.Application.Atas;
@@ -18,6 +19,7 @@ public sealed class AtaService : IAtaService
     private readonly IResultadoAcademicoService _resultadoAcademicoService;
     private readonly IDisciplinaService _disciplinaService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUsuarioService _usuarioService;
 
     public AtaService(
         IAtaRepository ataRepository,
@@ -25,7 +27,8 @@ public sealed class AtaService : IAtaService
         IAlunoService alunoService,
         IResultadoAcademicoService resultadoAcademicoService,
         IDisciplinaService disciplinaService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUsuarioService usuarioService)
     {
         _ataRepository = ataRepository;
         _turmaService = turmaService;
@@ -33,6 +36,7 @@ public sealed class AtaService : IAtaService
         _resultadoAcademicoService = resultadoAcademicoService;
         _disciplinaService = disciplinaService;
         _currentUserService = currentUserService;
+        _usuarioService = usuarioService;
     }
 
     public async Task<IReadOnlyList<AtaListItemDto>> ListarAsync(int? anoLetivo = null, CancellationToken cancellationToken = default)
@@ -228,18 +232,32 @@ public sealed class AtaService : IAtaService
             ? PermissoesPerfil.PodeAcessarAtas(_currentUserService.IsInRole)
             : PermissoesPerfil.PodeEditarAtaFinalizada(_currentUserService.IsInRole);
 
+        var diretorNome = await ObterDiretorNomeAsync(cancellationToken);
+
         return new AtaDetalheDto(
             ata.Id,
             ata.TurmaId,
             turma.Nome,
             turma.SerieNome,
             turma.AnoLetivo,
+            turma.Turno,
+            diretorNome,
             ata.Status,
             podeEditar,
             ata.FinalizadaEmUtc,
             ata.FinalizadaPorNome,
             disciplinasColunas,
             itens);
+    }
+
+    // Usada no cabeçalho da Ata em PDF. Prioriza o Diretor; sem Diretor cadastrado, usa o Vice-Diretor
+    // (mesmas permissões). Se houver mais de um, usa o primeiro por nome.
+    private async Task<string?> ObterDiretorNomeAsync(CancellationToken cancellationToken)
+    {
+        var usuarios = await _usuarioService.ListarAsync(cancellationToken);
+        var diretor = usuarios.FirstOrDefault(x => x.Perfil == Perfis.Diretor)
+            ?? usuarios.FirstOrDefault(x => x.Perfil == Perfis.ViceDiretor);
+        return diretor?.NomeCompleto;
     }
 
     public async Task<AtaResult> SalvarMatriculaAsync(Guid ataAlunoId, string? matriculaPrefeitura, CancellationToken cancellationToken = default)

@@ -49,6 +49,8 @@ public sealed record AtaDetalheDto(
     string TurmaNome,
     string SerieNome,
     int AnoLetivo,
+    string Turno,
+    string? DiretorNome,
     string Status,
     bool PodeEditar,
     DateTime? FinalizadaEmUtc,
