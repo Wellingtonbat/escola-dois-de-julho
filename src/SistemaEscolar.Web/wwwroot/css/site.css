@@ -357,38 +357,118 @@ body.app-body {
   color: var(--text-support);
 }
 
+/* Botões — nota: o bloco de filtros (.filter-*) reaproveita .btn-primary/.btn-outline-secondary nos
+   seus botões "Filtrar"/"Limpar", então eles também herdam este visual (esperado: só a aparência do
+   botão em si muda, nada do layout/markup do filtro foi tocado). */
+.btn {
+  border-radius: var(--radius-field);
+  min-height: var(--control-min-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.btn-sm {
+  min-height: 2.25rem;
+  font-size: 0.85rem;
+}
+
 .btn-primary {
-  background: linear-gradient(135deg, var(--brand), var(--accent-cyan));
-  border-color: transparent;
-  box-shadow: 0 0.35rem 0.8rem rgba(50, 103, 246, 0.25);
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: none;
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-  background: linear-gradient(135deg, #2e5ee2, #0094ba);
-  border-color: transparent;
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+  color: #fff;
+}
+
+.btn-outline-secondary {
+  background: var(--surface);
+  border-color: var(--border-field);
+  color: var(--ink);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+  background: var(--surface-muted);
+  border-color: var(--border-field);
+  color: var(--ink);
+}
+
+.btn-outline-primary {
+  background: var(--surface);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.btn-outline-danger {
+  background: var(--surface);
+  border-color: #e8b7ac;
+  color: var(--status-failed-text);
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+  background: var(--status-failed-bg);
+  border-color: #e8b7ac;
+  color: var(--status-failed-text);
+}
+
+.btn-outline-success {
+  background: var(--surface);
+  border-color: #9bd6c9;
+  color: var(--status-approved-text);
+}
+
+.btn-outline-success:hover,
+.btn-outline-success:focus {
+  background: var(--status-approved-bg);
+  border-color: #9bd6c9;
+  color: var(--status-approved-text);
+}
+
+.btn-dark {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.btn-dark:hover,
+.btn-dark:focus {
+  background: #16254f;
+  border-color: #16254f;
+  color: #fff;
 }
 
 .page-wrap {
-  padding: 1.5rem;
+  padding: 2rem 2.5rem;
 }
 
 .panel {
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 0.9rem;
-  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+  box-shadow: none;
   overflow: hidden;
 }
 
 .panel-header {
   border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(
-    90deg,
-    rgba(50, 103, 246, 0.06),
-    rgba(31, 185, 128, 0.05)
-  );
-  padding: 1rem 1.25rem;
+  background: var(--surface-muted);
+  padding: 1.25rem 1.5rem;
   /* Com vários botões de ação (ex.: "Abrir Boletim", "Lançamento em Massa"), o cabeçalho e o grupo
      de botões precisam quebrar linha no mobile — sem isso eles estouram a largura da tela. */
   flex-wrap: wrap;
@@ -416,49 +496,93 @@ body.app-body {
 .table-sneat th,
 .table-sneat td {
   padding: 0.8rem 0.85rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #edf0f6;
   font-size: 0.88rem;
   white-space: nowrap;
 }
 
 .table-sneat thead th {
-  color: #4c4f67;
-  font-weight: 600;
-  font-size: 0.76rem;
+  color: var(--text-support);
+  font-weight: 700;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: #f8faff;
+  background: var(--surface-muted);
 }
 
 .table-sneat tbody tr:hover {
-  background: #f4f8ff;
+  background: var(--surface-muted);
 }
 
+/* Chip de status: sempre ponto + texto (nunca só cor) — o ponto é desenhado via ::before para não
+   precisar alterar o markup de cada tela que já usa .status-pill. */
 .status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   border-radius: 999px;
   font-size: 0.74rem;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   font-weight: 600;
+  line-height: 1.5;
+}
+
+.status-pill::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
 }
 
 .status-pill.status-open {
-  background: #ddf8ec;
-  color: #107149;
+  background: var(--status-approved-bg);
+  color: var(--status-approved-text);
+}
+
+.status-pill.status-open::before {
+  background: var(--status-approved-dot);
 }
 
 .status-pill.status-warn {
-  background: #fff1d7;
-  color: #9b5f00;
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.status-pill.status-warn::before {
+  background: var(--status-pending-dot);
 }
 
 .status-pill.status-danger {
-  background: #ffe3ea;
-  color: #b42356;
+  background: var(--status-failed-bg);
+  color: var(--status-failed-text);
+}
+
+.status-pill.status-danger::before {
+  background: var(--status-failed-dot);
 }
 
 .status-pill.status-neutral {
-  background: #eef0f6;
-  color: var(--text-muted);
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-text);
+}
+
+.status-pill.status-neutral::before {
+  background: var(--text-muted);
+}
+
+/* Faixa de aviso (ex.: período de lançamento aberto manualmente além da data final) — única
+   ocorrência de .alert-danger no projeto, por isso o override aqui vale globalmente para ela. */
+.alert-danger {
+  background: var(--warning-banner-bg);
+  border: 1px solid var(--warning-banner-border);
+  color: var(--status-pending-text);
+  border-radius: var(--radius-field);
+}
+
+.alert-danger svg {
+  color: var(--status-pending-dot);
 }
 
 /* Boletim do Aluno */
@@ -665,12 +789,15 @@ body.app-body {
 
 .field-input {
   width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
+  min-height: var(--control-min-height);
+  box-sizing: border-box;
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-field);
   padding: 0.4rem 0.55rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
   background: var(--surface);
   text-align: center;
 }
@@ -678,7 +805,7 @@ body.app-body {
 .field-input:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(50, 103, 246, 0.15);
+  box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
 .field-input:disabled,
@@ -927,12 +1054,15 @@ table.grade-sheet {
 
 .cell-input {
   width: 3.4rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.4rem;
+  min-height: var(--control-min-height);
+  box-sizing: border-box;
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-field);
   padding: 0.32rem 0.2rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
   background: var(--surface);
   text-align: center;
 }
@@ -940,7 +1070,7 @@ table.grade-sheet {
 .cell-input:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(50, 103, 246, 0.15);
+  box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
 .cell-input:disabled,
@@ -996,35 +1126,9 @@ table.grade-sheet {
 .kpi-card {
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  padding: 1rem;
+  border-radius: var(--radius-card);
+  padding: 1.1rem 1.25rem;
   position: relative;
-  isolation: isolate;
-}
-
-.kpi-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0.14;
-  z-index: -1;
-}
-
-.kpi-card:nth-child(1)::before {
-  background: linear-gradient(135deg, var(--brand), #8db1ff);
-}
-
-.kpi-card:nth-child(2)::before {
-  background: linear-gradient(135deg, var(--accent-green), #9de7ca);
-}
-
-.kpi-card:nth-child(3)::before {
-  background: linear-gradient(135deg, var(--accent-orange), #ffd2b1);
-}
-
-.kpi-card:nth-child(4)::before {
-  background: linear-gradient(135deg, var(--accent-pink), #ffc0e6);
 }
 
 .kpi-label {
@@ -1035,9 +1139,12 @@ table.grade-sheet {
 }
 
 .kpi-value {
-  font-size: 1.45rem;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
   font-weight: 700;
-  color: var(--text-main);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .app-footer {
@@ -1068,19 +1175,19 @@ table.grade-sheet {
 }
 
 .kpi-card:nth-child(1) .kpi-icon {
-  background: linear-gradient(135deg, var(--brand), var(--accent-cyan));
+  background: var(--brand);
 }
 
 .kpi-card:nth-child(2) .kpi-icon {
-  background: linear-gradient(135deg, var(--accent-green), #17a06f);
+  background: var(--status-approved-dot);
 }
 
 .kpi-card:nth-child(3) .kpi-icon {
-  background: linear-gradient(135deg, var(--accent-orange), #ff7014);
+  background: var(--accent-amber);
 }
 
 .kpi-card:nth-child(4) .kpi-icon {
-  background: linear-gradient(135deg, var(--accent-pink), #d6338c);
+  background: var(--status-failed-dot);
 }
 
 .kpi-icon svg {
