@@ -4,6 +4,17 @@
     ViewData["Title"] = "Turmas";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Turmas" };
     var podeGerenciar = User.EhGestao();
+
+    var serieSelecionadaNome = Model.SerieId.HasValue
+        ? Model.Series.FirstOrDefault(s => s.Value == Model.SerieId.Value.ToString())?.Text
+        : null;
+    var statusLabel = Model.Status switch { "ativas" => "Apenas ativas", "inativas" => "Apenas inativas", _ => null };
+
+    var filtrosAtivos = new List<(string Label, string Campo)>();
+    if (!string.IsNullOrWhiteSpace(Model.Busca)) { filtrosAtivos.Add(($"Busca: {Model.Busca}", "Busca")); }
+    if (serieSelecionadaNome is not null) { filtrosAtivos.Add(($"Série: {serieSelecionadaNome}", "SerieId")); }
+    if (Model.AnoLetivo.HasValue) { filtrosAtivos.Add(($"Ano: {Model.AnoLetivo}", "AnoLetivo")); }
+    if (statusLabel is not null) { filtrosAtivos.Add((statusLabel, "Status")); }
 }
 
 <section class="panel">
@@ -18,35 +29,75 @@
         }
     </div>
     <div class="panel-body">
-        <form method="get" class="row g-2 mb-3">
-            <input type="hidden" name="PageNumber" value="1" />
-            <div class="col-12 col-md-5">
-                <input asp-for="Busca" class="form-control" placeholder="Buscar por nome, série ou turno" />
+        <div class="filter-panel">
+            <div class="filter-panel-header">
+                <span class="filter-icon-badge" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 2.5A.5.5 0 0 1 2 2h12a.5.5 0 0 1 .4.8L10 8.9V13.5a.5.5 0 0 1-.74.44l-2-1.1a.5.5 0 0 1-.26-.44V8.9L1.6 2.8a.5.5 0 0 1-.1-.3Z" /></svg>
+                </span>
+                <span class="filter-panel-title">Filtros</span>
+                @if (filtrosAtivos.Count > 0)
+                {
+                    <span class="filter-active-count">@filtrosAtivos.Count ativo@(filtrosAtivos.Count > 1 ? "s" : "")</span>
+                }
             </div>
-            <div class="col-12 col-md-2">
-                <select asp-for="SerieId" class="form-select" title="Filtrar por série">
-                    <option value="">Todas as séries</option>
-                    @foreach (var serie in Model.Series)
+            <form method="get" class="filter-bar">
+                <input type="hidden" name="PageNumber" value="1" />
+                <div class="filter-field filter-field-wide">
+                    <label for="turmas-busca">Buscar</label>
+                    <div class="filter-input-icon">
+                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.74 10.33a6.5 6.5 0 1 0-1.41 1.41l3.47 3.47a1 1 0 0 0 1.41-1.41ZM12 6.5A5.5 5.5 0 1 1 6.5 1a5.5 5.5 0 0 1 5.5 5.5" /></svg>
+                        <input asp-for="Busca" id="turmas-busca" class="form-control" placeholder="Nome, série ou turno" />
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label for="turmas-serie">Série</label>
+                    <select asp-for="SerieId" id="turmas-serie" class="form-select" title="Filtrar por série">
+                        <option value="">Todas as séries</option>
+                        @foreach (var serie in Model.Series)
+                        {
+                            <option value="@serie.Value">@serie.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label for="turmas-ano">Ano letivo</label>
+                    <input asp-for="AnoLetivo" id="turmas-ano" type="number" class="form-control" placeholder="Ano" />
+                </div>
+                <div class="filter-field">
+                    <label>Status</label>
+                    <div class="filter-pill-group">
+                        <input type="radio" name="Status" id="turmas-status-todos" value="todos" class="filter-pill-input" checked="@(Model.Status == "todos")" />
+                        <label for="turmas-status-todos" class="filter-pill">Todos</label>
+                        <input type="radio" name="Status" id="turmas-status-ativas" value="ativas" class="filter-pill-input" checked="@(Model.Status == "ativas")" />
+                        <label for="turmas-status-ativas" class="filter-pill">Ativas</label>
+                        <input type="radio" name="Status" id="turmas-status-inativas" value="inativas" class="filter-pill-input" checked="@(Model.Status == "inativas")" />
+                        <label for="turmas-status-inativas" class="filter-pill">Inativas</label>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a asp-page="/Turmas/Index" class="btn btn-outline-secondary">Limpar</a>
+                </div>
+            </form>
+
+            @if (filtrosAtivos.Count > 0)
+            {
+                <div class="filter-chips">
+                    @foreach (var (label, campo) in filtrosAtivos)
                     {
-                        <option value="@serie.Value">@serie.Text</option>
+                        <span class="filter-chip">
+                            @label
+                            <a asp-page="/Turmas/Index"
+                               asp-route-Busca="@(campo == "Busca" ? null : Model.Busca)"
+                               asp-route-SerieId="@(campo == "SerieId" ? null : Model.SerieId)"
+                               asp-route-AnoLetivo="@(campo == "AnoLetivo" ? null : Model.AnoLetivo)"
+                               asp-route-Status="@(campo == "Status" ? "todos" : Model.Status)"
+                               title="Remover filtro">&times;</a>
+                        </span>
                     }
-                </select>
-            </div>
-            <div class="col-12 col-md-2">
-                <input asp-for="AnoLetivo" type="number" class="form-control" placeholder="Ano" />
-            </div>
-            <div class="col-12 col-md-2">
-                <select asp-for="Status" class="form-select">
-                    <option value="todos">Todos</option>
-                    <option value="ativas">Apenas ativas</option>
-                    <option value="inativas">Apenas inativas</option>
-                </select>
-            </div>
-            <div class="col-12 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a asp-page="/Turmas/Index" class="btn btn-outline-secondary">Limpar</a>
-            </div>
-        </form>
+                </div>
+            }
+        </div>
 
         <div class="panel-table-wrap">
             <table class="table-sneat">

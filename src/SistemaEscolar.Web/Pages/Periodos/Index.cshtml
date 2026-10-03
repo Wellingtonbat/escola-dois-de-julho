@@ -7,6 +7,13 @@
     var podeGerenciar = User.EhGestao();
     var podeAbrirFecharPeriodo = User.PodeAbrirFecharPeriodo();
     var hoje = DateTime.UtcNow;
+
+    var trimestreLabel = Model.Trimestre switch { 1 => "1° Trimestre", 2 => "2° Trimestre", 3 => "3° Trimestre", _ => null };
+    var statusLabel = Model.Status switch { "abertos" => "Abertos", "fechados" => "Fechados", _ => null };
+    var filtrosAtivos = new List<(string Label, string Campo)>();
+    if (Model.AnoLetivo.HasValue) { filtrosAtivos.Add(($"Ano: {Model.AnoLetivo}", "AnoLetivo")); }
+    if (trimestreLabel is not null) { filtrosAtivos.Add((trimestreLabel, "Trimestre")); }
+    if (statusLabel is not null) { filtrosAtivos.Add((statusLabel, "Status")); }
 }
 
 <section class="panel">
@@ -25,30 +32,69 @@
     </div>
 
     <div class="panel-body">
-        <form method="get" class="row g-2 mb-3">
-            <div class="col-12 col-md-2">
-                <input asp-for="AnoLetivo" type="number" class="form-control" placeholder="Ano" />
+        <div class="filter-panel">
+            <div class="filter-panel-header">
+                <span class="filter-icon-badge" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 2.5A.5.5 0 0 1 2 2h12a.5.5 0 0 1 .4.8L10 8.9V13.5a.5.5 0 0 1-.74.44l-2-1.1a.5.5 0 0 1-.26-.44V8.9L1.6 2.8a.5.5 0 0 1-.1-.3Z" /></svg>
+                </span>
+                <span class="filter-panel-title">Filtros</span>
+                @if (filtrosAtivos.Count > 0)
+                {
+                    <span class="filter-active-count">@filtrosAtivos.Count ativo@(filtrosAtivos.Count > 1 ? "s" : "")</span>
+                }
             </div>
-            <div class="col-12 col-md-2">
-                <select asp-for="Trimestre" class="form-select">
-                    <option value="">Todos trimestres</option>
-                    <option value="1">1o Trimestre</option>
-                    <option value="2">2o Trimestre</option>
-                    <option value="3">3o Trimestre</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-2">
-                <select asp-for="Status" class="form-select">
-                    <option value="todos">Todos</option>
-                    <option value="abertos">Abertos</option>
-                    <option value="fechados">Fechados</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-8 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a asp-page="/Periodos/Index" class="btn btn-outline-secondary">Limpar</a>
-            </div>
-        </form>
+            <form method="get" class="filter-bar">
+                <div class="filter-field">
+                    <label for="periodos-ano">Ano letivo</label>
+                    <input asp-for="AnoLetivo" id="periodos-ano" type="number" class="form-control" placeholder="Ano" />
+                </div>
+                <div class="filter-field">
+                    <label>Trimestre</label>
+                    <div class="filter-pill-group">
+                        <input type="radio" name="Trimestre" id="periodos-trim-todos" value="" class="filter-pill-input" checked="@(!Model.Trimestre.HasValue)" />
+                        <label for="periodos-trim-todos" class="filter-pill">Todos</label>
+                        <input type="radio" name="Trimestre" id="periodos-trim-1" value="1" class="filter-pill-input" checked="@(Model.Trimestre == 1)" />
+                        <label for="periodos-trim-1" class="filter-pill">1°</label>
+                        <input type="radio" name="Trimestre" id="periodos-trim-2" value="2" class="filter-pill-input" checked="@(Model.Trimestre == 2)" />
+                        <label for="periodos-trim-2" class="filter-pill">2°</label>
+                        <input type="radio" name="Trimestre" id="periodos-trim-3" value="3" class="filter-pill-input" checked="@(Model.Trimestre == 3)" />
+                        <label for="periodos-trim-3" class="filter-pill">3°</label>
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Status</label>
+                    <div class="filter-pill-group">
+                        <input type="radio" name="Status" id="periodos-status-todos" value="todos" class="filter-pill-input" checked="@(Model.Status == "todos")" />
+                        <label for="periodos-status-todos" class="filter-pill">Todos</label>
+                        <input type="radio" name="Status" id="periodos-status-abertos" value="abertos" class="filter-pill-input" checked="@(Model.Status == "abertos")" />
+                        <label for="periodos-status-abertos" class="filter-pill">Abertos</label>
+                        <input type="radio" name="Status" id="periodos-status-fechados" value="fechados" class="filter-pill-input" checked="@(Model.Status == "fechados")" />
+                        <label for="periodos-status-fechados" class="filter-pill">Fechados</label>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a asp-page="/Periodos/Index" class="btn btn-outline-secondary">Limpar</a>
+                </div>
+            </form>
+
+            @if (filtrosAtivos.Count > 0)
+            {
+                <div class="filter-chips">
+                    @foreach (var (label, campo) in filtrosAtivos)
+                    {
+                        <span class="filter-chip">
+                            @label
+                            <a asp-page="/Periodos/Index"
+                               asp-route-AnoLetivo="@(campo == "AnoLetivo" ? null : Model.AnoLetivo)"
+                               asp-route-Trimestre="@(campo == "Trimestre" ? null : Model.Trimestre)"
+                               asp-route-Status="@(campo == "Status" ? "todos" : Model.Status)"
+                               title="Remover filtro">&times;</a>
+                        </span>
+                    }
+                </div>
+            }
+        </div>
 
         <div class="panel-table-wrap">
             <table class="table-sneat">
