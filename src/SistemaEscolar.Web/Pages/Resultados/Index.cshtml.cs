@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -18,8 +17,6 @@ namespace SistemaEscolar.Web.Pages.Resultados;
 
 public sealed class IndexModel : PageModel
 {
-    private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
-
     private const int PageSizeFixo = 50;
     private readonly IResultadoAcademicoService _resultadoService;
     private readonly IRecuperacaoFinalService _recuperacaoFinalService;
@@ -120,7 +117,7 @@ public sealed class IndexModel : PageModel
             return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
         }
 
-        if (!TryParseNota(recuperacaoFinal, out var valor) || !valor.HasValue)
+        if (!DecimalParsing.TryParseNota(recuperacaoFinal, out var valor) || !valor.HasValue)
         {
             TempData["ErrorMessage"] = "Informe um valor numérico entre 0 e 10 para a Recuperação Final.";
             return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
@@ -157,25 +154,6 @@ public sealed class IndexModel : PageModel
     private bool CanLancarRecuperacao() =>
         User.PodeAlterarNotas();
 
-    private static bool TryParseNota(string? rawValue, out decimal? value)
-    {
-        if (string.IsNullOrWhiteSpace(rawValue))
-        {
-            value = null;
-            return false;
-        }
-
-        var text = rawValue.Trim();
-        if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)
-            || decimal.TryParse(text, NumberStyles.Number, PtBr, out parsed))
-        {
-            value = parsed;
-            return true;
-        }
-
-        value = null;
-        return false;
-    }
 
     public async Task<IActionResult> OnGetExportCsvAsync(CancellationToken cancellationToken)
     {

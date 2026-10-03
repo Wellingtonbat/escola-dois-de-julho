@@ -7,4 +7,5 @@ public sealed record AlunoCreateRequest(
     int AnoLetivo,
     Guid SerieId,
     Guid? TurmaId,
-    bool IsAtivo);
+    bool IsAtivo,
+    string? MatriculaPrefeitura = null);

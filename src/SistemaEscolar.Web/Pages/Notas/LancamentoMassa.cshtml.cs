@@ -177,10 +177,10 @@ public sealed class LancamentoMassaModel : PageModel
             return new JsonResult(new { succeeded = false, error = "Seu perfil tem acesso somente de consulta às notas." });
         }
 
-        if (!TryParseNota(avaliacao1, out var av1)
-            || !TryParseNota(avaliacao2, out var av2)
-            || !TryParseNota(avaliacao3, out var av3)
-            || !TryParseNota(recuperacaoParalela, out var rec))
+        if (!DecimalParsing.TryParseNota(avaliacao1, out var av1)
+            || !DecimalParsing.TryParseNota(avaliacao2, out var av2)
+            || !DecimalParsing.TryParseNota(avaliacao3, out var av3)
+            || !DecimalParsing.TryParseNota(recuperacaoParalela, out var rec))
         {
             return new JsonResult(new { succeeded = false, error = "Formato de nota inválido. Use valores numéricos entre 0 e 10." });
         }
@@ -245,25 +245,6 @@ public sealed class LancamentoMassaModel : PageModel
     private static string FormatarExibicao(decimal? valor) =>
         valor.HasValue ? valor.Value.ToString("0.00", PtBr) : "–";
 
-    private static bool TryParseNota(string? rawValue, out decimal? value)
-    {
-        if (string.IsNullOrWhiteSpace(rawValue))
-        {
-            value = null;
-            return true;
-        }
-
-        var text = rawValue.Trim();
-        if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)
-            || decimal.TryParse(text, NumberStyles.Number, PtBr, out parsed))
-        {
-            value = parsed;
-            return true;
-        }
-
-        value = null;
-        return false;
-    }
 
     public sealed record AlunoLinhaVm(
         Guid AlunoId,

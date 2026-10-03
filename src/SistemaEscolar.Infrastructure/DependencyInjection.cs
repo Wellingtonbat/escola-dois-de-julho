@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Alunos;
+using SistemaEscolar.Application.Atas;
 using SistemaEscolar.Application.Auditoria;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Notas;
@@ -31,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<AuditableEntitySaveChangesInterceptor>();
         services.AddScoped<ApplicationDbInitializer>();
         services.AddScoped<IAlunoRepository, AlunoRepository>();
+        services.AddScoped<IAtaRepository, AtaRepository>();
         services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
         services.AddScoped<IDisciplinaRepository, DisciplinaRepository>();
         services.AddScoped<IDisciplinaSerieRepository, DisciplinaSerieRepository>();

@@ -85,6 +85,9 @@
                                     @if (podeGerenciar)
                                     {
                                         <div class="actions-cell">
+                                            <a asp-page="/Alunos/Index" asp-route-TurmaId="@turma.Id" class="icon-btn" title="Ver alunos desta turma">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM5 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm4.5 1c-2.5 0-6 1.2-6 3.5V14h9v-1.5c0-.7-.27-1.3-.7-1.84A6.5 6.5 0 0 0 9.5 9Zm3.74.25c1.39.47 2.76 1.4 2.76 2.75V14h-2v-1.5c0-.9-.27-1.63-.76-2.25Z" /></svg>
+                                            </a>
                                             <button type="button" class="icon-btn edit btn-edit-turma"
                                                     data-bs-toggle="modal" data-bs-target="#editTurmaModal" data-id="@turma.Id"
                                                     data-nome="@turma.Nome" data-serie-id="@turma.SerieId" data-turno="@turma.Turno"
@@ -122,7 +125,12 @@
                                     }
                                     else
                                     {
-                                        <span class="text-muted">Somente consulta</span>
+                                        <div class="actions-cell">
+                                            <a asp-page="/Alunos/Index" asp-route-TurmaId="@turma.Id" class="icon-btn" title="Ver alunos desta turma">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM5 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm4.5 1c-2.5 0-6 1.2-6 3.5V14h9v-1.5c0-.7-.27-1.3-.7-1.84A6.5 6.5 0 0 0 9.5 9Zm3.74.25c1.39.47 2.76 1.4 2.76 2.75V14h-2v-1.5c0-.9-.27-1.63-.76-2.25Z" /></svg>
+                                            </a>
+                                            <span class="text-muted">Somente consulta</span>
+                                        </div>
                                     }
                                 </td>
                             </tr>

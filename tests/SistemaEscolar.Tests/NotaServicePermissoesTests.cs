@@ -228,8 +228,8 @@ public sealed class NotaServicePermissoesTests
     {
         private static readonly IReadOnlyList<AlunoListItemDto> Alunos = new[]
         {
-            new AlunoListItemDto(AlunoNoEscopo, "1", "1", "Aluno No Escopo", DateTime.Today, 2026, Guid.NewGuid(), "6º Ano", TurmaDoProfessor, "6A", true),
-            new AlunoListItemDto(AlunoForaDoEscopo, "2", "2", "Aluno Fora Do Escopo", DateTime.Today, 2026, Guid.NewGuid(), "6º Ano", TurmaDeOutroProfessor, "6B", true),
+            new AlunoListItemDto(AlunoNoEscopo, "1", null, "1", "Aluno No Escopo", DateTime.Today, 2026, Guid.NewGuid(), "6º Ano", TurmaDoProfessor, "6A", true),
+            new AlunoListItemDto(AlunoForaDoEscopo, "2", null, "2", "Aluno Fora Do Escopo", DateTime.Today, 2026, Guid.NewGuid(), "6º Ano", TurmaDeOutroProfessor, "6B", true),
         };
 
         public Task<IReadOnlyList<AlunoListItemDto>> ListarAsync(AlunoListFilter? filter = null, CancellationToken cancellationToken = default) =>
@@ -240,6 +240,7 @@ public sealed class NotaServicePermissoesTests
 
         public Task<AlunoCreateResult> CriarAsync(AlunoCreateRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AlunoCreateResult> AtualizarAsync(Guid id, AlunoCreateRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AlunoCreateResult> AtualizarMatriculaPrefeituraAsync(Guid id, string? matriculaPrefeitura, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> AlternarStatusAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> ExcluirAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }

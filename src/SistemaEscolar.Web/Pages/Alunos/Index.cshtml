@@ -68,6 +68,7 @@
                 <thead>
                     <tr>
                         <th>Matrícula</th>
+                        <th>Matrícula (Prefeitura)</th>
                         <th>CPF</th>
                         <th>Nome</th>
                         <th>Nascimento</th>
@@ -82,7 +83,7 @@
                     @if (Model.Alunos.Count == 0)
                     {
                         <tr>
-                            <td colspan="9" class="text-center text-muted">Nenhum aluno encontrado.</td>
+                            <td colspan="10" class="text-center text-muted">Nenhum aluno encontrado.</td>
                         </tr>
                     }
                     else
@@ -91,6 +92,7 @@
                         {
                             <tr class="@(podeGerenciar ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-aluno">
                                 <td>@aluno.Matricula</td>
+                                <td>@(aluno.MatriculaPrefeitura ?? "-")</td>
                                 <td>@aluno.Cpf</td>
                                 <td>@aluno.NomeCompleto</td>
                                 <td>@aluno.DataNascimento.ToString("dd/MM/yyyy")</td>
@@ -106,12 +108,16 @@
                                     @if (podeGerenciar)
                                     {
                                         <div class="actions-cell">
+                                            <a asp-page="/Notas/Boletim" asp-route-AlunoId="@aluno.Id" class="icon-btn" title="Ver boletim">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H3Zm1.5 2.5h7v1h-7v-1Zm0 2.5h7v1h-7V7Zm0 2.5h5v1h-5v-1Z" /></svg>
+                                            </a>
                                             <button type="button" class="icon-btn edit btn-edit-aluno"
                                                     data-bs-toggle="modal" data-bs-target="#editAlunoModal" data-id="@aluno.Id"
                                                     data-matricula="@aluno.Matricula" data-cpf="@aluno.Cpf" data-nome="@aluno.NomeCompleto"
                                                     data-nascimento="@aluno.DataNascimento.ToString("yyyy-MM-dd")"
                                                     data-ano-letivo="@aluno.AnoLetivo" data-serie-id="@aluno.SerieId"
-                                                    data-turma-id="@aluno.TurmaId" data-ativo="@aluno.IsAtivo" title="Editar">
+                                                    data-turma-id="@aluno.TurmaId" data-ativo="@aluno.IsAtivo"
+                                                    data-matricula-prefeitura="@aluno.MatriculaPrefeitura" title="Editar">
                                                 <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
                                             </button>
                                             <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@aluno.Id" class="m-0">
@@ -145,7 +151,12 @@
                                     }
                                     else
                                     {
-                                        <span class="text-muted">Somente consulta</span>
+                                        <div class="actions-cell">
+                                            <a asp-page="/Notas/Boletim" asp-route-AlunoId="@aluno.Id" class="icon-btn" title="Ver boletim">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H3Zm1.5 2.5h7v1h-7v-1Zm0 2.5h7v1h-7V7Zm0 2.5h5v1h-5v-1Z" /></svg>
+                                            </a>
+                                            <span class="text-muted">Somente consulta</span>
+                                        </div>
                                     }
                                 </td>
                             </tr>
@@ -225,6 +236,11 @@
                         <p class="small text-muted">A matrícula é gerada automaticamente pelo sistema. Se o CPF já
                             possuir matrícula de anos anteriores, ela será reaproveitada.</p>
 
+                        <div class="mb-3">
+                            <label for="create-aluno-matricula-prefeitura" class="form-label">Matrícula (Prefeitura) <span class="text-muted">— opcional</span></label>
+                            <input type="text" id="create-aluno-matricula-prefeitura" name="matriculaPrefeitura" class="form-control"
+                                   placeholder="Número fornecido pela prefeitura" />
+                        </div>
                         <div class="mb-3">
                             <label for="create-aluno-cpf" class="form-label">CPF</label>
                             <input type="text" id="create-aluno-cpf" name="cpf" class="form-control"
@@ -311,6 +327,11 @@
                         <div class="mb-3">
                             <label class="form-label">Matrícula</label>
                             <input type="text" id="edit-aluno-matricula" class="form-control" disabled readonly />
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-aluno-matricula-prefeitura" class="form-label">Matrícula (Prefeitura) <span class="text-muted">— opcional</span></label>
+                            <input type="text" id="edit-aluno-matricula-prefeitura" name="matriculaPrefeitura" class="form-control"
+                                   placeholder="Número fornecido pela prefeitura" />
                         </div>
                         <div class="mb-3">
                             <label for="edit-aluno-cpf" class="form-label">CPF</label>
@@ -495,6 +516,7 @@
 
                 const idInput = document.getElementById("edit-aluno-id");
                 const matriculaInput = document.getElementById("edit-aluno-matricula");
+                const matriculaPrefeituraInput = document.getElementById("edit-aluno-matricula-prefeitura");
                 const cpfInput = document.getElementById("edit-aluno-cpf");
                 const nomeInput = document.getElementById("edit-aluno-nome");
                 const dataNascimentoInput = document.getElementById("edit-aluno-data-nascimento");
@@ -506,6 +528,7 @@
                     button.addEventListener("click", () => {
                         idInput.value = button.dataset.id || "";
                         matriculaInput.value = button.dataset.matricula || "";
+                        matriculaPrefeituraInput.value = button.dataset.matriculaPrefeitura || "";
                         cpfInput.value = button.dataset.cpf || "";
                         cpfInput.dispatchEvent(new Event("input"));
                         nomeInput.value = button.dataset.nome || "";

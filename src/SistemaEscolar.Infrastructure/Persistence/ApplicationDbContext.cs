@@ -23,6 +23,9 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
     public DbSet<Serie> Series => Set<Serie>();
     public DbSet<Turma> Turmas => Set<Turma>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Ata> Atas => Set<Ata>();
+    public DbSet<AtaAluno> AtaAlunos => Set<AtaAluno>();
+    public DbSet<AtaAlunoDisciplina> AtaAlunoDisciplinas => Set<AtaAlunoDisciplina>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -41,6 +44,7 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.ToTable("Alunos");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Matricula).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.MatriculaPrefeitura).HasMaxLength(30);
             entity.Property(x => x.Cpf).HasMaxLength(11).IsRequired();
             entity.Property(x => x.NomeCompleto).HasMaxLength(200).IsRequired();
             entity.Property(x => x.DataNascimento).HasColumnType("timestamp without time zone").IsRequired();
@@ -48,6 +52,8 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.Property(x => x.IsDeleted).HasDefaultValue(false);
             entity.HasIndex(x => x.Matricula);
             entity.HasIndex(x => new { x.Cpf, x.AnoLetivo }).IsUnique().HasFilter("\"IsDeleted\" = false");
+            // Única entre os alunos não excluídos, mas só quando preenchida (vários alunos podem estar sem ela ainda).
+            entity.HasIndex(x => x.MatriculaPrefeitura).IsUnique().HasFilter("\"MatriculaPrefeitura\" IS NOT NULL AND \"IsDeleted\" = false");
             entity.Property(x => x.CreatedBy).HasMaxLength(128);
             entity.Property(x => x.UpdatedBy).HasMaxLength(128);
 
@@ -258,6 +264,72 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Ap
             entity.Property(x => x.IsDeleted).HasDefaultValue(false);
             entity.Property(x => x.CreatedBy).HasMaxLength(128);
             entity.Property(x => x.UpdatedBy).HasMaxLength(128);
+        });
+
+        builder.Entity<Ata>(entity =>
+        {
+            entity.ToTable("Atas");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.FinalizadaPorUserId).HasMaxLength(128);
+            entity.Property(x => x.FinalizadaPorNome).HasMaxLength(200);
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.Property(x => x.CreatedBy).HasMaxLength(128);
+            entity.Property(x => x.UpdatedBy).HasMaxLength(128);
+            // Uma turma (já específica de um ano letivo) tem no máximo uma Ata.
+            entity.HasIndex(x => x.TurmaId).IsUnique().HasFilter("\"IsDeleted\" = false");
+
+            entity.HasOne<Turma>()
+                .WithMany()
+                .HasForeignKey(x => x.TurmaId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AtaAluno>(entity =>
+        {
+            entity.ToTable("AtaAlunos");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TP).HasPrecision(5, 2).IsRequired();
+            entity.Property(x => x.MC).HasPrecision(4, 2).IsRequired();
+            entity.Property(x => x.AvF).HasPrecision(4, 2);
+            entity.Property(x => x.RF).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.Property(x => x.CreatedBy).HasMaxLength(128);
+            entity.Property(x => x.UpdatedBy).HasMaxLength(128);
+            entity.HasIndex(x => new { x.AtaId, x.AlunoId }).IsUnique().HasFilter("\"IsDeleted\" = false");
+
+            entity.HasOne<Ata>()
+                .WithMany()
+                .HasForeignKey(x => x.AtaId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<Aluno>()
+                .WithMany()
+                .HasForeignKey(x => x.AlunoId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AtaAlunoDisciplina>(entity =>
+        {
+            entity.ToTable("AtaAlunoDisciplinas");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.DisciplinaNome).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.DisciplinaCodigo).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.ResultadoFinalAno).HasPrecision(4, 2).IsRequired();
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.Property(x => x.CreatedBy).HasMaxLength(128);
+            entity.Property(x => x.UpdatedBy).HasMaxLength(128);
+            entity.HasIndex(x => new { x.AtaAlunoId, x.DisciplinaId }).IsUnique().HasFilter("\"IsDeleted\" = false");
+
+            entity.HasOne<AtaAluno>()
+                .WithMany()
+                .HasForeignKey(x => x.AtaAlunoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<Disciplina>()
+                .WithMany()
+                .HasForeignKey(x => x.DisciplinaId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

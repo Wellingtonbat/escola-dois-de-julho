@@ -29,6 +29,7 @@ public sealed class AlunoService : IAlunoService
             .Select(x => new AlunoListItemDto(
                 x.Id,
                 x.Matricula,
+                x.MatriculaPrefeitura,
                 x.Cpf,
                 x.NomeCompleto,
                 x.DataNascimento,
@@ -55,6 +56,7 @@ public sealed class AlunoService : IAlunoService
         return new AlunoListItemDto(
             aluno.Id,
             aluno.Matricula,
+            aluno.MatriculaPrefeitura,
             aluno.Cpf,
             aluno.NomeCompleto,
             aluno.DataNascimento,
@@ -81,6 +83,7 @@ public sealed class AlunoService : IAlunoService
         {
             Id = Guid.NewGuid(),
             Matricula = matricula,
+            MatriculaPrefeitura = validation.MatriculaPrefeitura,
             Cpf = validation.Cpf,
             NomeCompleto = validation.NomeCompleto,
             DataNascimento = request.DataNascimento.Date,
@@ -110,6 +113,7 @@ public sealed class AlunoService : IAlunoService
         }
 
         aluno.Cpf = validation.Cpf;
+        aluno.MatriculaPrefeitura = validation.MatriculaPrefeitura;
         aluno.NomeCompleto = validation.NomeCompleto;
         aluno.DataNascimento = request.DataNascimento.Date;
         aluno.AnoLetivo = request.AnoLetivo;
@@ -117,6 +121,29 @@ public sealed class AlunoService : IAlunoService
         aluno.TurmaId = request.TurmaId;
         aluno.IsAtivo = request.IsAtivo;
 
+        await _alunoRepository.UpdateAsync(aluno, cancellationToken);
+
+        return AlunoCreateResult.Success();
+    }
+
+    // Usado pela tela de Ata, que também permite preencher/corrigir a matrícula da prefeitura
+    // diretamente na grade, sem passar pelo formulário completo do aluno.
+    public async Task<AlunoCreateResult> AtualizarMatriculaPrefeituraAsync(
+        Guid id, string? matriculaPrefeitura, CancellationToken cancellationToken = default)
+    {
+        var aluno = await _alunoRepository.GetByIdAsync(id, cancellationToken);
+        if (aluno is null)
+        {
+            return AlunoCreateResult.Fail("Aluno não encontrado.");
+        }
+
+        var validacao = await ValidarMatriculaPrefeituraAsync(matriculaPrefeitura, id, cancellationToken);
+        if (!validacao.Result.Succeeded)
+        {
+            return validacao.Result;
+        }
+
+        aluno.MatriculaPrefeitura = validacao.Valor;
         await _alunoRepository.UpdateAsync(aluno, cancellationToken);
 
         return AlunoCreateResult.Success();
@@ -148,7 +175,7 @@ public sealed class AlunoService : IAlunoService
         return true;
     }
 
-    private async Task<(AlunoCreateResult Result, string Cpf, string NomeCompleto)> ValidateAsync(
+    private async Task<(AlunoCreateResult Result, string Cpf, string NomeCompleto, string? MatriculaPrefeitura)> ValidateAsync(
         AlunoCreateRequest request,
         Guid? ignoreId,
         CancellationToken cancellationToken)
@@ -158,28 +185,28 @@ public sealed class AlunoService : IAlunoService
 
         if (cpf.Length != 11)
         {
-            return (AlunoCreateResult.Fail("Informe um CPF válido com 11 dígitos."), cpf, nomeCompleto);
+            return (AlunoCreateResult.Fail("Informe um CPF válido com 11 dígitos."), cpf, nomeCompleto, null);
         }
 
         if (string.IsNullOrWhiteSpace(nomeCompleto))
         {
-            return (AlunoCreateResult.Fail("O nome do aluno é obrigatório."), cpf, nomeCompleto);
+            return (AlunoCreateResult.Fail("O nome do aluno é obrigatório."), cpf, nomeCompleto, null);
         }
 
         if (request.DataNascimento == default || request.DataNascimento > DateTime.UtcNow.Date)
         {
-            return (AlunoCreateResult.Fail("A data de nascimento é obrigatória e deve ser válida."), cpf, nomeCompleto);
+            return (AlunoCreateResult.Fail("A data de nascimento é obrigatória e deve ser válida."), cpf, nomeCompleto, null);
         }
 
         if (request.AnoLetivo < 2000 || request.AnoLetivo > 2100)
         {
-            return (AlunoCreateResult.Fail("Informe um ano letivo válido."), cpf, nomeCompleto);
+            return (AlunoCreateResult.Fail("Informe um ano letivo válido."), cpf, nomeCompleto, null);
         }
 
         var serie = await _serieRepository.GetByIdAsync(request.SerieId, cancellationToken);
         if (serie is null)
         {
-            return (AlunoCreateResult.Fail("Série não encontrada."), cpf, nomeCompleto);
+            return (AlunoCreateResult.Fail("Série não encontrada."), cpf, nomeCompleto, null);
         }
 
         if (request.TurmaId.HasValue)
@@ -187,27 +214,52 @@ public sealed class AlunoService : IAlunoService
             var turma = await _turmaRepository.GetByIdAsync(request.TurmaId.Value, cancellationToken);
             if (turma is null)
             {
-                return (AlunoCreateResult.Fail("Turma não encontrada."), cpf, nomeCompleto);
+                return (AlunoCreateResult.Fail("Turma não encontrada."), cpf, nomeCompleto, null);
             }
 
             if (turma.SerieId != request.SerieId)
             {
-                return (AlunoCreateResult.Fail("A turma selecionada não pertence à série informada."), cpf, nomeCompleto);
+                return (AlunoCreateResult.Fail("A turma selecionada não pertence à série informada."), cpf, nomeCompleto, null);
             }
         }
 
         if (await _alunoRepository.CpfMatriculadoNoAnoAsync(cpf, request.AnoLetivo, ignoreId, cancellationToken))
         {
-            return (AlunoCreateResult.Fail("Já existe matrícula para este CPF no ano letivo informado."), cpf, nomeCompleto);
+            return (AlunoCreateResult.Fail("Já existe matrícula para este CPF no ano letivo informado."), cpf, nomeCompleto, null);
         }
 
         var maiorOrdemAnterior = await _alunoRepository.ObterMaiorOrdemSerieAnteriorAsync(cpf, request.AnoLetivo, cancellationToken);
         if (maiorOrdemAnterior.HasValue && serie.Ordem < maiorOrdemAnterior.Value)
         {
-            return (AlunoCreateResult.Fail("Não é possível matricular o aluno em série anterior a uma já cursada em ano letivo anterior."), cpf, nomeCompleto);
+            return (AlunoCreateResult.Fail("Não é possível matricular o aluno em série anterior a uma já cursada em ano letivo anterior."), cpf, nomeCompleto, null);
         }
 
-        return (AlunoCreateResult.Success(), cpf, nomeCompleto);
+        var matricula = await ValidarMatriculaPrefeituraAsync(request.MatriculaPrefeitura, ignoreId, cancellationToken);
+        if (!matricula.Result.Succeeded)
+        {
+            return (matricula.Result, cpf, nomeCompleto, null);
+        }
+
+        return (AlunoCreateResult.Success(), cpf, nomeCompleto, matricula.Valor);
+    }
+
+    // Em branco é válido (o campo é opcional — nem toda escola tem o número da prefeitura ainda);
+    // quando preenchido, precisa ser único entre os alunos não excluídos.
+    private async Task<(AlunoCreateResult Result, string? Valor)> ValidarMatriculaPrefeituraAsync(
+        string? matriculaPrefeitura, Guid? ignoreId, CancellationToken cancellationToken)
+    {
+        var valor = string.IsNullOrWhiteSpace(matriculaPrefeitura) ? null : matriculaPrefeitura.Trim();
+        if (valor is null)
+        {
+            return (AlunoCreateResult.Success(), null);
+        }
+
+        if (await _alunoRepository.MatriculaPrefeituraExisteAsync(valor, ignoreId, cancellationToken))
+        {
+            return (AlunoCreateResult.Fail($"Já existe um aluno cadastrado com a matrícula da prefeitura \"{valor}\"."), valor);
+        }
+
+        return (AlunoCreateResult.Success(), valor);
     }
 
     private static string NormalizeCpf(string? cpf)

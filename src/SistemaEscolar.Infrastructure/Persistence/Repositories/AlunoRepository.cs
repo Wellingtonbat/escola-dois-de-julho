@@ -101,6 +101,17 @@ public sealed class AlunoRepository : IAlunoRepository
                 cancellationToken);
     }
 
+    public async Task<bool> MatriculaPrefeituraExisteAsync(string matriculaPrefeitura, Guid? ignoreId = null, CancellationToken cancellationToken = default)
+    {
+        return await _context.Alunos
+            .AsNoTracking()
+            .AnyAsync(x =>
+                !x.IsDeleted &&
+                x.MatriculaPrefeitura == matriculaPrefeitura &&
+                (!ignoreId.HasValue || x.Id != ignoreId.Value),
+                cancellationToken);
+    }
+
     public async Task<string> ProximaMatriculaAsync(CancellationToken cancellationToken = default)
     {
         var proximoValor = await _context.Database

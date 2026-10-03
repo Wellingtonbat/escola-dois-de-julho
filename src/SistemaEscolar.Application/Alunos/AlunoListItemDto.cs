@@ -3,6 +3,7 @@ namespace SistemaEscolar.Application.Alunos;
 public sealed record AlunoListItemDto(
     Guid Id,
     string Matricula,
+    string? MatriculaPrefeitura,
     string Cpf,
     string NomeCompleto,
     DateTime DataNascimento,

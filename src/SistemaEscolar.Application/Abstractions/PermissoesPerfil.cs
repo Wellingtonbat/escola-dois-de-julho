@@ -54,4 +54,13 @@ public static class PermissoesPerfil
     // o perfil de gestão não sirva de atalho para editar notas de outros professores.
     public static bool AlteracaoDeNotasRestritaAoEscopo(Func<string, bool> isInRole) =>
         isInRole(Perfis.Professor) && !EhDiretoria(isInRole);
+
+    // Ata de Resultados Finais: mesmo grupo que hoje baixa boletim em PDF acessa a lista, cria uma Ata
+    // e edita enquanto ela está em Rascunho.
+    public static bool PodeAcessarAtas(Func<string, bool> isInRole) =>
+        EhGestao(isInRole);
+
+    // Depois que uma Ata é finalizada, só a Diretoria pode voltar a editá-la (via "Habilitar para Edição").
+    public static bool PodeEditarAtaFinalizada(Func<string, bool> isInRole) =>
+        EhDiretoria(isInRole);
 }

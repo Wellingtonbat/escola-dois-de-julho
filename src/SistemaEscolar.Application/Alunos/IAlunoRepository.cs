@@ -9,6 +9,7 @@ public interface IAlunoRepository
     Task<string?> ObterMatriculaPorCpfAsync(string cpf, CancellationToken cancellationToken = default);
     Task<int?> ObterMaiorOrdemSerieAnteriorAsync(string cpf, int anoLetivoAtual, CancellationToken cancellationToken = default);
     Task<bool> CpfMatriculadoNoAnoAsync(string cpf, int anoLetivo, Guid? ignoreId = null, CancellationToken cancellationToken = default);
+    Task<bool> MatriculaPrefeituraExisteAsync(string matriculaPrefeitura, Guid? ignoreId = null, CancellationToken cancellationToken = default);
     Task<string> ProximaMatriculaAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Aluno aluno, CancellationToken cancellationToken = default);
     Task UpdateAsync(Aluno aluno, CancellationToken cancellationToken = default);

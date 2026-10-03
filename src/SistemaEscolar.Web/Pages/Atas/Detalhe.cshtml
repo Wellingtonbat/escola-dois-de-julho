@@ -1,0 +1,215 @@
+@page "{id:guid}"
+@model SistemaEscolar.Web.Pages.Atas.DetalheModel
+@{
+    ViewData["Title"] = $"Ata — {Model.Ata?.TurmaNome}";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Atas", $"{Model.Ata?.TurmaNome} — {Model.Ata?.AnoLetivo}" };
+    var ata = Model.Ata!;
+    var finalizada = ata.Status == "Finalizada";
+}
+
+<section class="panel mb-3">
+    <div class="panel-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a asp-page="/Atas/Index" class="btn btn-outline-secondary btn-sm" title="Voltar para a lista de Atas">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" /></svg>
+            </a>
+            <span class="meta-tag">Turma <strong>@ata.TurmaNome</strong></span>
+            <span class="meta-tag">Série <strong>@ata.SerieNome</strong></span>
+            <span class="meta-tag">Ano letivo <strong>@ata.AnoLetivo</strong></span>
+            <span class="status-pill @(finalizada ? "status-open" : "status-warn")">@ata.Status</span>
+            @if (finalizada && !string.IsNullOrWhiteSpace(ata.FinalizadaPorNome))
+            {
+                <span class="text-muted small">por @ata.FinalizadaPorNome em @ata.FinalizadaEmUtc?.ToString("dd/MM/yyyy")</span>
+            }
+        </div>
+        <div class="d-flex flex-column align-items-end gap-1">
+            <div class="d-flex gap-2">
+                @if (!finalizada)
+                {
+                    <form method="post" asp-page-handler="Finalizar" asp-route-id="@ata.AtaId" class="m-0">
+                        <button type="submit" class="btn btn-primary" @(ata.TodosComResultado && ata.PodeEditar ? null : "disabled")
+                                onclick="return confirm('Confirma o fechamento oficial desta Ata? Depois de finalizada, só Diretor ou Vice-Diretor podem editá-la.');">
+                            Finalizar Ata
+                        </button>
+                    </form>
+                }
+                else if (User.PodeEditarAtaFinalizada())
+                {
+                    <form method="post" asp-page-handler="HabilitarEdicao" asp-route-id="@ata.AtaId" class="m-0">
+                        <button type="submit" class="btn btn-outline-primary"
+                                onclick="return confirm('Reabrir esta Ata para edição?');">
+                            Habilitar para Edição
+                        </button>
+                    </form>
+                }
+                <a href="?id=@ata.AtaId&handler=PdfAta" class="btn btn-outline-primary @(ata.TodosComResultado ? null : "disabled")"
+                   @(ata.TodosComResultado ? null : "aria-disabled=\"true\" tabindex=\"-1\" onclick=\"return false;\"")>
+                    Gerar PDF
+                </a>
+            </div>
+            @if (!ata.TodosComResultado)
+            {
+                <div class="hint-inline danger">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
+                    @(ata.TotalAlunos - ata.AlunosComResultado) de @ata.TotalAlunos aluno(s) ainda sem resultado definido.
+                </div>
+            }
+            @if (!ata.PodeEditar)
+            {
+                <div class="hint-inline">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm.93-9.412-2 .25-.07.328.392.073c.255.06.302.15.244.422l-.628 2.96c-.164.771.087 1.132.685 1.132.464 0 1.002-.213 1.246-.508l.078-.375c-.171.15-.42.21-.588.21-.238 0-.324-.166-.262-.463zM9 5.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" /></svg>
+                    Ata finalizada — somente consulta.
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <p style="font-size:1.05rem;font-weight:700;margin:0 0 0.15rem">Resultado final por aluno</p>
+        <p class="text-muted" style="margin:0;font-size:0.82rem">Matrícula e Avaliação Final salvas automaticamente ao sair do campo.</p>
+    </div>
+    <div class="panel-body" style="padding:0">
+        <div class="panel-table-wrap">
+            <table class="table-sneat" id="ata-grade">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Nº</th>
+                        <th rowspan="2">Matrícula</th>
+                        <th rowspan="2">Nome</th>
+                        <th colspan="@ata.DisciplinasColunas.Count" class="text-center">Disciplinas — resultado final do ano</th>
+                        <th rowspan="2" title="Total de Pontos">TP</th>
+                        <th rowspan="2" title="Média do Curso">MC</th>
+                        <th rowspan="2" title="Avaliação Final">AvF</th>
+                        <th rowspan="2" title="Resultado Final">RF</th>
+                    </tr>
+                    <tr>
+                        @foreach (var coluna in ata.DisciplinasColunas)
+                        {
+                            <th class="text-center" title="@coluna.Nome">@(string.IsNullOrWhiteSpace(coluna.Codigo) ? coluna.Nome : coluna.Codigo)</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ata.Itens.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="@(7 + ata.DisciplinasColunas.Count)" class="text-center text-muted">Nenhum aluno ativo nesta turma.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in ata.Itens)
+                        {
+                            <tr data-linha data-ata-aluno-id="@item.AtaAlunoId">
+                                <td class="text-muted">@item.Numero</td>
+                                <td>
+                                    <input type="text" class="field-input" style="width:8rem" data-matricula
+                                           value="@item.MatriculaPrefeitura" placeholder="Nº da prefeitura"
+                                           @(ata.PodeEditar ? null : "disabled") />
+                                </td>
+                                <td style="font-weight:600;white-space:normal;min-width:180px">@item.NomeCompleto</td>
+                                @foreach (var coluna in ata.DisciplinasColunas)
+                                {
+                                    var disciplina = item.Disciplinas.FirstOrDefault(d => d.DisciplinaId == coluna.DisciplinaId);
+                                    <td class="text-center @(disciplina is not null && disciplina.ResultadoFinalAno < 5m ? "text-danger fw-semibold" : null)">
+                                        @(disciplina is null ? "—" : disciplina.ResultadoFinalAno.ToString("0.0"))
+                                    </td>
+                                }
+                                <td class="text-center" style="font-weight:700">@item.TP.ToString("0.0")</td>
+                                <td class="text-center" style="font-weight:700">@item.MC.ToString("0.0")</td>
+                                <td>
+                                    <input type="text" inputmode="decimal" class="field-input" style="width:4.5rem" data-avf
+                                           value="@(item.AvF?.ToString("0.0"))" placeholder="0 a 10"
+                                           @(ata.PodeEditar && item.AvFHabilitado ? null : "disabled") />
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm" data-rf style="width:9rem"
+                                            @(ata.PodeEditar ? null : "disabled")>
+                                        @foreach (var valor in new[] { "Pendente", "Aprovado", "Conservado", "Transferido" })
+                                        {
+                                            <option value="@valor" selected="@(valor == item.RF)">@valor</option>
+                                        }
+                                    </select>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@if (ata.PodeEditar)
+{
+    <form id="antiforgery-form" style="display:none">@Html.AntiForgeryToken()</form>
+
+    @section Scripts {
+        <script>
+            (() => {
+                const token = document.querySelector('#antiforgery-form input[name="__RequestVerificationToken"]').value;
+
+                async function postHandler(handler, campos) {
+                    const formData = new FormData();
+                    Object.entries(campos).forEach(([chave, valor]) => formData.append(chave, valor ?? ""));
+                    formData.append("__RequestVerificationToken", token);
+
+                    const resposta = await fetch(`?handler=${handler}`, {
+                        method: "POST",
+                        body: formData,
+                        headers: { "X-Requested-With": "XMLHttpRequest" },
+                    });
+                    return resposta.json();
+                }
+
+                document.querySelectorAll("tr[data-linha]").forEach((linha) => {
+                    const ataAlunoId = linha.dataset.ataAlunoId;
+                    const matriculaInput = linha.querySelector("[data-matricula]");
+                    const avfInput = linha.querySelector("[data-avf]");
+                    const rfSelect = linha.querySelector("[data-rf]");
+
+                    let agendamento = null;
+                    function agendar(fn) {
+                        clearTimeout(agendamento);
+                        agendamento = setTimeout(fn, 500);
+                    }
+
+                    if (matriculaInput) {
+                        matriculaInput.addEventListener("change", () => agendar(async () => {
+                            const dados = await postHandler("SalvarMatricula", { ataAlunoId, matriculaPrefeitura: matriculaInput.value });
+                            if (!dados.succeeded) {
+                                alert(dados.error || "Não foi possível salvar a matrícula.");
+                            }
+                        }));
+                    }
+
+                    if (avfInput) {
+                        avfInput.addEventListener("change", () => agendar(async () => {
+                            const dados = await postHandler("SalvarAvF", { ataAlunoId, valor: avfInput.value });
+                            if (!dados.succeeded) {
+                                alert(dados.error || "Não foi possível salvar a Avaliação Final.");
+                                return;
+                            }
+                            // RF (e os botões Finalizar/Gerar PDF) dependem do conjunto da turma inteira —
+                            // recarrega para refletir o estado atualizado de todo mundo.
+                            window.location.reload();
+                        }));
+                    }
+
+                    if (rfSelect) {
+                        rfSelect.addEventListener("change", async () => {
+                            const dados = await postHandler("DefinirRF", { ataAlunoId, rf: rfSelect.value });
+                            if (!dados.succeeded) {
+                                alert(dados.error || "Não foi possível salvar a situação final.");
+                                return;
+                            }
+                            window.location.reload();
+                        });
+                    }
+                });
+            })();
+        </script>
+    }
+}

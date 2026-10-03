@@ -110,6 +110,7 @@ public sealed class IndexModel : PageModel
         Guid serieId,
         Guid? turmaId,
         bool isAtivo,
+        string? matriculaPrefeitura,
         string? busca,
         string? status,
         string? serieFilter,
@@ -125,7 +126,7 @@ public sealed class IndexModel : PageModel
         }
 
         var result = await _alunoService.CriarAsync(
-            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turmaId, isAtivo),
+            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turmaId, isAtivo, matriculaPrefeitura),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -147,6 +148,7 @@ public sealed class IndexModel : PageModel
         Guid serieId,
         Guid? turmaId,
         bool isAtivo,
+        string? matriculaPrefeitura,
         string? busca,
         string? status,
         string? serieFilter,
@@ -163,7 +165,7 @@ public sealed class IndexModel : PageModel
 
         var result = await _alunoService.AtualizarAsync(
             id,
-            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turmaId, isAtivo),
+            new AlunoCreateRequest(cpf, nomeCompleto, dataNascimento, anoLetivo, serieId, turmaId, isAtivo, matriculaPrefeitura),
             cancellationToken);
 
         if (!result.Succeeded)

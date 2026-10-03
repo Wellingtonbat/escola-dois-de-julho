@@ -1,0 +1,149 @@
+@page
+@model SistemaEscolar.Web.Pages.Atas.IndexModel
+@{
+    ViewData["Title"] = "Atas";
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Atas" };
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1 class="h5 mb-1">Atas de Resultados Finais</h1>
+            <p class="text-muted mb-0">Fechamento oficial do resultado anual de cada turma, por ano letivo.</p>
+        </div>
+        @if (Model.TurmasSemAta.Count > 0)
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#novaAtaModal">
+                Nova Ata
+            </button>
+        }
+    </div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 mb-3">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="col-12 col-md-2">
+                <select asp-for="AnoLetivo" class="form-select">
+                    @foreach (var ano in Model.AnosDisponiveis)
+                    {
+                        <option value="@ano">@ano</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <select asp-for="Status" class="form-select">
+                    <option value="todos">Todos os status</option>
+                    <option value="rascunho">Rascunho</option>
+                    <option value="finalizada">Finalizada</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a asp-page="/Atas/Index" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Turma</th>
+                        <th>Série</th>
+                        <th>Ano letivo</th>
+                        <th>Status</th>
+                        <th>Alunos com resultado</th>
+                        <th>Finalizada em</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Atas.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Nenhuma Ata cadastrada para este ano letivo.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var ata in Model.Atas)
+                        {
+                            <tr class="row-clicavel" data-href="/Atas/Detalhe/@ata.Id">
+                                <td style="font-weight:600">@ata.TurmaNome</td>
+                                <td>@ata.SerieNome</td>
+                                <td>@ata.AnoLetivo</td>
+                                <td>
+                                    <span class="status-pill @(ata.Status == "Finalizada" ? "status-open" : "status-warn")">@ata.Status</span>
+                                </td>
+                                <td>@ata.AlunosComResultado de @ata.TotalAlunos</td>
+                                <td class="text-muted">@(ata.FinalizadaEmUtc.HasValue ? ata.FinalizadaEmUtc.Value.ToString("dd/MM/yyyy") : "—")</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        @if (ata.TodosComResultado)
+                                        {
+                                            <a href="/Atas/Detalhe/@ata.Id?handler=PdfAta" class="icon-btn" title="Gerar PDF" aria-label="Gerar PDF">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0H4Z" /><path d="M9.5 0v4a.5.5 0 0 0 .5.5h4L9.5 0Z" opacity=".5" /></svg>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="icon-btn" disabled title="Finalize a ata para gerar o PDF" aria-label="Gerar PDF (indisponível)">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0H4Z" /><path d="M9.5 0v4a.5.5 0 0 0 .5.5h4L9.5 0Z" opacity=".5" /></svg>
+                                            </button>
+                                        }
+                                        <span class="row-chevron">
+                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="novaAtaModal" tabindex="-1" aria-labelledby="novaAtaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="novaAtaModalLabel">Nova Ata</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" asp-page-handler="Criar">
+                <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
+                <input type="hidden" name="status" value="@Model.Status" />
+                <div class="modal-body">
+                    <p class="small text-muted">A Ata é criada com o resultado atual de cada disciplina, lançamentos de notas. Depois é só preencher a Avaliação Final de quem precisar e finalizar.</p>
+                    <div class="mb-1">
+                        <label for="nova-ata-turma" class="form-label">Turma (sem Ata em @Model.AnoLetivo)</label>
+                        <select id="nova-ata-turma" name="turmaId" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            @foreach (var turma in Model.TurmasSemAta)
+                            {
+                                <option value="@turma.Value">@turma.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Ata</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll("tr[data-href]").forEach((row) => {
+            row.addEventListener("click", (event) => {
+                if (event.target.closest("a, button")) {
+                    return;
+                }
+                window.location.href = row.dataset.href;
+            });
+        });
+    </script>
+}

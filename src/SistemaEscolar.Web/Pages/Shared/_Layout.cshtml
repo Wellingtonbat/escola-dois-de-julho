@@ -31,6 +31,7 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
     var resultadosActive = currentPath.StartsWith("/Resultados", StringComparison.OrdinalIgnoreCase);
     var usuariosActive = currentPath.StartsWith("/Usuarios", StringComparison.OrdinalIgnoreCase);
     var auditoriaActive = currentPath.StartsWith("/Auditoria", StringComparison.OrdinalIgnoreCase);
+    var atasActive = currentPath.StartsWith("/Atas", StringComparison.OrdinalIgnoreCase);
     var podeGerenciarUsuarios = User.EhGestao();
     var isProfessorOnly = User.EhApenasProfessor();
     var successMessage = TempData["SuccessMessage"]?.ToString();
@@ -131,6 +132,15 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
                     </span>
                     <span class="sidebar-link-label">Resultados</span>
                 </a>
+                @if (User.PodeAcessarAtas())
+                {
+                    <a asp-page="/Atas/Index" class="sidebar-link @(atasActive ? "active" : null)">
+                        <span class="sidebar-link-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0H4Z" /><path d="M9.5 0v4a.5.5 0 0 0 .5.5h4L9.5 0Z" opacity=".5" /><path d="M5 9h6v1H5V9Zm0 2h6v1H5v-1Zm0-4h3v1H5V7Z" /></svg>
+                        </span>
+                        <span class="sidebar-link-label">Atas</span>
+                    </a>
+                }
                 @if (podeGerenciarUsuarios)
                 {
                     <a asp-page="/Usuarios/Index" class="sidebar-link @(usuariosActive ? "active" : null)">
