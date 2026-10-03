@@ -1195,16 +1195,18 @@ table.grade-sheet {
   height: 1.2rem;
 }
 
-/* Cores semânticas para kpi-icon fora da sequência padrão (ex.: Resultados: Aprovados/Reprovados/Pendentes) */
-.kpi-icon-approved {
+/* Cores semânticas para kpi-icon fora da sequência padrão (ex.: Resultados: Aprovados/Reprovados/Pendentes).
+   Especificidade igual à de ".kpi-card:nth-child(n) .kpi-icon" (3 seletores de classe) para garantir que
+   vençam mesmo vindo depois no cascade. */
+.kpi-card .kpi-icon.kpi-icon-approved {
   background: var(--status-approved-dot);
 }
 
-.kpi-icon-danger {
+.kpi-card .kpi-icon.kpi-icon-danger {
   background: var(--status-failed-dot);
 }
 
-.kpi-icon-pending {
+.kpi-card .kpi-icon.kpi-icon-pending {
   background: var(--status-pending-dot);
 }
 
