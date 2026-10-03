@@ -124,13 +124,23 @@ public sealed class DetalheModel : PageModel
                 page.Margin(24);
                 page.DefaultTextStyle(x => x.FontSize(8));
 
+                // A logo da prefeitura repete em todas as páginas; o restante do cabeçalho (texto,
+                // campos de preenchimento, parágrafo) aparece só uma vez, na primeira página, via
+                // ShowOnce — evita repetir o bloco inteiro em Atas de turmas grandes com várias páginas.
                 page.Header().Column(col =>
                 {
                     col.Item().Row(row =>
                     {
-                        row.ConstantItem(170).Image(brasaoBytes).FitWidth();
+                        row.ConstantItem(90).Image(brasaoBytes).FitWidth();
 
-                        row.RelativeItem().AlignRight().AlignMiddle().Column(direita =>
+                        row.ConstantItem(140).ShowOnce().AlignMiddle().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(11).Bold().FontColor(Colors.Blue.Darken2));
+                            t.Line("Secretaria da");
+                            t.Line("Educação");
+                        });
+
+                        row.RelativeItem().ShowOnce().AlignRight().AlignMiddle().Column(direita =>
                         {
                             if (ata.FinalizadaEmUtc.HasValue)
                             {
@@ -141,19 +151,37 @@ public sealed class DetalheModel : PageModel
                         });
                     });
 
-                    col.Item().PaddingTop(10).Row(row =>
+                    col.Item().ShowOnce().PaddingTop(10).Row(row =>
                     {
-                        row.RelativeItem().Text($"Escola: {EscolaCodigoNome}").FontSize(9);
-                        row.RelativeItem().AlignRight().Text($"Diretor/a: {ata.DiretorNome ?? string.Empty}").FontSize(9);
+                        row.RelativeItem().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(9));
+                            t.Span("Escola: ").Bold();
+                            t.Span(EscolaCodigoNome);
+                        });
+                        row.RelativeItem().AlignLeft().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(9));
+                            t.Span("Diretor/a: ").Bold();
+                            t.Span(ata.DiretorNome ?? string.Empty);
+                        });
                     });
 
-                    col.Item().PaddingTop(4).Row(row =>
+                    col.Item().ShowOnce().PaddingTop(4).Row(row =>
                     {
-                        row.RelativeItem().Text("Coordenador/a Pedagógico/a:").FontSize(9);
-                        row.RelativeItem().AlignRight().Text("Professor/a:").FontSize(9);
+                        row.RelativeItem().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(9));
+                            t.Span("Coordenador/a Pedagógico/a: ").Bold();
+                        });
+                        row.RelativeItem().AlignLeft().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(9));
+                            t.Span("Professor/a: ").Bold();
+                        });
                     });
 
-                    col.Item().PaddingTop(8).Text(t =>
+                    col.Item().ShowOnce().PaddingTop(8).Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(9));
                         t.Span("Ao(s) ");
@@ -162,66 +190,70 @@ public sealed class DetalheModel : PageModel
                         t.Span("_______________").Underline();
                         t.Span(" do ano de ");
                         t.Span(ata.AnoLetivo.ToString(CultureInfo.InvariantCulture)).Bold();
-                        t.Span($", encerrou-se o ano letivo programado para a turma do {ata.TurmaNome}, do Ensino Fundamental II Regular, turno {ata.Turno}, com os resultados constantes abaixo:");
+                        t.Span(", encerrou-se o ano letivo programado para a turma do ");
+                        t.Span(ata.TurmaNome).Bold();
+                        t.Span(", do Ensino Fundamental II Regular, turno ");
+                        t.Span(ata.Turno).Bold();
+                        t.Span(", com os resultados constantes abaixo:");
                     });
 
-                    col.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
+                    col.Item().ShowOnce().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
                 });
 
-                page.Content().PaddingTop(10).Table(table =>
-                {
-                    table.ColumnsDefinition(columns =>
+                page.Content().PaddingTop(20).Table(table =>
                     {
-                        columns.ConstantColumn(20);
-                        columns.RelativeColumn(1.3f);
-                        columns.RelativeColumn(2.6f);
-                        foreach (var _ in ata.DisciplinasColunas)
+                        table.ColumnsDefinition(columns =>
                         {
-                            columns.RelativeColumn(0.9f);
-                        }
+                            columns.ConstantColumn(20);
+                            columns.RelativeColumn(1.3f);
+                            columns.RelativeColumn(2.6f);
+                            foreach (var _ in ata.DisciplinasColunas)
+                            {
+                                columns.RelativeColumn(0.9f);
+                            }
 
-                        columns.RelativeColumn(0.8f);
-                        columns.RelativeColumn(0.8f);
-                        columns.RelativeColumn(0.8f);
-                        columns.RelativeColumn(1f);
+                            columns.RelativeColumn(0.8f);
+                            columns.RelativeColumn(0.8f);
+                            columns.RelativeColumn(0.8f);
+                            columns.RelativeColumn(1f);
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Nº");
+                            header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Matrícula");
+                            header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Nome");
+                            foreach (var coluna in ata.DisciplinasColunas)
+                            {
+                                header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle()
+                                    .Text(string.IsNullOrWhiteSpace(coluna.Codigo) ? coluna.Nome : coluna.Codigo);
+                            }
+
+                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("TP");
+                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("MC");
+                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("AvF");
+                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("RF");
+                        });
+
+                        foreach (var item in ata.Itens)
+                        {
+                            table.Cell().Element(Celula).AlignMiddle().Text(item.Numero.ToString());
+                            table.Cell().Element(Celula).AlignMiddle().Text(item.MatriculaPrefeitura ?? "—");
+                            table.Cell().Element(Celula).AlignMiddle().Text(item.NomeCompleto);
+
+                            foreach (var coluna in ata.DisciplinasColunas)
+                            {
+                                var disciplina = item.Disciplinas.FirstOrDefault(d => d.DisciplinaId == coluna.DisciplinaId);
+                                table.Cell().Element(Celula).AlignCenter().AlignMiddle()
+                                    .Text(disciplina is null ? "—" : disciplina.ResultadoFinalAno.ToString("0.0", PtBr));
+                            }
+
+                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.TP.ToString("0.0", PtBr));
+                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.MC.ToString("0.0", PtBr));
+                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.AvF.HasValue ? item.AvF.Value.ToString("0.0", PtBr) : "—");
+                            table.Cell().Element(CelulaRF(item.RF)).AlignCenter().AlignMiddle().Text(item.RF).Bold();
+                        }
                     });
-
-                    table.Header(header =>
-                    {
-                        header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Nº");
-                        header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Matrícula");
-                        header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Nome");
-                        foreach (var coluna in ata.DisciplinasColunas)
-                        {
-                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle()
-                                .Text(string.IsNullOrWhiteSpace(coluna.Codigo) ? coluna.Nome : coluna.Codigo);
-                        }
-
-                        header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("TP");
-                        header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("MC");
-                        header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("AvF");
-                        header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("RF");
-                    });
-
-                    foreach (var item in ata.Itens)
-                    {
-                        table.Cell().Element(Celula).AlignMiddle().Text(item.Numero.ToString());
-                        table.Cell().Element(Celula).AlignMiddle().Text(item.MatriculaPrefeitura ?? "—");
-                        table.Cell().Element(Celula).AlignMiddle().Text(item.NomeCompleto);
-
-                        foreach (var coluna in ata.DisciplinasColunas)
-                        {
-                            var disciplina = item.Disciplinas.FirstOrDefault(d => d.DisciplinaId == coluna.DisciplinaId);
-                            table.Cell().Element(Celula).AlignCenter().AlignMiddle()
-                                .Text(disciplina is null ? "—" : disciplina.ResultadoFinalAno.ToString("0.0", PtBr));
-                        }
-
-                        table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.TP.ToString("0.0", PtBr));
-                        table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.MC.ToString("0.0", PtBr));
-                        table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.AvF.HasValue ? item.AvF.Value.ToString("0.0", PtBr) : "—");
-                        table.Cell().Element(CelulaRF(item.RF)).AlignCenter().AlignMiddle().Text(item.RF).Bold();
-                    }
-                });
 
                 page.Footer().AlignRight().Text(x =>
                 {
