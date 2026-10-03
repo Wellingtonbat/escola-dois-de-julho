@@ -129,25 +129,32 @@ public sealed class DetalheModel : PageModel
                 // ShowOnce — evita repetir o bloco inteiro em Atas de turmas grandes com várias páginas.
                 page.Header().Column(col =>
                 {
-                    col.Item().Row(row =>
+                    // O texto "Secretaria da Educação" fica numa camada por cima (Layers), sobre um
+                    // espaço reservado sempre presente na Row de baixo — assim a logo não "anda" para
+                    // a esquerda nas páginas em que o texto (ShowOnce) deixa de ser desenhado.
+                    col.Item().Layers(layers =>
                     {
-                        row.ConstantItem(90).Image(brasaoBytes).FitWidth();
+                        layers.PrimaryLayer().Row(row =>
+                        {
+                            row.ConstantItem(140);
+                            row.ConstantItem(90).Image(brasaoBytes).FitWidth();
 
-                        row.ConstantItem(140).ShowOnce().AlignMiddle().Text(t =>
+                            row.RelativeItem().ShowOnce().AlignRight().AlignMiddle().Column(direita =>
+                            {
+                                if (ata.FinalizadaEmUtc.HasValue)
+                                {
+                                    direita.Item().AlignRight().Text($"Finalizada em {ata.FinalizadaEmUtc.Value:dd/MM/yyyy}")
+                                        .FontSize(7.5f).FontColor(Colors.Grey.Darken1);
+                                }
+                                direita.Item().AlignRight().Text("ATA DE RESULTADOS FINAIS").Bold().FontSize(13);
+                            });
+                        });
+
+                        layers.Layer().ShowOnce().Width(140).AlignMiddle().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(11).Bold().FontColor(Colors.Blue.Darken2));
                             t.Line("Secretaria da");
                             t.Line("Educação");
-                        });
-
-                        row.RelativeItem().ShowOnce().AlignRight().AlignMiddle().Column(direita =>
-                        {
-                            if (ata.FinalizadaEmUtc.HasValue)
-                            {
-                                direita.Item().AlignRight().Text($"Finalizada em {ata.FinalizadaEmUtc.Value:dd/MM/yyyy}")
-                                    .FontSize(7.5f).FontColor(Colors.Grey.Darken1);
-                            }
-                            direita.Item().AlignRight().Text("ATA DE RESULTADOS FINAIS").Bold().FontSize(13);
                         });
                     });
 
@@ -162,7 +169,7 @@ public sealed class DetalheModel : PageModel
                         row.RelativeItem().AlignLeft().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(9));
-                            t.Span("Diretor/a: ").Bold();
+                            t.Span("Diretor(a): ").Bold();
                             t.Span(ata.DiretorNome ?? string.Empty);
                         });
                     });
@@ -172,12 +179,12 @@ public sealed class DetalheModel : PageModel
                         row.RelativeItem().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(9));
-                            t.Span("Coordenador/a Pedagógico/a: ").Bold();
+                            t.Span("Coordenador(a) Pedagógico(a): ").Bold();
                         });
                         row.RelativeItem().AlignLeft().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(9));
-                            t.Span("Professor/a: ").Bold();
+                            t.Span("Professor(a): ").Bold();
                         });
                     });
 
