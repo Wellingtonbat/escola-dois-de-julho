@@ -260,8 +260,7 @@ body.app-body {
 }
 
 .app-topbar {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(8px);
+  background: var(--surface);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
@@ -291,8 +290,11 @@ body.app-body {
 }
 
 .topbar-title {
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 .topbar-subtitle {
@@ -346,11 +348,13 @@ body.app-body {
 }
 
 .user-chip {
-  background: linear-gradient(90deg, #f5f8ff, #fff2e9);
+  background: var(--surface-muted);
   border: 1px solid var(--border-color);
   border-radius: 999px;
   padding: 0.375rem 0.75rem;
   font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-support);
 }
 
 .btn-primary {
@@ -1742,18 +1746,18 @@ table.grade-sheet {
     height: 44px;
     min-width: 44px;
     border-radius: 999px;
-    border: 6px solid #ecebff;
-    background: linear-gradient(135deg, #6d71f9, #5a63ee);
+    border: 6px solid var(--brand-soft);
+    background: var(--brand);
     color: #fff;
-    box-shadow: 0 8px 18px rgba(81, 90, 228, 0.35);
+    box-shadow: 0 8px 18px rgba(39, 72, 217, 0.35);
     z-index: 1025;
   }
 
   #sidebarToggle:hover,
   #sidebarToggle:focus {
-    background: linear-gradient(135deg, #5f64ed, #4d56dc);
+    background: var(--brand-hover);
     color: #fff;
-    border-color: #e4e2ff;
+    border-color: var(--brand-soft);
   }
 
   .sidebar-toggle-text {

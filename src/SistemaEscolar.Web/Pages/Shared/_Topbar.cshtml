@@ -1,0 +1,59 @@
+@using SistemaEscolar.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var breadcrumb = ViewData["Breadcrumb"] as string[];
+    breadcrumb ??= new[] { "Dashboard", ViewData["Title"]?.ToString() ?? "Sistema Escolar" };
+
+    string? usuarioLogadoNome = null;
+    if (SignInManager.IsSignedIn(User))
+    {
+        var usuarioLogado = await UserManager.GetUserAsync(User);
+        usuarioLogadoNome = string.IsNullOrWhiteSpace(usuarioLogado?.FullName) ? User.Identity?.Name : usuarioLogado.FullName;
+    }
+}
+<header class="app-topbar">
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="sidebarToggle"
+                aria-label="Alternar menu lateral" aria-expanded="true">
+            <span class="sidebar-toggle-icon" aria-hidden="true">&#8249;</span>
+            <span class="sidebar-toggle-text d-lg-none ms-1">Menu</span>
+        </button>
+        <div>
+            <p class="topbar-title mb-0">@ViewData["Title"]</p>
+            <small class="topbar-subtitle">Gestão acadêmica e operacional</small>
+            <nav aria-label="breadcrumb" class="mt-1">
+                <ol class="topbar-breadcrumb mb-0">
+                    @for (var i = 0; i < breadcrumb.Length; i++)
+                    {
+                        var item = breadcrumb[i];
+                        if (i == breadcrumb.Length - 1)
+                        {
+                            <li class="current" aria-current="page">@item</li>
+                        }
+                        else
+                        {
+                            <li>@item</li>
+                        }
+                    }
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="topbar-actions">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <span class="user-chip">@usuarioLogadoNome</span>
+            <form method="post" asp-page="/Logout" class="mb-0">
+                <button type="submit" class="btn btn-sm btn-outline-primary"
+                        onclick="return confirm('Tem certeza que deseja sair do sistema?');">Sair</button>
+            </form>
+        }
+        else
+        {
+            <a class="btn btn-sm btn-primary" asp-page="/Login">Entrar</a>
+        }
+    </div>
+</header>

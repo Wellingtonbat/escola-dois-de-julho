@@ -1,11 +1,4 @@
-﻿@using SistemaEscolar.Infrastructure.Identity
-@using Microsoft.AspNetCore.Identity
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
-@{
-    var title = ViewData["Title"]?.ToString() ?? "Sistema Escolar";
-    var breadcrumb = ViewData["Breadcrumb"] as string[];
-    breadcrumb ??= new[] { "Dashboard", title };
+﻿@{
     var entryAssembly = System.Reflection.Assembly.GetEntryAssembly();
     var infoAttr = entryAssembly is null
         ? null
@@ -20,13 +13,6 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
 
     var successMessage = TempData["SuccessMessage"]?.ToString();
     var errorMessage = TempData["ErrorMessage"]?.ToString();
-
-    string? usuarioLogadoNome = null;
-    if (SignInManager.IsSignedIn(User))
-    {
-        var usuarioLogado = await UserManager.GetUserAsync(User);
-        usuarioLogadoNome = string.IsNullOrWhiteSpace(usuarioLogado?.FullName) ? User.Identity?.Name : usuarioLogado.FullName;
-    }
 }
 
 <!DOCTYPE html>
@@ -47,70 +33,27 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
     <div class="app-shell" id="appShell">
         <partial name="_Sidebar" />
 
-                                                <div class="app-main">
-                                                    <header class="app-topbar">
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="sidebarToggle"
-                                                                    aria-label="Alternar menu lateral" aria-expanded="true">
-                                                                <span class="sidebar-toggle-icon" aria-hidden="true">&#8249;</span>
-                                                                <span class="sidebar-toggle-text d-lg-none ms-1">Menu</span>
-                                                            </button>
-                                                            <div>
-                                                                <p class="topbar-title mb-0">@ViewData["Title"]</p>
-                                                                <small class="topbar-subtitle">Gestão acadêmica e operacional</small>
-                                                                <nav aria-label="breadcrumb" class="mt-1">
-                                                                    <ol class="topbar-breadcrumb mb-0">
-                                                                        @for (var i = 0; i < breadcrumb.Length; i++)
-                                                                        {
-                                                                            var item = breadcrumb[i];
-                                                                            if (i == breadcrumb.Length - 1)
-                                                                            {
-                                                                                <li class="current" aria-current="page">@item</li>
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                <li>@item</li>
-                                                                            }
-                                                                        }
-                                                                    </ol>
-                                                                </nav>
-                                                            </div>
-                                                        </div>
+        <div class="app-main">
+            <partial name="_Topbar" />
 
-                                                        <div class="topbar-actions">
-                                                            @if (SignInManager.IsSignedIn(User))
-                                                            {
-                                                                <span class="user-chip">@usuarioLogadoNome</span>
-                                                                <form method="post" asp-page="/Logout" class="mb-0">
-                                                                    <button type="submit" class="btn btn-sm btn-outline-primary"
-                                                                            onclick="return confirm('Tem certeza que deseja sair do sistema?');">Sair</button>
-                                                                </form>
-                                                            }
-                                                            else
-                                                            {
-                                                                <a class="btn btn-sm btn-primary" asp-page="/Login">Entrar</a>
-                                                            }
-                                                        </div>
-                                                    </header>
+            <main role="main" class="page-wrap">
+                @RenderBody()
+            </main>
 
-                                                    <main role="main" class="page-wrap">
-                                                        @RenderBody()
-                                                    </main>
+            <footer class="app-footer">
+                <span>&copy; @(DateTime.Now.Year) Sistema Escolar &mdash; Desenvolvido por Well Tech &mdash; v@(appVersion)</span>
+            </footer>
+        </div>
+    </div>
+    <div class="app-overlay d-lg-none" id="appOverlay"></div>
 
-                                                    <footer class="app-footer">
-                                                        <span>&copy; @(DateTime.Now.Year) Sistema Escolar &mdash; Desenvolvido por Well Tech &mdash; v@(appVersion)</span>
-                                                    </footer>
-                                                </div>
-                                            </div>
-                                            <div class="app-overlay d-lg-none" id="appOverlay"></div>
+    <partial name="_SystemModals" />
 
-                                            <partial name="_SystemModals" />
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
 
-                                            <script src="~/lib/jquery/dist/jquery.min.js"></script>
-                                            <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-                                            <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
 
-                                            @await RenderSectionAsync("Scripts", required: false)
-                                        </body>
-
-                                    </html>
+</html>
