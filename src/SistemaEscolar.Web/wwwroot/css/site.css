@@ -186,6 +186,23 @@ body.app-body {
   z-index: 1010;
 }
 
+/* Flex items (como o bloco de título/breadcrumb) têm min-width:auto por padrão, então um
+   breadcrumb longo (ex.: "Acadêmico / Estrutura Acadêmica / Turmas") força o topbar a ficar mais
+   largo que a tela em vez de quebrar linha, empurrando os botões de usuário/sair para fora. */
+.app-topbar > .d-flex {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.topbar-breadcrumb {
+  flex-wrap: wrap;
+  row-gap: 0.2rem;
+}
+
+.topbar-actions {
+  flex-shrink: 0;
+}
+
 .topbar-title {
   font-size: 1rem;
   font-weight: 700;
