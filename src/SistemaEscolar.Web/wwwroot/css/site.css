@@ -1,19 +1,59 @@
 :root {
-  --app-bg: #f5f6fa;
+  /* Identidade visual 2026 — ver resumo da reforma para o mapeamento completo. */
+  --app-bg: #f4f6fa;
   --surface: #ffffff;
-  --surface-muted: #f8f9fd;
-  --border-color: #e6e8f0;
-  --brand: #3267f6;
-  --brand-soft: #eef3ff;
+  --surface-muted: #f8f9fc;
+  --border-color: #e3e7ef;
+  --border-field: #c5cddf;
+
+  --ink: #0f1d40;
+  --brand: #2748d9;
+  --brand-hover: #1b34a8;
+  --brand-soft: #e7ecfb;
+  --accent-amber: #f2b233;
+
+  /* Mantidos pelo valor antigo: ainda usados pelo bloco de filtros (intocado nesta reforma) e por
+     regras de componente que serão substituídas na Etapa 3. */
   --accent-cyan: #00a7d1;
   --accent-orange: #ff8a34;
   --accent-green: #1fb980;
   --accent-pink: #ef4ea8;
   --accent-yellow: #f2b400;
-  --text-main: #2b2c40;
-  --text-muted: #6f7186;
+
+  --text-main: #0f1d40;
+  --text-muted: #5b6785;
+  --text-support: #46526f;
+
+  --status-approved-bg: #ddf3ef;
+  --status-approved-text: #0b5f55;
+  --status-approved-dot: #0b7f72;
+  --status-failed-bg: #fbe0da;
+  --status-failed-text: #9e2a12;
+  --status-failed-dot: #c93c20;
+  --status-pending-bg: #ffe9b8;
+  --status-pending-text: #5a3b00;
+  --status-pending-dot: #b7791f;
+  --status-neutral-bg: #eaeef5;
+  --status-neutral-text: #3c4766;
+  --warning-banner-bg: #fff3d6;
+  --warning-banner-border: #efcf86;
+
+  --sidebar-bg: #0f1d40;
+  --sidebar-item-active-bg: #1e2e5e;
+  --sidebar-item-text: #c2cae0;
+  --sidebar-group-label: #8190b8;
+  --sidebar-icon-active: #f2b233;
+  --sidebar-icon: #8e9bc0;
+
+  --radius-card: 16px;
+  --radius-field: 10px;
+  --control-min-height: 44px;
+
+  --font-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, sans-serif;
+
   --sidebar-width: 270px;
-  --shadow-soft: 0 6px 24px rgba(43, 44, 64, 0.08);
+  --shadow-soft: 0 6px 24px rgba(15, 29, 64, 0.08);
 }
 
 html,
@@ -23,13 +63,9 @@ body {
 
 body.app-body {
   margin: 0;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   color: var(--text-main);
-  background:
-    radial-gradient(circle at top right, #d9e8ff 0, transparent 35%),
-    radial-gradient(circle at 18% 15%, #ffe9d8 0, transparent 22%),
-    radial-gradient(circle at 78% 90%, #e8fff7 0, transparent 26%),
-    var(--app-bg);
+  background: var(--app-bg);
 }
 
 .app-shell {
@@ -1045,31 +1081,6 @@ table.grade-sheet {
   height: 1.2rem;
 }
 
-.dashboard-filter-bar {
-  display: flex;
-  align-items: flex-end;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.dashboard-filter-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.dashboard-filter-field label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-}
-
-.dashboard-filter-field .form-select {
-  min-width: 190px;
-}
-
 /* Painel de filtros padrão para telas de listagem (Alunos, Turmas, Notas, Resultados, Atas, etc.):
    cartão com cabeçalho de identidade (badge em gradiente + contagem de filtros ativos), campos
    compactos e chips removíveis dos filtros aplicados. */
@@ -1534,7 +1545,7 @@ table.grade-sheet {
 .auth-layout-body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   background:
     radial-gradient(circle at 80% 5%, #d9e8ff 0%, transparent 30%),
     radial-gradient(circle at 15% 95%, #ffe4f2 0%, transparent 28%),
