@@ -1408,8 +1408,10 @@ table.grade-sheet {
 }
 
 .chart-card-title {
-  font-size: 0.95rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
   font-weight: 700;
+  color: var(--ink);
   margin: 0 0 0.15rem;
 }
 
@@ -1450,12 +1452,12 @@ table.grade-sheet {
   position: absolute;
   left: 0;
   right: 0;
-  border-top: 2px dashed #c7cadb;
+  border-top: 2px dashed var(--status-pending-dot);
 }
 
 .bar-chart-threshold-label {
   font-size: 0.68rem;
-  color: #8b8ea3;
+  color: var(--status-pending-text);
   position: absolute;
   right: 0;
   transform: translateY(-1.1rem);
@@ -1486,7 +1488,7 @@ table.grade-sheet {
 /* Disciplina sem nenhum lançamento no período filtrado (ver dashboard.js, renderBarras). */
 .bar-col-fill-vazia {
   height: 4px;
-  background: repeating-linear-gradient(45deg, #d8dae6, #d8dae6 4px, transparent 4px, transparent 8px);
+  background: repeating-linear-gradient(45deg, var(--border-field), var(--border-field) 4px, transparent 4px, transparent 8px);
 }
 
 .bar-col-label {

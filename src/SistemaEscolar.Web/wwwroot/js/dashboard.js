@@ -24,7 +24,14 @@ if (dashKpis) {
   const ICON_CALENDARIO =
     '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5ZM1 4h14v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4Z"/></svg>';
 
-  const PALETA_BARRAS = ["#3267f6", "#00a7d1", "#ff8a34", "#1fb980", "#ef4ea8", "#f2b400"];
+  const PALETA_BARRAS = [
+    "var(--brand)",
+    "var(--accent-amber)",
+    "var(--status-approved-dot)",
+    "var(--status-failed-dot)",
+    "var(--text-support)",
+    "var(--status-pending-dot)",
+  ];
 
   function formatarDecimal(valor, casas) {
     if (valor === null || valor === undefined) return "—";
@@ -135,24 +142,28 @@ if (dashKpis) {
     const arcoReprovados = (pctReprovados / 100) * circunferencia;
     const arcoPendentes = (pctPendentes / 100) * circunferencia;
 
+    const corAprovados = "var(--status-approved-dot)";
+    const corReprovados = "var(--status-failed-dot)";
+    const corPendentes = "var(--status-pending-dot)";
+
     dashDonut.innerHTML = `
       <div class="donut-block">
         <svg width="120" height="120" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="42" fill="none" stroke="#eef0f6" stroke-width="12"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border-color)" stroke-width="12"/>
           <circle cx="50" cy="50" r="42" fill="none" stroke-width="12" stroke-linecap="round" transform="rotate(-90 50 50)"
-                  stroke="#1fb980" stroke-dasharray="${arcoAprovados} ${circunferencia}" stroke-dashoffset="0"/>
+                  stroke="${corAprovados}" stroke-dasharray="${arcoAprovados} ${circunferencia}" stroke-dashoffset="0"/>
           <circle cx="50" cy="50" r="42" fill="none" stroke-width="12" stroke-linecap="round" transform="rotate(-90 50 50)"
-                  stroke="#ef4ea8" stroke-dasharray="${arcoReprovados} ${circunferencia}" stroke-dashoffset="${-arcoAprovados}"/>
+                  stroke="${corReprovados}" stroke-dasharray="${arcoReprovados} ${circunferencia}" stroke-dashoffset="${-arcoAprovados}"/>
           <circle cx="50" cy="50" r="42" fill="none" stroke-width="12" stroke-linecap="round" transform="rotate(-90 50 50)"
-                  stroke="#f2b400" stroke-dasharray="${arcoPendentes} ${circunferencia}" stroke-dashoffset="${-(arcoAprovados + arcoReprovados)}"/>
-          <text x="50" y="47" text-anchor="middle" font-size="17" font-weight="800" fill="#2b2c40" font-family="Public Sans, sans-serif">${formatarDecimal(pctAprovados, 0)}%</text>
-          <text x="50" y="61" text-anchor="middle" font-size="7" fill="#6f7186" font-family="Public Sans, sans-serif">aprovação</text>
+                  stroke="${corPendentes}" stroke-dasharray="${arcoPendentes} ${circunferencia}" stroke-dashoffset="${-(arcoAprovados + arcoReprovados)}"/>
+          <text x="50" y="47" text-anchor="middle" font-size="17" font-weight="800" fill="#0F1D40" font-family="Figtree, system-ui, sans-serif">${formatarDecimal(pctAprovados, 0)}%</text>
+          <text x="50" y="61" text-anchor="middle" font-size="7" fill="#5B6785" font-family="Figtree, system-ui, sans-serif">aprovação</text>
         </svg>
         <div>
           <p class="donut-legend-title">${d.total} registro(s)</p>
-          <div class="legend-row"><span class="legend-dot" style="background:#1fb980"></span>Aprovados&nbsp;<b>${d.aprovados} (${formatarPercentual(pctAprovados)})</b></div>
-          <div class="legend-row"><span class="legend-dot" style="background:#ef4ea8"></span>Reprovados&nbsp;<b>${d.reprovados} (${formatarPercentual(pctReprovados)})</b></div>
-          <div class="legend-row"><span class="legend-dot" style="background:#f2b400"></span>Pendentes&nbsp;<b>${d.pendentes} (${formatarPercentual(pctPendentes)})</b></div>
+          <div class="legend-row"><span class="legend-dot" style="background:${corAprovados}"></span>Aprovados&nbsp;<b>${d.aprovados} (${formatarPercentual(pctAprovados)})</b></div>
+          <div class="legend-row"><span class="legend-dot" style="background:${corReprovados}"></span>Reprovados&nbsp;<b>${d.reprovados} (${formatarPercentual(pctReprovados)})</b></div>
+          <div class="legend-row"><span class="legend-dot" style="background:${corPendentes}"></span>Pendentes&nbsp;<b>${d.pendentes} (${formatarPercentual(pctPendentes)})</b></div>
         </div>
       </div>`;
   }
@@ -181,29 +192,29 @@ if (dashKpis) {
     const areaFim = validos.length > 0 ? ` L${validos[validos.length - 1].x},160 Z` : "";
 
     const circulos = validos
-      .map((p) => `<circle cx="${p.x}" cy="${p.y.toFixed(1)}" r="5" fill="#fff" stroke="#3267f6" stroke-width="3"/>`)
+      .map((p) => `<circle cx="${p.x}" cy="${p.y.toFixed(1)}" r="5" fill="#fff" stroke="#2748D9" stroke-width="3"/>`)
       .join("");
     const rotulos = validos
-      .map((p) => `<text x="${p.x}" y="${(p.y - 14).toFixed(1)}" text-anchor="middle" class="line-point-label" fill="#2b2c40" font-family="Public Sans, sans-serif">${formatarDecimal(p.media, 1)}</text>`)
+      .map((p) => `<text x="${p.x}" y="${(p.y - 14).toFixed(1)}" text-anchor="middle" class="line-point-label" fill="#0F1D40" font-family="Figtree, system-ui, sans-serif">${formatarDecimal(p.media, 1)}</text>`)
       .join("");
     const rotulosEixo = xs
-      .map((x, indice) => `<text x="${x}" y="178" text-anchor="middle" font-size="10" fill="#6f7186" font-family="Public Sans, sans-serif">${indice + 1}º Trim.</text>`)
+      .map((x, indice) => `<text x="${x}" y="178" text-anchor="middle" font-size="10" fill="#5B6785" font-family="Figtree, system-ui, sans-serif">${indice + 1}º Trim.</text>`)
       .join("");
 
     dashLinha.innerHTML = `
       <svg width="100%" height="200" viewBox="0 0 400 200" preserveAspectRatio="none">
         <defs>
           <linearGradient id="dashLineFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3267f6" stop-opacity="0.28"/>
-            <stop offset="100%" stop-color="#3267f6" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#2748D9" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="#2748D9" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        <line x1="20" y1="160" x2="380" y2="160" stroke="#e6e8f0" stroke-width="1"/>
-        <line x1="20" y1="20" x2="20" y2="160" stroke="#e6e8f0" stroke-width="1"/>
-        <line x1="20" y1="90" x2="380" y2="90" stroke="#d8bfe8" stroke-width="1.4" stroke-dasharray="4 4"/>
-        <text x="384" y="93" font-size="9" fill="#8b8ea3" font-family="Public Sans, sans-serif">5,0</text>
+        <line x1="20" y1="160" x2="380" y2="160" stroke="#E3E7EF" stroke-width="1"/>
+        <line x1="20" y1="20" x2="20" y2="160" stroke="#E3E7EF" stroke-width="1"/>
+        <line x1="20" y1="90" x2="380" y2="90" stroke="#F2B233" stroke-width="1.4" stroke-dasharray="4 4"/>
+        <text x="384" y="93" font-size="9" fill="#B7791F" font-family="Figtree, system-ui, sans-serif">5,0</text>
         ${validos.length > 0 ? `<path d="${areaInicio}${linha}${areaFim}" fill="url(#dashLineFill)"/>` : ""}
-        ${validos.length > 1 ? `<path d="M${linha}" fill="none" stroke="#3267f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
+        ${validos.length > 1 ? `<path d="M${linha}" fill="none" stroke="#2748D9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
         ${circulos}
         ${rotulos}
         ${rotulosEixo}
@@ -246,8 +257,8 @@ if (dashKpis) {
 
     dashRanking.innerHTML = `
       <div class="ranking-cols">
-        ${renderRankingColuna("Melhor desempenho", "#107149", ICON_CHECK, melhores, "#1fb980")}
-        ${renderRankingColuna("Atenção necessária", "#b42356", ICON_ALERTA, atencao, "#ef4ea8")}
+        ${renderRankingColuna("Melhor desempenho", "var(--status-approved-text)", ICON_CHECK, melhores, "var(--status-approved-dot)")}
+        ${renderRankingColuna("Atenção necessária", "var(--status-failed-text)", ICON_ALERTA, atencao, "var(--status-failed-dot)")}
       </div>`;
   }
 
@@ -272,14 +283,18 @@ if (dashKpis) {
           .map((disciplina) => {
             const celula = mapa.get(`${turma}||${disciplina}`);
             if (!celula) {
-              return '<td><div class="heatmap-cell" style="background:#f1f1f5;color:#b7b9c8">—</div></td>';
+              return '<td><div class="heatmap-cell" style="background:var(--status-neutral-bg);color:var(--text-muted)">—</div></td>';
             }
             if (celula.esperadas === 0) {
-              return '<td><div class="heatmap-cell" style="background:#f1f1f5;color:#b7b9c8">—<small>sem alunos ativos</small></div></td>';
+              return '<td><div class="heatmap-cell" style="background:var(--status-neutral-bg);color:var(--text-muted)">—<small>sem alunos ativos</small></div></td>';
             }
             const pendentes = celula.esperadas - celula.lancadas;
             const ratio = celula.lancadas / celula.esperadas;
-            const cor = ratio >= 1 ? { bg: "#ddf8ec", fg: "#107149" } : ratio >= 0.7 ? { bg: "#fff1d7", fg: "#9b5f00" } : { bg: "#ffe3ea", fg: "#b42356" };
+            const cor = ratio >= 1
+              ? { bg: "var(--status-approved-bg)", fg: "var(--status-approved-text)" }
+              : ratio >= 0.7
+                ? { bg: "var(--status-pending-bg)", fg: "var(--status-pending-text)" }
+                : { bg: "var(--status-failed-bg)", fg: "var(--status-failed-text)" };
             const detalhe = pendentes > 0 ? `<small>${pendentes} pendente(s)</small>` : "";
             return `<td><div class="heatmap-cell" style="background:${cor.bg};color:${cor.fg}">${celula.lancadas}/${celula.esperadas}${detalhe}</div></td>`;
           })
@@ -296,9 +311,9 @@ if (dashKpis) {
         </table>
       </div>
       <div class="heatmap-legend">
-        <span class="legend-row"><span class="legend-dot" style="background:#1fb980"></span>Completo — todas as notas lançadas</span>
-        <span class="legend-row"><span class="legend-dot" style="background:#f2b400"></span>Parcial — até 30% pendente</span>
-        <span class="legend-row"><span class="legend-dot" style="background:#ef4ea8"></span>Crítico — mais de 30% pendente</span>
+        <span class="legend-row"><span class="legend-dot" style="background:var(--status-approved-dot)"></span>Completo — todas as notas lançadas</span>
+        <span class="legend-row"><span class="legend-dot" style="background:var(--status-pending-dot)"></span>Parcial — até 30% pendente</span>
+        <span class="legend-row"><span class="legend-dot" style="background:var(--status-failed-dot)"></span>Crítico — mais de 30% pendente</span>
       </div>`;
   }
 
