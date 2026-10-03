@@ -64,70 +64,71 @@ else
             </div>
         </div>
     }
-    <section class="panel mb-3">
-        <div class="panel-header d-flex align-items-center justify-content-between">
-            <div>
-                <h1 class="h5 mb-1">Visão Geral</h1>
-                <p class="text-muted mb-0 small">Escolha um professor, turma, disciplina ou período para detalhar os indicadores abaixo.</p>
+    <h1 class="h5 mb-1">Visão Geral</h1>
+    <p class="text-muted mb-3 small">Escolha um professor, turma, disciplina ou período para detalhar os indicadores abaixo.</p>
+
+    <div class="filter-panel mb-3">
+        <div class="filter-panel-header">
+            <span class="filter-icon-badge" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 2.5A.5.5 0 0 1 2 2h12a.5.5 0 0 1 .4.8L10 8.9V13.5a.5.5 0 0 1-.74.44l-2-1.1a.5.5 0 0 1-.26-.44V8.9L1.6 2.8a.5.5 0 0 1-.1-.3Z" /></svg>
+            </span>
+            <span class="filter-panel-title">Filtros</span>
+        </div>
+        <div class="filter-bar">
+            <div class="filter-field">
+                <label for="dash-professor">Professor</label>
+                <select id="dash-professor" class="form-select">
+                    <option value="">Todos os professores</option>
+                    @foreach (var professor in Model.Professores)
+                    {
+                        <option value="@professor.Value" selected="@(Model.ProfessorId.HasValue && professor.Value == Model.ProfessorId.Value.ToString())">@professor.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="dash-turma">Turma</label>
+                <select id="dash-turma" class="form-select">
+                    <option value="">Todas as turmas</option>
+                    @foreach (var turma in Model.Turmas)
+                    {
+                        <option value="@turma.Value" selected="@(Model.TurmaId.HasValue && turma.Value == Model.TurmaId.Value.ToString())">@turma.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="dash-disciplina">Disciplina</label>
+                <select id="dash-disciplina" class="form-select">
+                    <option value="">Todas as disciplinas</option>
+                    @foreach (var disciplina in Model.Disciplinas)
+                    {
+                        <option value="@disciplina.Value" selected="@(Model.DisciplinaId.HasValue && disciplina.Value == Model.DisciplinaId.Value.ToString())">@disciplina.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="dash-ano">Ano letivo</label>
+                <select id="dash-ano" class="form-select">
+                    @foreach (var ano in Model.AnosDisponiveis)
+                    {
+                        <option value="@ano" selected="@(Model.Dados != null && ano == Model.Dados.AnoLetivo)">@ano</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="dash-trimestre">Trimestre</label>
+                <select id="dash-trimestre" class="form-select">
+                    <option value="">Ano completo</option>
+                    <option value="1" selected="@(Model.Trimestre == 1)">1º Trimestre</option>
+                    <option value="2" selected="@(Model.Trimestre == 2)">2º Trimestre</option>
+                    <option value="3" selected="@(Model.Trimestre == 3)">3º Trimestre</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="button" id="dash-filtrar" class="btn btn-primary">Filtrar</button>
+                <button type="button" id="dash-limpar" class="btn btn-outline-secondary">Limpar</button>
             </div>
         </div>
-        <div class="panel-body">
-            <div class="dashboard-filter-bar">
-                <div class="dashboard-filter-field">
-                    <label for="dash-professor">Professor</label>
-                    <select id="dash-professor" class="form-select">
-                        <option value="">Todos os professores</option>
-                        @foreach (var professor in Model.Professores)
-                        {
-                            <option value="@professor.Value" selected="@(Model.ProfessorId.HasValue && professor.Value == Model.ProfessorId.Value.ToString())">@professor.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="dashboard-filter-field">
-                    <label for="dash-turma">Turma</label>
-                    <select id="dash-turma" class="form-select">
-                        <option value="">Todas as turmas</option>
-                        @foreach (var turma in Model.Turmas)
-                        {
-                            <option value="@turma.Value" selected="@(Model.TurmaId.HasValue && turma.Value == Model.TurmaId.Value.ToString())">@turma.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="dashboard-filter-field">
-                    <label for="dash-disciplina">Disciplina</label>
-                    <select id="dash-disciplina" class="form-select">
-                        <option value="">Todas as disciplinas</option>
-                        @foreach (var disciplina in Model.Disciplinas)
-                        {
-                            <option value="@disciplina.Value" selected="@(Model.DisciplinaId.HasValue && disciplina.Value == Model.DisciplinaId.Value.ToString())">@disciplina.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="dashboard-filter-field">
-                    <label for="dash-ano">Ano letivo</label>
-                    <select id="dash-ano" class="form-select">
-                        @foreach (var ano in Model.AnosDisponiveis)
-                        {
-                            <option value="@ano" selected="@(Model.Dados != null && ano == Model.Dados.AnoLetivo)">@ano</option>
-                        }
-                    </select>
-                </div>
-                <div class="dashboard-filter-field">
-                    <label for="dash-trimestre">Trimestre</label>
-                    <select id="dash-trimestre" class="form-select">
-                        <option value="">Ano completo</option>
-                        <option value="1" selected="@(Model.Trimestre == 1)">1º Trimestre</option>
-                        <option value="2" selected="@(Model.Trimestre == 2)">2º Trimestre</option>
-                        <option value="3" selected="@(Model.Trimestre == 3)">3º Trimestre</option>
-                    </select>
-                </div>
-                <div class="d-flex gap-2" style="margin-left:auto">
-                    <button type="button" id="dash-filtrar" class="btn btn-primary">Filtrar</button>
-                    <button type="button" id="dash-limpar" class="btn btn-outline-secondary">Limpar</button>
-                </div>
-            </div>
-        </div>
-    </section>
+    </div>
 
     <div id="dash-charts-area" class="position-relative">
         <div id="dash-loading-overlay" class="dashboard-loading-overlay d-none">
