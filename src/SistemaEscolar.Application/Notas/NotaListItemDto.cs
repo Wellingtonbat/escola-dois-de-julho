@@ -18,4 +18,6 @@ public sealed record NotaListItemDto(
     decimal? RecuperacaoParalela,
     decimal ResultadoUnidade,
     decimal ResultadoFinalUnidade,
-    bool IsFinalizada);
+    bool IsFinalizada,
+    Guid? TurmaId = null,
+    string? TurmaNome = null);

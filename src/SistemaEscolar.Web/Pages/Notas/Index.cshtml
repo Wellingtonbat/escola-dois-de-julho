@@ -62,13 +62,31 @@
                 </select>
             </div>
             <div class="col-12 col-md-2">
+                <select asp-for="TurmaId" class="form-select" title="Filtrar por turma">
+                    <option value="">Todas as turmas</option>
+                    @foreach (var turma in Model.TurmasParaFiltro)
+                    {
+                        <option value="@turma.Value">@turma.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <select asp-for="DisciplinaId" class="form-select" title="Filtrar por disciplina">
+                    <option value="">Todas as disciplinas</option>
+                    @foreach (var disciplina in Model.DisciplinasParaFiltro)
+                    {
+                        <option value="@disciplina.Value">@disciplina.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
                 <select asp-for="Status" class="form-select">
                     <option value="todos">Todos</option>
                     <option value="finalizadas">Finalizadas</option>
                     <option value="pendentes">Pendentes</option>
                 </select>
             </div>
-            <div class="col-12 col-md-2 d-flex gap-2">
+            <div class="col-12 d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
                 <a asp-page="/Notas/Index" class="btn btn-outline-secondary">Limpar</a>
             </div>
@@ -79,6 +97,7 @@
                 <thead>
                     <tr>
                         <th>Aluno</th>
+                        <th>Turma</th>
                         <th>Disciplina</th>
                         <th>Professor</th>
                         <th>Período</th>
@@ -96,7 +115,7 @@
                     @if (Model.Notas.Count == 0)
                     {
                         <tr>
-                            <td colspan="12" class="text-center text-muted">Nenhum lançamento encontrado.</td>
+                            <td colspan="13" class="text-center text-muted">Nenhum lançamento encontrado.</td>
                         </tr>
                     }
                     else
@@ -106,6 +125,7 @@
                             <tr class="@(podeGerenciar ? "row-clicavel" : null)"
                                 data-href="/Notas/Boletim?alunoId=@nota.AlunoId&periodoId=@nota.PeriodoLancamentoId">
                                 <td>@nota.AlunoNome</td>
+                                <td>@(nota.TurmaNome ?? "-")</td>
                                 <td>@nota.DisciplinaNome</td>
                                 <td>@nota.ProfessorNome</td>
                                 <td>@nota.PeriodoDescricao</td>
@@ -129,6 +149,8 @@
                                                 <input type="hidden" name="status" value="@Model.Status" />
                                                 <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
                                                 <input type="hidden" name="trimestre" value="@Model.Trimestre" />
+                                                <input type="hidden" name="turmaId" value="@Model.TurmaId" />
+                                                <input type="hidden" name="disciplinaId" value="@Model.DisciplinaId" />
                                                 <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                                                 <input type="hidden" name="pageSize" value="@Model.PageSize" />
                                                 <button type="submit" class="icon-btn toggle" title="@(nota.IsFinalizada ? "Reabrir" : "Finalizar")"
@@ -141,6 +163,8 @@
                                                 <input type="hidden" name="status" value="@Model.Status" />
                                                 <input type="hidden" name="anoLetivo" value="@Model.AnoLetivo" />
                                                 <input type="hidden" name="trimestre" value="@Model.Trimestre" />
+                                                <input type="hidden" name="turmaId" value="@Model.TurmaId" />
+                                                <input type="hidden" name="disciplinaId" value="@Model.DisciplinaId" />
                                                 <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                                                 <input type="hidden" name="pageSize" value="@Model.PageSize" />
                                                 <button type="submit" class="icon-btn delete" title="Excluir"
@@ -178,7 +202,8 @@
                         <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : string.Empty)">
                             <a class="page-link" asp-page="/Notas/Index" asp-route-Busca="@Model.Busca"
                                asp-route-Status="@Model.Status" asp-route-AnoLetivo="@Model.AnoLetivo"
-                               asp-route-Trimestre="@Model.Trimestre" asp-route-PageSize="@Model.PageSize"
+                               asp-route-Trimestre="@Model.Trimestre" asp-route-TurmaId="@Model.TurmaId"
+                               asp-route-DisciplinaId="@Model.DisciplinaId" asp-route-PageSize="@Model.PageSize"
                                asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
                         </li>
 
@@ -187,7 +212,8 @@
                             <li class="page-item @(i == Model.PageNumber ? "active" : string.Empty)">
                                 <a class="page-link" asp-page="/Notas/Index" asp-route-Busca="@Model.Busca"
                                    asp-route-Status="@Model.Status" asp-route-AnoLetivo="@Model.AnoLetivo"
-                                   asp-route-Trimestre="@Model.Trimestre" asp-route-PageSize="@Model.PageSize"
+                                   asp-route-Trimestre="@Model.Trimestre" asp-route-TurmaId="@Model.TurmaId"
+                                   asp-route-DisciplinaId="@Model.DisciplinaId" asp-route-PageSize="@Model.PageSize"
                                    asp-route-PageNumber="@i">@i</a>
                             </li>
                         }
@@ -195,7 +221,8 @@
                         <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : string.Empty)">
                             <a class="page-link" asp-page="/Notas/Index" asp-route-Busca="@Model.Busca"
                                asp-route-Status="@Model.Status" asp-route-AnoLetivo="@Model.AnoLetivo"
-                               asp-route-Trimestre="@Model.Trimestre" asp-route-PageSize="@Model.PageSize"
+                               asp-route-Trimestre="@Model.Trimestre" asp-route-TurmaId="@Model.TurmaId"
+                               asp-route-DisciplinaId="@Model.DisciplinaId" asp-route-PageSize="@Model.PageSize"
                                asp-route-PageNumber="@(Model.PageNumber + 1)">Próxima</a>
                         </li>
                     </ul>

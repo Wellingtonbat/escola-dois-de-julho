@@ -21,6 +21,8 @@ public sealed class NotaRepository : INotaRepository
             join d in _context.Disciplinas.AsNoTracking() on n.DisciplinaId equals d.Id
             join p in _context.Professores.AsNoTracking() on n.ProfessorId equals p.Id
             join periodo in _context.PeriodosLancamento.AsNoTracking() on n.PeriodoLancamentoId equals periodo.Id
+            join turma in _context.Set<Domain.Entities.Turma>().AsNoTracking() on a.TurmaId equals (Guid?)turma.Id into turmaGroup
+            from turma in turmaGroup.DefaultIfEmpty()
             where !n.IsDeleted && !a.IsDeleted && !d.IsDeleted && !p.IsDeleted
             select new
             {
@@ -41,7 +43,9 @@ public sealed class NotaRepository : INotaRepository
                 n.RecuperacaoParalela,
                 n.ResultadoUnidade,
                 n.ResultadoFinalUnidade,
-                n.IsFinalizada
+                n.IsFinalizada,
+                TurmaId = turma != null ? (Guid?)turma.Id : null,
+                TurmaNome = turma != null ? turma.Nome : null
             };
 
         if (!string.IsNullOrWhiteSpace(filter?.Busca))
@@ -68,6 +72,16 @@ public sealed class NotaRepository : INotaRepository
             query = query.Where(x => x.IsFinalizada == filter.IsFinalizada.Value);
         }
 
+        if (filter?.TurmaId.HasValue == true)
+        {
+            query = query.Where(x => x.TurmaId == filter.TurmaId.Value);
+        }
+
+        if (filter?.DisciplinaId.HasValue == true)
+        {
+            query = query.Where(x => x.DisciplinaId == filter.DisciplinaId.Value);
+        }
+
         return await query
             .OrderByDescending(x => x.AnoLetivo)
             .ThenBy(x => x.Trimestre)
@@ -91,7 +105,9 @@ public sealed class NotaRepository : INotaRepository
                 x.RecuperacaoParalela,
                 x.ResultadoUnidade,
                 x.ResultadoFinalUnidade,
-                x.IsFinalizada))
+                x.IsFinalizada,
+                x.TurmaId,
+                x.TurmaNome))
             .ToListAsync(cancellationToken);
     }
 

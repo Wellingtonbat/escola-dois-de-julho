@@ -60,7 +60,8 @@ public sealed class NotaService : INotaService
         var professores = await _professorService.ListarAsync(null, cancellationToken);
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
 
-        var alunoNome = alunos.FirstOrDefault(x => x.Id == nota.AlunoId)?.NomeCompleto ?? "Aluno não encontrado";
+        var aluno = alunos.FirstOrDefault(x => x.Id == nota.AlunoId);
+        var alunoNome = aluno?.NomeCompleto ?? "Aluno não encontrado";
         var disciplinaNome = disciplinas.FirstOrDefault(x => x.Id == nota.DisciplinaId)?.Nome ?? "Disciplina não encontrada";
         var professorNome = professores.FirstOrDefault(x => x.Id == nota.ProfessorId)?.NomeCompleto ?? "Professor não encontrado";
 
@@ -82,7 +83,9 @@ public sealed class NotaService : INotaService
             nota.RecuperacaoParalela,
             nota.ResultadoUnidade,
             nota.ResultadoFinalUnidade,
-            nota.IsFinalizada);
+            nota.IsFinalizada,
+            aluno?.TurmaId,
+            aluno?.TurmaNome);
     }
 
     public async Task<NotaCreateResult> CriarAsync(NotaCreateRequest request, CancellationToken cancellationToken = default)

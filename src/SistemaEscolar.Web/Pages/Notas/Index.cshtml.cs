@@ -43,6 +43,8 @@ public sealed class IndexModel : PageModel
     public IReadOnlyList<int> AnosDisponiveis { get; private set; } = Array.Empty<int>();
     public LancamentoMassaModalVm LancamentoMassaModal { get; private set; } = new();
     public IReadOnlyList<SelectListItem> TurmasParaBoletim { get; private set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> TurmasParaFiltro { get; private set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> DisciplinasParaFiltro { get; private set; } = Array.Empty<SelectListItem>();
 
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
@@ -55,6 +57,12 @@ public sealed class IndexModel : PageModel
 
     [BindProperty(SupportsGet = true)]
     public int? Trimestre { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public Guid? TurmaId { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public Guid? DisciplinaId { get; set; }
 
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
@@ -75,7 +83,7 @@ public sealed class IndexModel : PageModel
             _ => null
         };
 
-        var filter = new NotaListFilter(Busca, AnoLetivo, Trimestre, statusFilter);
+        var filter = new NotaListFilter(Busca, AnoLetivo, Trimestre, statusFilter, TurmaId, DisciplinaId);
         var notasFiltradas = await _notaService.ListarAsync(filter, cancellationToken);
 
         TotalCount = notasFiltradas.Count;
@@ -94,6 +102,8 @@ public sealed class IndexModel : PageModel
         string? status,
         int? anoLetivo,
         int? trimestre,
+        Guid? turmaId,
+        Guid? disciplinaId,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -101,18 +111,18 @@ public sealed class IndexModel : PageModel
         if (!CanManageNotas())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para alterar status de notas.";
-            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, TurmaId = turmaId, DisciplinaId = disciplinaId, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         var updated = await _notaService.AlternarFinalizacaoAsync(id, cancellationToken);
         if (!updated)
         {
             TempData["ErrorMessage"] = "Lançamento de nota não encontrado para atualização de status.";
-            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, TurmaId = turmaId, DisciplinaId = disciplinaId, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         TempData["SuccessMessage"] = "Status do lançamento atualizado com sucesso.";
-        return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, PageNumber = pageNumber, PageSize = pageSize });
+        return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, TurmaId = turmaId, DisciplinaId = disciplinaId, PageNumber = pageNumber, PageSize = pageSize });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(
@@ -121,6 +131,8 @@ public sealed class IndexModel : PageModel
         string? status,
         int? anoLetivo,
         int? trimestre,
+        Guid? turmaId,
+        Guid? disciplinaId,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -128,18 +140,18 @@ public sealed class IndexModel : PageModel
         if (!CanManageNotas())
         {
             TempData["ErrorMessage"] = "Você não tem permissão para excluir notas.";
-            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, TurmaId = turmaId, DisciplinaId = disciplinaId, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         var deleted = await _notaService.ExcluirAsync(id, cancellationToken);
         if (!deleted)
         {
             TempData["ErrorMessage"] = "Lançamento de nota não encontrado para exclusão.";
-            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, PageNumber = pageNumber, PageSize = pageSize });
+            return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, TurmaId = turmaId, DisciplinaId = disciplinaId, PageNumber = pageNumber, PageSize = pageSize });
         }
 
         TempData["SuccessMessage"] = "Lançamento de nota excluído com sucesso.";
-        return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, PageNumber = pageNumber, PageSize = pageSize });
+        return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, TurmaId = turmaId, DisciplinaId = disciplinaId, PageNumber = pageNumber, PageSize = pageSize });
     }
 
     private async Task LoadSelectOptionsAsync(CancellationToken cancellationToken)
@@ -158,6 +170,24 @@ public sealed class IndexModel : PageModel
         Alunos = alunosVisiveis
             .OrderBy(x => x.NomeCompleto)
             .Select(x => new SelectListItem(x.NomeCompleto, x.Id.ToString()))
+            .ToList();
+
+        var turmasFiltro = await _turmaService.ListarAsync(null, cancellationToken);
+        var turmasFiltroVisiveis = escopo is not null
+            ? turmasFiltro.Where(t => escopo.TurmaIds.Contains(t.Id))
+            : turmasFiltro;
+        TurmasParaFiltro = turmasFiltroVisiveis
+            .OrderBy(t => t.Nome)
+            .Select(t => new SelectListItem($"{t.Nome} ({t.SerieNome})", t.Id.ToString()))
+            .ToList();
+
+        var disciplinasFiltro = await _disciplinaService.ListarAsync(null, cancellationToken);
+        var disciplinasFiltroVisiveis = escopo is not null
+            ? disciplinasFiltro.Where(d => escopo.DisciplinaIds.Contains(d.Id))
+            : disciplinasFiltro;
+        DisciplinasParaFiltro = disciplinasFiltroVisiveis
+            .OrderBy(d => d.Nome)
+            .Select(d => new SelectListItem(d.Nome, d.Id.ToString()))
             .ToList();
 
         var periodos = await _periodoService.ListarAsync(null, cancellationToken);
