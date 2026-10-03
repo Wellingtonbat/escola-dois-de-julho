@@ -150,7 +150,9 @@ public sealed class AtaService : IAtaService
                 Id = Guid.NewGuid(),
                 AlunoId = aluno.Id,
                 TP = Math.Round(disciplinas.Sum(d => d.ResultadoFinalAno), 2),
-                MC = disciplinas.Count > 0 ? Math.Round(disciplinas.Average(d => d.ResultadoFinalAno), 2) : 0m,
+                // MC (Média do Curso) é a média mínima de aprovação — referência fixa, não a média das
+                // notas do próprio aluno (essa é a Situação/RF, já calculada por disciplina).
+                MC = AtaConstantes.MediaAprovacao,
                 AvF = null,
                 RF = todasAprovadas ? AtaConstantes.RFAprovado : AtaConstantes.RFPendente
             };
