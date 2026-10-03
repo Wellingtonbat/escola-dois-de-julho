@@ -2,7 +2,7 @@
 @model SistemaEscolar.Web.Pages.Professores.IndexModel
 @{
     ViewData["Title"] = "Professores";
-    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Estrutura Acadêmica", "Professores" };
+    ViewData["Breadcrumb"] = new[] { "Acadêmico", "Professores" };
     var podeGerenciar = User.EhGestao();
     // Só a Diretoria concede/revoga o perfil de Vice-Diretor e mexe na conta (senha, exclusão) de quem o tem.
     var podeDefinirViceDiretor = User.EhDiretoria();
@@ -12,8 +12,6 @@
     if (!string.IsNullOrWhiteSpace(Model.Busca)) { filtrosAtivos.Add(($"Busca: {Model.Busca}", "Busca")); }
     if (statusLabel is not null) { filtrosAtivos.Add((statusLabel, "Status")); }
 }
-
-<partial name="Shared/_EstruturaAcademicaTabs" model="@("Professores")" />
 
 <section class="panel">
     <div class="panel-header d-flex justify-content-between align-items-center">

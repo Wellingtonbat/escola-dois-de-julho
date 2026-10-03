@@ -1,0 +1,158 @@
+@{
+    var currentPath = ViewContext.HttpContext.Request.Path.Value ?? string.Empty;
+    bool StartsWith(string prefix) => currentPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+
+    var dashboardActive = currentPath.Equals("/", StringComparison.OrdinalIgnoreCase)
+        || currentPath.Equals("/Index", StringComparison.OrdinalIgnoreCase);
+    var notasActive = StartsWith("/Notas");
+    var resultadosActive = StartsWith("/Resultados");
+    var periodosActive = StartsWith("/Periodos");
+    var atasActive = StartsWith("/Atas");
+    var alunosActive = StartsWith("/Alunos");
+    var turmasActive = StartsWith("/Turmas");
+    var seriesActive = StartsWith("/Series");
+    var disciplinasActive = StartsWith("/Disciplinas");
+    var professoresActive = StartsWith("/Professores");
+    var usuariosActive = StartsWith("/Usuarios");
+    var auditoriaActive = StartsWith("/Auditoria");
+
+    var isProfessorOnly = User.EhApenasProfessor();
+    var podeAcessarAtas = User.PodeAcessarAtas();
+    var podeGerenciarUsuarios = User.EhGestao();
+    var podeVerAuditoria = User.PodeVerAuditoria();
+    var cadastrosVisivel = !isProfessorOnly;
+    var administracaoVisivel = podeGerenciarUsuarios || podeVerAuditoria;
+
+    var entryAssembly = System.Reflection.Assembly.GetEntryAssembly();
+    var infoAttr = entryAssembly is null
+        ? null
+        : System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(entryAssembly);
+    var appVersion = infoAttr?.InformationalVersion;
+    if (string.IsNullOrWhiteSpace(appVersion))
+    {
+        appVersion = entryAssembly?.GetName().Version?.ToString(3) ?? "1.0.0";
+    }
+}
+<aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+        <span class="brand-badge" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none"><path d="M9 27V14c3.5-1.7 7-1.5 11 1.2 4-2.7 7.5-2.9 11-1.2v13c-3.5-1.7-7-1.5-11 1.2-4-2.7-7.5-2.9-11-1.2z" stroke="#0F1D40" stroke-width="2.2" stroke-linejoin="round"></path><path d="M20 15.2v13" stroke="#0F1D40" stroke-width="2.2"></path></svg>
+        </span>
+        <div>
+            <p class="brand-title mb-0">Sistema Escolar</p>
+            <small class="brand-subtitle">Painel Administrativo</small>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Menu principal">
+        <div class="sidebar-group">
+            <small class="sidebar-section-title">Acadêmico</small>
+            <a asp-page="/Index" class="sidebar-link @(dashboardActive ? "active" : null)">
+                <span class="sidebar-link-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z" /></svg>
+                </span>
+                <span class="sidebar-link-label">Dashboard</span>
+            </a>
+            <a asp-page="/Notas/Index" class="sidebar-link @(notasActive ? "active" : null)">
+                <span class="sidebar-link-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+                </span>
+                <span class="sidebar-link-label">Notas</span>
+            </a>
+            <a asp-page="/Resultados/Index" class="sidebar-link @(resultadosActive ? "active" : null)">
+                <span class="sidebar-link-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-4 3 3 5-6" /></svg>
+                </span>
+                <span class="sidebar-link-label">Resultados</span>
+            </a>
+            @if (cadastrosVisivel)
+            {
+                <a asp-page="/Periodos/Index" class="sidebar-link @(periodosActive ? "active" : null)">
+                    <span class="sidebar-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4" /></svg>
+                    </span>
+                    <span class="sidebar-link-label">Períodos</span>
+                </a>
+            }
+            @if (podeAcessarAtas)
+            {
+                <a asp-page="/Atas/Index" class="sidebar-link @(atasActive ? "active" : null)">
+                    <span class="sidebar-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" /><path d="M14 2v6h6" /><path d="m3 15 2 2 4-4" /></svg>
+                    </span>
+                    <span class="sidebar-link-label">Atas</span>
+                </a>
+            }
+        </div>
+
+        @if (cadastrosVisivel)
+        {
+            <div class="sidebar-group">
+                <small class="sidebar-section-title">Cadastros</small>
+                <a asp-page="/Alunos/Index" class="sidebar-link @(alunosActive ? "active" : null)">
+                    <span class="sidebar-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5zM6 12v5c3 2 9 2 12 0v-5" /></svg>
+                    </span>
+                    <span class="sidebar-link-label">Alunos</span>
+                </a>
+                <a asp-page="/Turmas/Index" class="sidebar-link @(turmasActive ? "active" : null)">
+                    <span class="sidebar-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></svg>
+                    </span>
+                    <span class="sidebar-link-label">Turmas</span>
+                </a>
+                <a asp-page="/Series/Index" class="sidebar-link @(seriesActive ? "active" : null)">
+                    <span class="sidebar-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+                    </span>
+                    <span class="sidebar-link-label">Séries</span>
+                </a>
+                <a asp-page="/Disciplinas/Index" class="sidebar-link @(disciplinasActive ? "active" : null)">
+                    <span class="sidebar-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM6.5 17H20v4H6.5A2.5 2.5 0 0 1 4 18.5" /></svg>
+                    </span>
+                    <span class="sidebar-link-label">Disciplinas</span>
+                </a>
+                <a asp-page="/Professores/Index" class="sidebar-link @(professoresActive ? "active" : null)">
+                    <span class="sidebar-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /></svg>
+                    </span>
+                    <span class="sidebar-link-label">Professores</span>
+                </a>
+            </div>
+        }
+
+        @if (administracaoVisivel)
+        {
+            <div class="sidebar-group">
+                <small class="sidebar-section-title">Administração</small>
+                @if (podeGerenciarUsuarios)
+                {
+                    <a asp-page="/Usuarios/Index" class="sidebar-link @(usuariosActive ? "active" : null)">
+                        <span class="sidebar-link-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                        </span>
+                        <span class="sidebar-link-label">Usuários</span>
+                    </a>
+                }
+                @if (podeVerAuditoria)
+                {
+                    <a asp-page="/Auditoria/Index" class="sidebar-link @(auditoriaActive ? "active" : null)">
+                        <span class="sidebar-link-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+                        </span>
+                        <span class="sidebar-link-label">Auditoria</span>
+                    </a>
+                }
+            </div>
+        }
+    </nav>
+
+    <div class="sidebar-footer">
+        <a asp-page="/Manual/Index" asp-page-handler="DownloadPdf" class="sidebar-footer-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5M4 20h16" /></svg>
+            Baixar manual (PDF)
+        </a>
+        <div class="sidebar-version">Versão @appVersion</div>
+    </div>
+</aside>

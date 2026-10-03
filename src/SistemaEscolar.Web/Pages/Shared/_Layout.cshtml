@@ -3,7 +3,6 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 @{
-    var currentPath = ViewContext.HttpContext.Request.Path.Value ?? string.Empty;
     var title = ViewData["Title"]?.ToString() ?? "Sistema Escolar";
     var breadcrumb = ViewData["Breadcrumb"] as string[];
     breadcrumb ??= new[] { "Dashboard", title };
@@ -19,22 +18,6 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
         appVersion = entryAssembly?.GetName().Version?.ToString(3) ?? "1.0.0";
     }
 
-    var dashboardActive = currentPath.Equals("/", StringComparison.OrdinalIgnoreCase)
-        || currentPath.Equals("/Index", StringComparison.OrdinalIgnoreCase);
-    var alunosActive = currentPath.StartsWith("/Alunos", StringComparison.OrdinalIgnoreCase);
-    var disciplinasActive = currentPath.StartsWith("/Disciplinas", StringComparison.OrdinalIgnoreCase);
-    var periodosActive = currentPath.StartsWith("/Periodos", StringComparison.OrdinalIgnoreCase);
-    var professoresActive = currentPath.StartsWith("/Professores", StringComparison.OrdinalIgnoreCase);
-    var turmasActive = currentPath.StartsWith("/Turmas", StringComparison.OrdinalIgnoreCase);
-    var seriesActive = currentPath.StartsWith("/Series", StringComparison.OrdinalIgnoreCase);
-    var estruturaAcademicaActive = disciplinasActive || periodosActive || professoresActive || turmasActive || seriesActive;
-    var notasActive = currentPath.StartsWith("/Notas", StringComparison.OrdinalIgnoreCase);
-    var resultadosActive = currentPath.StartsWith("/Resultados", StringComparison.OrdinalIgnoreCase);
-    var usuariosActive = currentPath.StartsWith("/Usuarios", StringComparison.OrdinalIgnoreCase);
-    var auditoriaActive = currentPath.StartsWith("/Auditoria", StringComparison.OrdinalIgnoreCase);
-    var atasActive = currentPath.StartsWith("/Atas", StringComparison.OrdinalIgnoreCase);
-    var podeGerenciarUsuarios = User.EhGestao();
-    var isProfessorOnly = User.EhApenasProfessor();
     var successMessage = TempData["SuccessMessage"]?.ToString();
     var errorMessage = TempData["ErrorMessage"]?.ToString();
 
@@ -62,86 +45,7 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
 
 <body class="app-body" data-flash-success="@successMessage" data-flash-error="@errorMessage">
     <div class="app-shell" id="appShell">
-        <aside class="app-sidebar" id="appSidebar">
-            <div class="sidebar-brand">
-                <span class="brand-badge">SE</span>
-                <div>
-                    <p class="brand-title mb-0">Sistema Escolar</p>
-                    <small class="brand-subtitle">Painel Administrativo</small>
-                </div>
-            </div>
-
-            <nav class="sidebar-nav">
-                <small class="sidebar-section-title">Acadêmico</small>
-                <a asp-page="/Index" class="sidebar-link @(dashboardActive ? "active" : null)">
-                    <span class="sidebar-link-icon" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v6H1V1Zm8 0h6v6H9V1ZM1 9h6v6H1V9Zm8 0h6v6H9V9Z" /></svg>
-                    </span>
-                    <span class="sidebar-link-label">Dashboard</span>
-                </a>
-                @if (!isProfessorOnly)
-                {
-                    <a asp-page="/Alunos/Index" class="sidebar-link @(alunosActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1 15 4.5 8 8 1 4.5 8 1Z" /><path d="M4 6.2v3.3c0 .9 1.8 1.8 4 1.8s4-.9 4-1.8V6.2L8 8 4 6.2Z" /><path d="M14 6v3.5a.5.5 0 0 0 1 0V6h-1Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Alunos</span>
-                    </a>
-                    <a asp-page="/Turmas/Index" class="sidebar-link @(estruturaAcademicaActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0 1 3.5l7 3.5 7-3.5L8 0ZM1 6.5v5.4l7 3.6 7-3.6V6.5L8 10 1 6.5Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Estrutura Acadêmica</span>
-                    </a>
-                }
-                <a asp-page="/Notas/Index" class="sidebar-link @(notasActive ? "active" : null)">
-                    <span class="sidebar-link-icon" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
-                    </span>
-                    <span class="sidebar-link-label">Notas</span>
-                </a>
-                <a asp-page="/Resultados/Index" class="sidebar-link @(resultadosActive ? "active" : null)">
-                    <span class="sidebar-link-icon" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M0 14.5a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 0-1H1V.5a.5.5 0 0 0-1 0v14Z" /><path d="M14.5 3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 1 0 0 1h1.79l-3.3 3.3-2-2a.5.5 0 0 0-.7 0l-4 4a.5.5 0 1 0 .7.7L7 6.41l2 2a.5.5 0 0 0 .7 0l3.5-3.5V6.5a.5.5 0 0 0 1 0v-3Z" /></svg>
-                    </span>
-                    <span class="sidebar-link-label">Resultados</span>
-                </a>
-                @if (User.PodeAcessarAtas())
-                {
-                    <a asp-page="/Atas/Index" class="sidebar-link @(atasActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0H4Z" /><path d="M9.5 0v4a.5.5 0 0 0 .5.5h4L9.5 0Z" opacity=".5" /><path d="M5 9h6v1H5V9Zm0 2h6v1H5v-1Zm0-4h3v1H5V7Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Atas</span>
-                    </a>
-                }
-                @if (podeGerenciarUsuarios)
-                {
-                    <a asp-page="/Usuarios/Index" class="sidebar-link @(usuariosActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm5-1.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM0 13c0-1.9 2.5-3.5 5.5-3.5S11 11.1 11 13v1H0v-1Zm12.5-2c-.3 0-.6.02-.9.06.9.7 1.4 1.7 1.4 2.94v1H16v-1c0-1.6-1.6-3-3.5-3Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Usuários</span>
-                    </a>
-                }
-                @if (User.PodeVerAuditoria())
-                {
-                    <a asp-page="/Auditoria/Index" class="sidebar-link @(auditoriaActive ? "active" : null)">
-                        <span class="sidebar-link-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1 2 3.5V8c0 3.3 2.3 5.9 6 7 3.7-1.1 6-3.7 6-7V3.5L8 1Zm-.7 9.6L5 8.3l.9-.9 1.4 1.4 3-3 .9.9-3.9 3.9Z" /></svg>
-                        </span>
-                        <span class="sidebar-link-label">Auditoria</span>
-                    </a>
-                }
-                <a asp-page="/Manual/Index" asp-page-handler="DownloadPdf" class="sidebar-link">
-                    <span class="sidebar-link-icon" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0H4Z" /><path d="M9.5 0v4a.5.5 0 0 0 .5.5h4L9.5 0Z" opacity=".5" /></svg>
-                    </span>
-                    <span class="sidebar-link-label">Baixar Manual (PDF)</span>
-                </a>
-
-            </nav>
-        </aside>
+        <partial name="_Sidebar" />
 
                                                 <div class="app-main">
                                                     <header class="app-topbar">
