@@ -136,7 +136,7 @@ public sealed class DetalheModel : PageModel
                     {
                         layers.PrimaryLayer().Row(row =>
                         {
-                            row.ConstantItem(140);
+                            row.ConstantItem(100);
                             row.ConstantItem(90).Image(brasaoBytes).FitWidth();
 
                             row.RelativeItem().ShowOnce().AlignRight().AlignMiddle().Column(direita =>
@@ -150,7 +150,7 @@ public sealed class DetalheModel : PageModel
                             });
                         });
 
-                        layers.Layer().ShowOnce().Width(140).AlignMiddle().Text(t =>
+                        layers.Layer().ShowOnce().Width(100).AlignMiddle().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(11).Bold().FontColor(Colors.Blue.Darken2));
                             t.Line("Secretaria da");
