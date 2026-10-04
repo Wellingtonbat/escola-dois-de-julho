@@ -1102,6 +1102,44 @@ body.app-body {
   background: #fdf1d6;
 }
 
+/* Finalizar/Excluir lançamento no card de disciplina do Boletim: já coloridos no estado normal
+   (não só no hover), para se destacarem das outras ações da tela em vez de se perderem como mais
+   um ícone neutro. */
+.disc-footer-actions .icon-btn {
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 0.65rem;
+}
+
+.disc-footer-actions .icon-btn svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.disc-footer-actions .icon-btn.finish {
+  border-color: var(--status-approved-dot);
+  color: var(--status-approved-text);
+  background: var(--status-approved-bg);
+}
+
+.disc-footer-actions .icon-btn.finish:hover {
+  border-color: var(--status-approved-text);
+  background: var(--status-approved-dot);
+  color: #fff;
+}
+
+.disc-footer-actions .icon-btn.delete {
+  border-color: var(--status-failed-dot);
+  color: var(--status-failed-text);
+  background: var(--status-failed-bg);
+}
+
+.disc-footer-actions .icon-btn.delete:hover {
+  border-color: var(--status-failed-text);
+  background: var(--status-failed-dot);
+  color: #fff;
+}
+
 .row-chevron {
   opacity: 0.35;
   transition: all 0.15s ease;
