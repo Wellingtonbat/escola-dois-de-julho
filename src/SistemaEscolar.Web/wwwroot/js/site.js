@@ -165,3 +165,160 @@ document.querySelectorAll("[data-password-rules]").forEach((rulesList) => {
   input.addEventListener("input", validate);
   validate();
 });
+
+// Multi-select com chips: transforma um <select multiple data-chip-select> num campo com os itens
+// selecionados exibidos como chips removíveis e um painel de busca/seleção, sem mudar o que é
+// enviado no formulário (o <select> original continua existindo, só fica visualmente oculto).
+function initChipSelect(select) {
+  if (select.dataset.chipSelectInit === "true") {
+    return;
+  }
+  select.dataset.chipSelectInit = "true";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "chip-select";
+  select.insertAdjacentElement("beforebegin", wrapper);
+
+  const control = document.createElement("div");
+  control.className = "chip-select-control";
+
+  const chipsArea = document.createElement("div");
+  chipsArea.className = "chip-select-chips";
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.className = "chip-select-search";
+  searchInput.autocomplete = "off";
+
+  control.appendChild(chipsArea);
+  control.appendChild(searchInput);
+
+  const panel = document.createElement("div");
+  panel.className = "chip-select-panel";
+  panel.hidden = true;
+
+  wrapper.appendChild(control);
+  wrapper.appendChild(panel);
+  wrapper.appendChild(select);
+  select.classList.add("chip-select-native");
+
+  const options = () => Array.from(select.options);
+
+  const toggleOption = (opt) => {
+    opt.selected = !opt.selected;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    searchInput.focus();
+  };
+
+  const renderPanel = (filtro) => {
+    panel.innerHTML = "";
+    const termo = (filtro || "").trim().toLowerCase();
+    let algumVisivel = false;
+
+    options().forEach((opt) => {
+      if (termo && !opt.text.toLowerCase().includes(termo)) {
+        return;
+      }
+      algumVisivel = true;
+
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "chip-select-item" + (opt.selected ? " is-selected" : "");
+      item.textContent = opt.text;
+      item.addEventListener("click", () => toggleOption(opt));
+      panel.appendChild(item);
+    });
+
+    if (!algumVisivel) {
+      const vazio = document.createElement("div");
+      vazio.className = "chip-select-empty";
+      vazio.textContent = "Nenhum resultado.";
+      panel.appendChild(vazio);
+    }
+  };
+
+  const renderChips = () => {
+    chipsArea.innerHTML = "";
+    const selecionados = options().filter((opt) => opt.selected);
+
+    selecionados.forEach((opt) => {
+      const chip = document.createElement("span");
+      chip.className = "chip-select-chip";
+
+      const label = document.createElement("span");
+      label.textContent = opt.text;
+
+      const remover = document.createElement("button");
+      remover.type = "button";
+      remover.className = "chip-select-remove";
+      remover.setAttribute("aria-label", `Remover ${opt.text}`);
+      remover.textContent = "×";
+      remover.addEventListener("click", (evento) => {
+        evento.stopPropagation();
+        toggleOption(opt);
+      });
+
+      chip.appendChild(label);
+      chip.appendChild(remover);
+      chipsArea.appendChild(chip);
+    });
+
+    searchInput.placeholder = selecionados.length ? "" : (select.dataset.chipPlaceholder || "Selecione...");
+  };
+
+  const render = () => {
+    renderChips();
+    renderPanel(searchInput.value);
+  };
+
+  const abrirPainel = () => {
+    panel.hidden = false;
+    wrapper.classList.add("is-open");
+    renderPanel(searchInput.value);
+  };
+
+  const fecharPainel = () => {
+    panel.hidden = true;
+    wrapper.classList.remove("is-open");
+    searchInput.value = "";
+    renderPanel("");
+  };
+
+  control.addEventListener("click", () => {
+    searchInput.focus();
+    abrirPainel();
+  });
+
+  searchInput.addEventListener("focus", abrirPainel);
+  searchInput.addEventListener("input", () => renderPanel(searchInput.value));
+  searchInput.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") {
+      fecharPainel();
+      searchInput.blur();
+    }
+    if (evento.key === "Backspace" && !searchInput.value) {
+      const selecionados = options().filter((opt) => opt.selected);
+      const ultimo = selecionados[selecionados.length - 1];
+      if (ultimo) {
+        toggleOption(ultimo);
+      }
+    }
+  });
+
+  document.addEventListener("click", (evento) => {
+    // composedPath() (não evento.target/wrapper.contains) porque o clique num item do painel
+    // recria o painel (innerHTML) dentro do próprio handler — na hora em que este listener roda na
+    // fase de bubbling, o nó original já foi removido da árvore. composedPath() fica congelado no
+    // momento do dispatch, então continua incluindo wrapper mesmo com o nó já desconectado.
+    const path = typeof evento.composedPath === "function" ? evento.composedPath() : [];
+    if (!path.includes(wrapper)) {
+      fecharPainel();
+    }
+  });
+
+  select.addEventListener("change", render);
+
+  render();
+}
+
+document.querySelectorAll("select[multiple][data-chip-select]").forEach(initChipSelect);

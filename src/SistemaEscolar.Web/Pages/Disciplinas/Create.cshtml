@@ -37,13 +37,12 @@
 
             <div class="col-12">
                 <label asp-for="Input.SerieIds" class="form-label"></label>
-                <select asp-for="Input.SerieIds" class="form-select" multiple size="6">
+                <select asp-for="Input.SerieIds" multiple data-chip-select data-chip-placeholder="Selecione as séries...">
                     @foreach (var serie in Model.Series)
                     {
                         <option value="@serie.Value">@serie.Text</option>
                     }
                 </select>
-                <small class="text-muted">Use Ctrl (ou Command) para selecionar múltiplas séries.</small>
                 <span asp-validation-for="Input.SerieIds" class="text-danger"></span>
             </div>
 

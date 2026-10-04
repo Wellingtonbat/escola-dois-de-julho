@@ -102,10 +102,25 @@
                         @foreach (var disciplina in Model.Disciplinas)
                         {
                             var serieIdsJson = System.Text.Json.JsonSerializer.Serialize(disciplina.Series.Select(x => x.SerieId));
+                            var seriesDaDisciplina = disciplina.Series.Select(x => x.SerieNome).Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
                             <tr class="@(podeGerenciar ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-disciplina">
                                 <td>@disciplina.Nome</td>
                                 <td>@disciplina.Codigo</td>
-                                <td>@disciplina.SeriesResumo</td>
+                                <td class="vinculos-cell">
+                                    @if (seriesDaDisciplina.Count == 0)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="vinculos-wrap">
+                                            @foreach (var nome in seriesDaDisciplina)
+                                            {
+                                                <span class="vinculo-chip vinculo-chip-serie">@nome</span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
                                 <td>@disciplina.CargaHoraria h</td>
                                 <td>
                                     <span class="status-pill @(disciplina.IsAtiva ? "status-open" : "status-warn")">
@@ -233,13 +248,13 @@
                         </div>
                         <div class="mb-3">
                             <label for="edit-disciplina-series" class="form-label">Séries vinculadas</label>
-                            <select id="edit-disciplina-series" name="serieIds" class="form-select" multiple size="6" required>
+                            <select id="edit-disciplina-series" name="serieIds" multiple required
+                                    data-chip-select data-chip-placeholder="Selecione as séries...">
                                 @foreach (var serie in Model.Series)
                                 {
                                     <option value="@serie.Value">@serie.Text</option>
                                 }
                             </select>
-                            <small class="text-muted">Use Ctrl (ou Command) para selecionar múltiplas séries.</small>
                         </div>
                         <div class="mb-3">
                             <label for="edit-disciplina-carga" class="form-label">Carga Horária</label>
@@ -297,6 +312,7 @@
                             serieIds = [];
                         }
                         applySeriesSelection(serieIds);
+                        seriesInput.dispatchEvent(new Event("change"));
 
                         cargaInput.value = button.dataset.carga || "";
                         ativaInput.checked = (button.dataset.ativa || "").toLowerCase() === "true";
