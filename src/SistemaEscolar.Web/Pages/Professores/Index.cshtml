@@ -132,10 +132,12 @@
                                     }
                                     else
                                     {
-                                        @foreach (var nome in disciplinasDistintas)
-                                        {
-                                            <span class="vinculo-chip">@nome</span>
-                                        }
+                                        <div class="vinculos-wrap">
+                                            @foreach (var nome in disciplinasDistintas)
+                                            {
+                                                <span class="vinculo-chip vinculo-chip-disciplina">@nome</span>
+                                            }
+                                        </div>
                                     }
                                 </td>
                                 <td class="vinculos-cell">
@@ -145,10 +147,12 @@
                                     }
                                     else
                                     {
-                                        @foreach (var nome in seriesDistintas)
-                                        {
-                                            <span class="vinculo-chip">@nome</span>
-                                        }
+                                        <div class="vinculos-wrap">
+                                            @foreach (var nome in seriesDistintas)
+                                            {
+                                                <span class="vinculo-chip vinculo-chip-serie">@nome</span>
+                                            }
+                                        </div>
                                     }
                                 </td>
                                 <td class="vinculos-cell vinculos-cell-turmas">
@@ -158,10 +162,12 @@
                                     }
                                     else
                                     {
-                                        @foreach (var nome in turmasDistintas)
-                                        {
-                                            <span class="vinculo-chip">@nome</span>
-                                        }
+                                        <div class="vinculos-wrap">
+                                            @foreach (var nome in turmasDistintas)
+                                            {
+                                                <span class="vinculo-chip vinculo-chip-turma">@nome</span>
+                                            }
+                                        </div>
                                     }
                                 </td>
                                 <td>

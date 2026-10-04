@@ -623,29 +623,48 @@ body.app-body {
 }
 
 /* Disciplinas/Séries/Turmas vinculadas (ex.: Professores): chips que quebram linha dentro de uma
-   largura máxima, em vez de uma string separada por vírgula que força rolagem lateral da tabela. */
+   largura máxima, em vez de uma string separada por vírgula que força rolagem lateral da tabela.
+   Importante: o flex-wrap fica numa <div> dentro do <td>, nunca no <td> diretamente — "display: flex"
+   num <td> tira o elemento do modo table-cell e quebra o alinhamento das colunas da tabela. */
 .vinculos-cell {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
   max-width: 220px;
-  padding-top: 0.55rem;
-  padding-bottom: 0.55rem;
+  vertical-align: middle;
 }
 
 .vinculos-cell-turmas {
-  max-width: 280px;
+  max-width: 300px;
+}
+
+.vinculos-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.4rem 0;
 }
 
 .vinculo-chip {
-  background: var(--app-bg);
-  border: 1px solid var(--border-color);
   border-radius: 999px;
-  padding: 0.15rem 0.55rem;
+  padding: 0.15rem 0.6rem;
   font-size: 0.72rem;
+  font-weight: 600;
   line-height: 1.4;
-  color: var(--text-support);
   white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.vinculo-chip-disciplina {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.vinculo-chip-serie {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.vinculo-chip-turma {
+  background: var(--status-approved-bg);
+  color: var(--status-approved-text);
 }
 
 .boletim-divider {
