@@ -86,8 +86,6 @@
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>E-mail</th>
-                        <th>CPF Usuário</th>
                         <th>Disciplinas</th>
                         <th>Séries</th>
                         <th>Turmas</th>
@@ -99,7 +97,7 @@
                     @if (Model.Professores.Count == 0)
                     {
                         <tr>
-                            <td colspan="8" class="text-center text-muted">Nenhum professor encontrado.</td>
+                            <td colspan="6" class="text-center text-muted">Nenhum professor encontrado.</td>
                         </tr>
                     }
                     else
@@ -116,6 +114,9 @@
                             }));
                             var ehViceDiretor = Model.ViceDiretorCpfs.Contains(professor.UsuarioCpf);
                             var podeAgirNaConta = !ehViceDiretor || podeDefinirViceDiretor;
+                            var disciplinasDistintas = professor.Atribuicoes.Select(a => a.DisciplinaNome).Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+                            var seriesDistintas = professor.Atribuicoes.Select(a => a.SerieNome).Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+                            var turmasDistintas = professor.Atribuicoes.Select(a => a.TurmaNome).Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
                             <tr class="@(podeGerenciar ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-professor">
                                 <td>
                                     @professor.NomeCompleto
@@ -124,11 +125,45 @@
                                         <span class="status-pill status-open ms-1">Vice-Diretor</span>
                                     }
                                 </td>
-                                <td>@professor.Email</td>
-                                <td>@professor.UsuarioCpf</td>
-                                <td>@professor.DisciplinasResumo</td>
-                                <td>@professor.SeriesResumo</td>
-                                <td>@professor.TurmasResumo</td>
+                                <td class="vinculos-cell">
+                                    @if (disciplinasDistintas.Count == 0)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var nome in disciplinasDistintas)
+                                        {
+                                            <span class="vinculo-chip">@nome</span>
+                                        }
+                                    }
+                                </td>
+                                <td class="vinculos-cell">
+                                    @if (seriesDistintas.Count == 0)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var nome in seriesDistintas)
+                                        {
+                                            <span class="vinculo-chip">@nome</span>
+                                        }
+                                    }
+                                </td>
+                                <td class="vinculos-cell vinculos-cell-turmas">
+                                    @if (turmasDistintas.Count == 0)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var nome in turmasDistintas)
+                                        {
+                                            <span class="vinculo-chip">@nome</span>
+                                        }
+                                    }
+                                </td>
                                 <td>
                                     <span class="status-pill @(professor.IsAtivo ? "status-open" : "status-warn")">
                                         @(professor.IsAtivo ? "Ativo" : "Inativo")

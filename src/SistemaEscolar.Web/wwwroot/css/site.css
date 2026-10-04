@@ -622,6 +622,32 @@ body.app-body {
   font-weight: 600;
 }
 
+/* Disciplinas/Séries/Turmas vinculadas (ex.: Professores): chips que quebram linha dentro de uma
+   largura máxima, em vez de uma string separada por vírgula que força rolagem lateral da tabela. */
+.vinculos-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-width: 220px;
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+
+.vinculos-cell-turmas {
+  max-width: 280px;
+}
+
+.vinculo-chip {
+  background: var(--app-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--text-support);
+  white-space: nowrap;
+}
+
 .boletim-divider {
   width: 1px;
   align-self: stretch;
