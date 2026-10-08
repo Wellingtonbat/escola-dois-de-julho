@@ -75,7 +75,9 @@ public class IndexModel : PageModel
 
     public IReadOnlyList<int> AnosDisponiveis { get; private set; } = Array.Empty<int>();
     public IReadOnlyList<SelectListItem> Professores { get; private set; } = Array.Empty<SelectListItem>();
-    public IReadOnlyList<SelectListItem> Turmas { get; private set; } = Array.Empty<SelectListItem>();
+    // Turmas de todos os anos: a tela mostra só as do ano letivo selecionado (atributo data-ano + dashboard.js),
+    // para que trocar o ano no filtro não exija recarregar a página.
+    public IReadOnlyList<TurmaListItemDto> Turmas { get; private set; } = Array.Empty<TurmaListItemDto>();
     public IReadOnlyList<SelectListItem> Disciplinas { get; private set; } = Array.Empty<SelectListItem>();
     public DashboardDadosDto? Dados { get; private set; }
     public IReadOnlyList<PeriodoListItemDto> PeriodosAbertosComDataVencida { get; private set; } = Array.Empty<PeriodoListItemDto>();
@@ -123,7 +125,6 @@ public class IndexModel : PageModel
 
         Turmas = (await _turmaService.ListarAsync(new TurmaListFilter(null, null, null, true), cancellationToken))
             .OrderBy(t => t.Nome)
-            .Select(t => new SelectListItem($"{t.Nome} ({t.SerieNome})", t.Id.ToString()))
             .ToList();
 
         Disciplinas = (await _disciplinaService.ListarAsync(null, cancellationToken))

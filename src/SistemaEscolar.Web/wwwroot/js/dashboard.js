@@ -58,7 +58,11 @@ if (dashKpis) {
   }
 
   function renderKpis(dados) {
-    document.getElementById("dash-kpis-caption").textContent = `Visão geral da escola — ano letivo ${dados.anoLetivo}`;
+    document.getElementById("dash-kpis-caption").textContent = descreverEscopo(dados, {
+      comTurma: true,
+      comDisciplina: true,
+      comProfessor: true,
+    });
     const k = dados.kpis;
     dashKpis.innerHTML = `
       <article class="kpi-card kpi-card-icon">
@@ -353,6 +357,21 @@ if (dashKpis) {
       if (botaoLimpar) botaoLimpar.disabled = false;
     }
   }
+
+  // O select de Turma traz as turmas de todos os anos; mostra só as do ano letivo escolhido e desmarca a
+  // turma selecionada se ela for de outro ano.
+  function sincronizarTurmasComAno() {
+    for (const opcao of filtroTurma.options) {
+      if (!opcao.value) continue;
+      const outroAno = opcao.dataset.ano !== filtroAno.value;
+      opcao.hidden = outroAno;
+      opcao.disabled = outroAno; // Safari ignora "hidden" em <option>
+    }
+    if (filtroTurma.selectedOptions[0]?.disabled) filtroTurma.value = "";
+  }
+
+  filtroAno.addEventListener("change", sincronizarTurmasComAno);
+  sincronizarTurmasComAno();
 
   botaoFiltrar?.addEventListener("click", carregarDados);
   botaoLimpar?.addEventListener("click", () => {

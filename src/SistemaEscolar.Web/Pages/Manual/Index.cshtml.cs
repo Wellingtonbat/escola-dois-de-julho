@@ -97,11 +97,11 @@ public sealed class IndexModel : PageModel
                         "de controle bem completo e colorido: lá em cima ficam os filtros — Professor, Turma, Disciplina e Ano/Trimestre. " +
                         "Escolha o que quiser conferir e clique em \"Filtrar\": todos os gráficos da tela se atualizam na hora, sem precisar " +
                         "recarregar a página.");
-                    Bullet(column, "Cartões coloridos no topo — sempre mostram números da escola inteira: quantos alunos, o percentual geral de aprovação, quantas notas ainda estão pendentes de lançamento e quantos trimestres estão abertos.");
+                    Bullet(column, "Cartões coloridos no topo — quantos alunos, o percentual de aprovação nas notas já lançadas, quantas notas ainda faltam lançar e quantos trimestres estão abertos para lançamento hoje. Assim como os gráficos, eles acompanham os filtros escolhidos.");
                     Bullet(column, "Gráfico \"Aprovados x Reprovados x Pendentes\" — um gráfico de rosca que mostra a proporção de cada situação, considerando os filtros escolhidos.");
                     Bullet(column, "Gráfico \"Média por disciplina\" — aparece depois que você escolhe uma turma, comparando a média de cada matéria dentro dela.");
                     Bullet(column, "Gráfico \"Evolução por trimestre\" — mostra se a média está subindo ou caindo ao longo do ano.");
-                    Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação.");
+                    Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação (com poucas turmas, elas são divididas entre as duas colunas, sem repetir).");
                     Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
                     Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 15.");
                     Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Vice-Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");

@@ -91,7 +91,7 @@ else
                     <option value="">Todas as turmas</option>
                     @foreach (var turma in Model.Turmas)
                     {
-                        <option value="@turma.Value" selected="@(Model.TurmaId.HasValue && turma.Value == Model.TurmaId.Value.ToString())">@turma.Text</option>
+                        <option value="@turma.Id" data-ano="@turma.AnoLetivo" hidden="@(Model.Dados != null && turma.AnoLetivo != Model.Dados.AnoLetivo)" disabled="@(Model.Dados != null && turma.AnoLetivo != Model.Dados.AnoLetivo)" selected="@(Model.TurmaId == turma.Id)">@turma.Nome (@turma.SerieNome)</option>
                     }
                 </select>
             </div>
