@@ -214,8 +214,8 @@ public sealed class IndexModel : PageModel
                         "A Ata de Resultados Finais (menu Atas) usa exatamente esses resultados. Enquanto está em Rascunho, ela acompanha " +
                         "as notas e a Avaliação Final em tempo real e calcula o resultado de cada aluno: Aprovado(a) quando todas as " +
                         "disciplinas ficam com 5,0 ou mais; Conservado(a) quando alguma fica abaixo de 5,0 mesmo depois da Avaliação Final; " +
-                        "e Pendente enquanto falta alguma nota ou alguma Avaliação Final. Alunos inativos entram como Transferido(a); na " +
-                        "Ata só é preciso marcar à mão Transferido(a) ou Deixou de frequentar. A coluna Apto a Cursar é preenchida pela " +
+                        "e Pendente enquanto falta alguma nota ou alguma Avaliação Final. Alunos inativos (quem saiu da escola) entram como " +
+                        "Transferido(a), e só para eles dá para trocar para Deixou de frequentar. A coluna Apto a Cursar é preenchida pela " +
                         "série. Ao finalizar, a Ata é \"congelada\" com as notas daquele momento.");
                     Paragrafo(column,
                         "Nesta tela também dá para filtrar por turma, série e situação, buscar por aluno, disciplina ou professor, e " +

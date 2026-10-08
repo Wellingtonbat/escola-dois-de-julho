@@ -236,21 +236,22 @@ public sealed class AtaService : IAtaService
             var rfAnterior = item.RF;
             var tpAnterior = item.TP;
 
+            // Aluno ativo: resultado sempre calculado pelo sistema. Aluno inativo (a escola inativa quem sai):
+            // Transferido(a) por padrão, ou Deixou de frequentar se marcado na Ata — sem notas na linha.
             AtaCalculo.ResultadoAluno calculo;
-            if (!aluno.IsAtivo && !AtaConstantes.EhRFManual(item.RF))
-            {
-                // Aluno inativado depois de a linha existir: passa a Transferido(a) (pode ser trocado à mão).
-                item.RF = AtaConstantes.RFTransferido;
-            }
-
-            if (AtaConstantes.EhRFManual(item.RF))
-            {
-                calculo = new AtaCalculo.ResultadoAluno(Array.Empty<AtaAlunoDisciplinaDto>(), item.RF, null);
-            }
-            else
+            if (aluno.IsAtivo)
             {
                 calculo = AtaCalculo.Calcular(colunas, resultadosPorAluno[aluno.Id].ToList(), disciplinasComLancamento);
                 item.RF = calculo.RF;
+            }
+            else
+            {
+                if (!AtaConstantes.EhRFManual(item.RF))
+                {
+                    item.RF = AtaConstantes.RFTransferido;
+                }
+
+                calculo = new AtaCalculo.ResultadoAluno(Array.Empty<AtaAlunoDisciplinaDto>(), item.RF, null);
             }
 
             item.TP = Math.Round(calculo.Disciplinas.Sum(d => d.ResultadoFinalAno), 2);
@@ -335,11 +336,11 @@ public sealed class AtaService : IAtaService
         return await AtualizarMatriculaDoAlunoAsync(contexto.Item!.AlunoId, matriculaPrefeitura, cancellationToken);
     }
 
-    // Só Transferido(a) e Deixou de frequentar são escolhidos à mão; "Automático" devolve o aluno ao
-    // resultado calculado pelo sistema (recalculado ao recarregar a Ata). Aluno inativo não volta ao automático.
+    // Único resultado escolhido à mão: para aluno inativo, Transferido(a) ou Deixou de frequentar. Aluno ativo
+    // tem sempre o resultado calculado; para transferir, a Secretaria inativa o aluno no cadastro de Alunos.
     public async Task<AtaResult> DefinirRFManualAsync(Guid ataAlunoId, string rf, CancellationToken cancellationToken = default)
     {
-        if (!AtaConstantes.EhRFManual(rf) && rf != AtaConstantes.RFAutomatico)
+        if (!AtaConstantes.EhRFManual(rf))
         {
             return AtaResult.Fail("Resultado inválido.");
         }
@@ -360,21 +361,13 @@ public sealed class AtaService : IAtaService
             return AtaResult.Fail("Ata finalizada: use \"Habilitar para Edição\" antes de alterar o resultado.");
         }
 
-        if (rf == AtaConstantes.RFAutomatico)
+        var aluno = await _alunoService.ObterPorIdAsync(item.AlunoId, cancellationToken);
+        if (aluno is null || aluno.IsAtivo)
         {
-            var aluno = await _alunoService.ObterPorIdAsync(item.AlunoId, cancellationToken);
-            if (aluno is null || !aluno.IsAtivo)
-            {
-                return AtaResult.Fail("Aluno inativo: o resultado deve ser Transferido(a) ou Deixou de frequentar.");
-            }
-
-            item.RF = AtaConstantes.RFPendente;
-        }
-        else
-        {
-            item.RF = rf;
+            return AtaResult.Fail("O resultado de aluno ativo é calculado pelo sistema. Para transferir, inative o aluno no cadastro de Alunos.");
         }
 
+        item.RF = rf;
         await _ataRepository.AtualizarItemAsync(item, cancellationToken);
         return AtaResult.Success();
     }

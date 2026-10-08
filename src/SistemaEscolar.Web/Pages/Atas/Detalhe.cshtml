@@ -70,7 +70,7 @@
         <p style="font-size:1.05rem;font-weight:700;margin:0 0 0.15rem">Resultado final por aluno</p>
         <p class="text-muted" style="margin:0;font-size:0.82rem">
             O resultado é calculado pelo sistema a partir das notas e da Avaliação Final (lançada pela Diretoria em Resultados).
-            Marque à mão apenas Transferido(a) ou Deixou de frequentar. A matrícula é salva ao sair do campo.
+            Alunos inativos aparecem como Transferido(a); para eles, dá para trocar para Deixou de frequentar. A matrícula é salva ao sair do campo.
         </p>
     </div>
     <div class="panel-body" style="padding:0">
@@ -125,13 +125,9 @@
                                     {
                                         <div class="text-muted" style="font-size:0.72rem;white-space:normal;max-width:16rem">@item.Pendencia</div>
                                     }
-                                    @if (ata.PodeEditar && !finalizada)
+                                    @if (ata.PodeEditar && !finalizada && !item.AlunoAtivo)
                                     {
-                                        <select class="form-select form-select-sm mt-1" data-rf style="width:11rem" title="Marcar à mão apenas transferência ou abandono">
-                                            @if (item.AlunoAtivo)
-                                            {
-                                                <option value="Automatico" selected="@(!item.RFManual)">Automático</option>
-                                            }
+                                        <select class="form-select form-select-sm mt-1" data-rf style="width:11rem" title="Aluno inativo: transferido ou deixou de frequentar">
                                             <option value="Transferido" selected="@(item.RF == "Transferido")">Transferido(a)</option>
                                             <option value="DeixouDeFrequentar" selected="@(item.RF == "DeixouDeFrequentar")">Deixou de frequentar</option>
                                         </select>
