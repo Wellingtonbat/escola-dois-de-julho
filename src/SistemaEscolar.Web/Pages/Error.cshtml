@@ -1,26 +1,25 @@
 ﻿@page
 @model ErrorModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Algo deu errado";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
-
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
-
-<h3>Development Mode</h3>
-<p>
-    Swapping to the <strong>Development</strong> environment displays detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+<section class="panel">
+    <div class="panel-body text-center py-5">
+        <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" class="text-warning mb-3" aria-hidden="true">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+        </svg>
+        <h1 class="h3 mb-2">Ops! Algo deu errado.</h1>
+        <p class="text-muted mb-1">Não foi possível concluir o que você pediu. Se você estava salvando algo, confira se a alteração foi gravada.</p>
+        <p class="text-muted mb-4">Tente novamente em alguns instantes. Se o problema continuar, avise a Direção.</p>
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Voltar</button>
+            <a asp-page="/Index" class="btn btn-primary">Ir para o início</a>
+        </div>
+        @if (Model.ShowRequestId)
+        {
+            @* Ajuda o suporte a achar o erro nos logs do servidor. *@
+            <p class="text-muted small mt-4 mb-0">Código para o suporte: <code>@Model.RequestId</code></p>
+        }
+    </div>
+</section>

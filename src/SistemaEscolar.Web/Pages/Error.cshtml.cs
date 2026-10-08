@@ -8,7 +8,9 @@ namespace SistemaEscolar.Web.Pages;
 [IgnoreAntiforgeryToken]
 public class ErrorModel : PageModel
 {
-    public string? RequestId { get; set; }
+    // Calculado na própria propriedade: o tratador de erros reexecuta esta página com o método original da
+    // requisição (inclusive POST), e aí o OnGet não roda.
+    public string? RequestId => Activity.Current?.Id ?? HttpContext.TraceIdentifier;
 
     public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
@@ -21,7 +23,6 @@ public class ErrorModel : PageModel
 
     public void OnGet()
     {
-        RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
     }
 }
 
