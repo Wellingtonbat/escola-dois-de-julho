@@ -27,7 +27,7 @@ public sealed record AtaTurmaDisponivelDto(Guid TurmaId, string TurmaNome, strin
 
 public sealed record AtaAlunoDisciplinaDto(Guid DisciplinaId, string DisciplinaNome, string DisciplinaCodigo, decimal ResultadoFinalAno);
 
-// Coluna da grade/PDF da Ata: uma por disciplina, ordenada por nome.
+// Coluna da grade/PDF da Ata: uma por disciplina da série, ordenada por nome.
 public sealed record AtaDisciplinaColunaDto(Guid DisciplinaId, string Nome, string Codigo);
 
 public sealed record AtaAlunoItemDto(
@@ -36,12 +36,18 @@ public sealed record AtaAlunoItemDto(
     int Numero,
     string NomeCompleto,
     string? MatriculaPrefeitura,
+    bool AlunoAtivo,
+    // Vazio para Transferido(a)/Deixou de frequentar: na Ata oficial a linha sai sem notas.
     IReadOnlyList<AtaAlunoDisciplinaDto> Disciplinas,
-    decimal TP,
-    decimal MC,
-    decimal? AvF,
-    bool AvFHabilitado,
-    string RF);
+    string RF,
+    // O que ainda falta para o resultado sair de "Pendente" (ex.: "Avaliação Final de Matemática").
+    string? Pendencia,
+    // Série que o aluno está apto a cursar no ano seguinte; nulo quando não se aplica ou fica em branco.
+    string? AptoACursar)
+{
+    public string RFDescricao => AtaConstantes.DescreverRF(RF);
+    public bool RFManual => AtaConstantes.EhRFManual(RF);
+}
 
 public sealed record AtaDetalheDto(
     Guid AtaId,

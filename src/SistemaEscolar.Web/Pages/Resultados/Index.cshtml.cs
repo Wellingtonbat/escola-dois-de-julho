@@ -120,7 +120,7 @@ public sealed class IndexModel : PageModel
 
         if (!DecimalParsing.TryParseNota(recuperacaoFinal, out var valor) || !valor.HasValue)
         {
-            TempData["ErrorMessage"] = "Informe um valor numérico entre 0 e 10 para a Recuperação Final.";
+            TempData["ErrorMessage"] = "Informe um valor numérico entre 0 e 10 para a Avaliação Final.";
             return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
         }
 
@@ -129,7 +129,7 @@ public sealed class IndexModel : PageModel
             cancellationToken);
 
         TempData[resultado.Succeeded ? "SuccessMessage" : "ErrorMessage"] = resultado.Succeeded
-            ? "Recuperação Final lançada com sucesso."
+            ? "Avaliação Final lançada com sucesso."
             : resultado.ErrorMessage;
 
         return RedirectToPageComFiltros(busca, anoLetivo, turma, serie, situacao, ordenacao, direcao, pageNumber);
@@ -151,9 +151,9 @@ public sealed class IndexModel : PageModel
         });
     }
 
-    // Coordenador e Secretária consultam os resultados, mas não lançam a Recuperação Final.
+    // Só a Diretoria lança a Avaliação Final; os demais perfis apenas consultam.
     private bool CanLancarRecuperacao() =>
-        User.PodeAlterarNotas();
+        User.PodeLancarAvaliacaoFinal();
 
 
     public async Task<IActionResult> OnGetExportCsvAsync(CancellationToken cancellationToken)
@@ -161,7 +161,7 @@ public sealed class IndexModel : PageModel
         var resultados = await GetFilteredOrderedAsync(cancellationToken);
 
         var csv = new StringBuilder();
-        csv.AppendLine("Disciplina;Aluno;Turma;Serie;AnoLetivo;MediaFinal;RecuperacaoFinal;ResultadoFinal;Situacao;Motivo");
+        csv.AppendLine("Disciplina;Aluno;Turma;Serie;AnoLetivo;MediaFinal;AvaliacaoFinal;ResultadoFinal;Situacao;Motivo");
 
         foreach (var item in resultados)
         {

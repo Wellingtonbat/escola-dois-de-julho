@@ -55,6 +55,10 @@ public static class PermissoesPerfil
     public static bool AlteracaoDeNotasRestritaAoEscopo(Func<string, bool> isInRole) =>
         isInRole(Perfis.Professor) && !EhDiretoria(isInRole);
 
+    // Avaliação Final (antiga "Recuperação Final", lançada em Resultados): só a Diretoria lança.
+    public static bool PodeLancarAvaliacaoFinal(Func<string, bool> isInRole) =>
+        EhDiretoria(isInRole);
+
     // Ata de Resultados Finais: mesmo grupo que hoje baixa boletim em PDF acessa a lista, cria uma Ata
     // e edita enquanto ela está em Rascunho.
     public static bool PodeAcessarAtas(Func<string, bool> isInRole) =>

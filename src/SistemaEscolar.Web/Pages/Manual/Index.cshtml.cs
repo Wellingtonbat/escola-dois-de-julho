@@ -203,12 +203,20 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column,
                         "É o boletim final. Junta as notas de todas as disciplinas de um aluno no ano e mostra a situação dele:");
                     Bullet(column, "Aprovado — média final igual ou maior que 5,0, com todas as notas do ano lançadas.");
-                    Bullet(column, "Reprovado — média final menor que 5,0, mesmo depois de considerar a Recuperação Final (quando existir).");
+                    Bullet(column, "Reprovado — média final menor que 5,0, mesmo depois de considerar a Avaliação Final (quando existir).");
                     Bullet(column, "Pendente — ainda falta lançar alguma nota do ano; o sistema ainda não consegue calcular o resultado final.");
                     Paragrafo(column,
-                        "Quando um aluno fica com média abaixo de 5,0 em alguma disciplina, esta tela mostra um campinho para lançar a " +
-                        "\"Recuperação Final\" dele — a última chance de recuperar no ano. Se a nota da recuperação for maior que a média, " +
-                        "ela passa a valer, e a situação do aluno muda automaticamente para Aprovado.");
+                        "Quando um aluno fecha os 3 trimestres com média abaixo de 5,0 em alguma disciplina, esta tela mostra um campinho " +
+                        "para lançar a \"Avaliação Final\" dele — a última chance de recuperar no ano. Só o Diretor e o Vice-Diretor " +
+                        "lançam essa nota. Vale a maior: se a Avaliação Final for maior que a média, ela passa a valer, e a situação muda " +
+                        "automaticamente para Aprovado.");
+                    Paragrafo(column,
+                        "A Ata de Resultados Finais (menu Atas) usa exatamente esses resultados. Enquanto está em Rascunho, ela acompanha " +
+                        "as notas e a Avaliação Final em tempo real e calcula o resultado de cada aluno: Aprovado(a) quando todas as " +
+                        "disciplinas ficam com 5,0 ou mais; Conservado(a) quando alguma fica abaixo de 5,0 mesmo depois da Avaliação Final; " +
+                        "e Pendente enquanto falta alguma nota ou alguma Avaliação Final. Alunos inativos entram como Transferido(a); na " +
+                        "Ata só é preciso marcar à mão Transferido(a) ou Deixou de frequentar. A coluna Apto a Cursar é preenchida pela " +
+                        "série. Ao finalizar, a Ata é \"congelada\" com as notas daquele momento.");
                     Paragrafo(column,
                         "Nesta tela também dá para filtrar por turma, série e situação, buscar por aluno, disciplina ou professor, e " +
                         "exportar a lista em CSV, Excel (XLSX) ou PDF. Na exportação em Excel, cada disciplina ganha sua própria aba, " +
@@ -363,7 +371,7 @@ public sealed class IndexModel : PageModel
             Linha("Usar o Lançamento de Notas em Massa", "Sim (todas)", "Não", "Não", "Só as suas turmas");
             Linha("Editar/excluir Nota em período Fechado", "Sim", "Não", "Não", "Não");
             Linha("Ver/exportar Resultados", "Sim (todos)", "Sim (todos)", "Sim (todos)", "Só os seus alunos");
-            Linha("Lançar a Recuperação Final", "Sim", "Não", "Não", "Só os seus alunos");
+            Linha("Lançar a Avaliação Final", "Sim", "Não", "Não", "Não");
             Linha("Baixar o Boletim do Aluno em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Baixar os Boletins de uma Turma em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Gerenciar Usuários (Coord./Secretária)", "Sim", "Sim", "Sim", "Não");

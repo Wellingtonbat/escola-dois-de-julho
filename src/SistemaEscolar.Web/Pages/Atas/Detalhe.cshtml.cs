@@ -52,19 +52,6 @@ public sealed class DetalheModel : PageModel
         return new JsonResult(new { succeeded = resultado.Succeeded, error = resultado.ErrorMessage });
     }
 
-    public async Task<IActionResult> OnPostSalvarAvFAsync(Guid ataAlunoId, string? valor, CancellationToken cancellationToken)
-    {
-        if (!DecimalParsing.TryParseNota(valor, out var nota))
-        {
-            return new JsonResult(new { succeeded = false, error = "Formato de nota inválido. Use um valor entre 0 e 10." });
-        }
-
-        // Muda o RF (e, com isso, se Finalizar/Gerar PDF ficam liberados) — o cliente recarrega a página
-        // em caso de sucesso para refletir isso, em vez de tentar atualizar tudo via JS.
-        var resultado = await _ataService.SalvarAvFAsync(ataAlunoId, nota, cancellationToken);
-        return new JsonResult(new { succeeded = resultado.Succeeded, error = resultado.ErrorMessage });
-    }
-
     public async Task<IActionResult> OnPostDefinirRFAsync(Guid ataAlunoId, string rf, CancellationToken cancellationToken)
     {
         var resultado = await _ataService.DefinirRFManualAsync(ataAlunoId, rf, cancellationToken);
@@ -208,67 +195,73 @@ public sealed class DetalheModel : PageModel
                     col.Item().ShowOnce().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
                 });
 
-                page.Content().PaddingTop(20).Table(table =>
+                page.Content().PaddingTop(20).Column(conteudo =>
+                {
+                    conteudo.Item().Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
                             columns.ConstantColumn(20);
-                            columns.RelativeColumn(1.3f);
-                            columns.RelativeColumn(2.6f);
+                            columns.RelativeColumn(1.2f);
+                            columns.RelativeColumn(3f);
                             foreach (var _ in ata.DisciplinasColunas)
                             {
-                                columns.RelativeColumn(0.9f);
+                                columns.RelativeColumn(0.75f);
                             }
 
-                            columns.RelativeColumn(0.8f);
-                            columns.RelativeColumn(0.8f);
-                            columns.RelativeColumn(0.8f);
-                            columns.RelativeColumn(1f);
+                            columns.RelativeColumn(1.2f);
+                            columns.RelativeColumn(0.9f);
                         });
 
                         table.Header(header =>
                         {
                             header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Nº");
                             header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Matrícula");
-                            header.Cell().Element(CabecalhoPrincipal).AlignMiddle().Text("Nome");
+                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("Nome");
                             foreach (var coluna in ata.DisciplinasColunas)
                             {
-                                header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle()
-                                    .Text(string.IsNullOrWhiteSpace(coluna.Codigo) ? coluna.Nome : coluna.Codigo);
+                                header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text(RotuloDisciplina(coluna));
                             }
 
-                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("TP");
-                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("MC");
-                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("AvF");
-                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("RF");
+                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("Resultado");
+                            header.Cell().Element(CabecalhoPrincipal).AlignCenter().AlignMiddle().Text("Apto a Cursar");
                         });
 
                         foreach (var item in ata.Itens)
                         {
-                            table.Cell().Element(Celula).AlignMiddle().Text(item.Numero.ToString());
-                            table.Cell().Element(Celula).AlignMiddle().Text(item.MatriculaPrefeitura ?? "—");
-                            table.Cell().Element(Celula).AlignMiddle().Text(item.NomeCompleto);
+                            table.Cell().Element(Celula).AlignMiddle().Text(item.Numero.ToString(CultureInfo.InvariantCulture));
+                            table.Cell().Element(Celula).AlignMiddle().Text(item.MatriculaPrefeitura ?? string.Empty);
+                            table.Cell().Element(Celula).AlignMiddle().Text(item.NomeCompleto.ToUpper(PtBr));
 
                             foreach (var coluna in ata.DisciplinasColunas)
                             {
+                                // Transferido(a)/Deixou de frequentar: linha sem notas, como no modelo oficial.
                                 var disciplina = item.Disciplinas.FirstOrDefault(d => d.DisciplinaId == coluna.DisciplinaId);
-                                table.Cell().Element(Celula).AlignCenter().AlignMiddle()
-                                    .Text(disciplina is null ? "—" : disciplina.ResultadoFinalAno.ToString("0.0", PtBr));
+                                var texto = item.RFManual ? string.Empty : disciplina is null ? "—" : disciplina.ResultadoFinalAno.ToString("0.0", PtBr);
+                                table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(texto);
                             }
 
-                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.TP.ToString("0.0", PtBr));
-                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.MC.ToString("0.0", PtBr));
-                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.AvF.HasValue ? item.AvF.Value.ToString("0.0", PtBr) : "—");
-                            table.Cell().Element(CelulaRF(item.RF)).AlignCenter().AlignMiddle().Text(item.RF).Bold();
+                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.RFDescricao);
+                            table.Cell().Element(Celula).AlignCenter().AlignMiddle().Text(item.AptoACursar ?? string.Empty);
                         }
                     });
 
-                page.Footer().AlignRight().Text(x =>
+                    // Fechamento da Ata (modelo oficial): fica inteiro na última página, logo após a tabela.
+                    conteudo.Item().PaddingTop(16).ShowEntire().Element(Fechamento);
+                });
+
+                page.Footer().Row(row =>
                 {
-                    x.Span("Página ");
-                    x.CurrentPageNumber();
-                    x.Span(" / ");
-                    x.TotalPages();
+                    row.RelativeItem();
+                    row.RelativeItem().AlignCenter().Text($"Emitido em {HorarioBrasilia.Agora:dd/MM/yyyy}").FontSize(8);
+                    row.RelativeItem().AlignRight().Text(x =>
+                    {
+                        x.DefaultTextStyle(t => t.FontSize(8));
+                        x.Span("Página ");
+                        x.CurrentPageNumber();
+                        x.Span(" de ");
+                        x.TotalPages();
+                    });
                 });
             });
         }).GeneratePdf();
@@ -280,16 +273,83 @@ public sealed class DetalheModel : PageModel
     private static IContainer Celula(IContainer container) =>
         container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(2).DefaultTextStyle(x => x.FontSize(7));
 
-    private static Func<IContainer, IContainer> CelulaRF(string rf) => container =>
+    // LEM e Componente Optativo levam asterisco no cabeçalho, remetendo às linhas de rodapé da Ata.
+    private static string RotuloDisciplina(AtaDisciplinaColunaDto coluna)
     {
-        var corFundo = rf switch
-        {
-            AtaConstantes.RFAprovado => Colors.Green.Lighten4,
-            AtaConstantes.RFConservado => Colors.Red.Lighten4,
-            AtaConstantes.RFTransferido => Colors.Grey.Lighten3,
-            _ => Colors.Amber.Lighten4
-        };
+        var rotulo = string.IsNullOrWhiteSpace(coluna.Codigo) ? coluna.Nome : coluna.Codigo;
+        var ehLem = coluna.Nome.Contains("Estrangeira", StringComparison.OrdinalIgnoreCase)
+            || coluna.Codigo.Equals("LEM", StringComparison.OrdinalIgnoreCase);
+        var ehOptativa = coluna.Nome.Contains("Optativ", StringComparison.OrdinalIgnoreCase)
+            || coluna.Codigo.Contains("Optativ", StringComparison.OrdinalIgnoreCase);
+        return ehLem || ehOptativa ? $"{rotulo}*" : rotulo;
+    }
 
-        return container.Background(corFundo).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(2).DefaultTextStyle(x => x.FontSize(7));
-    };
+    // Última parte da Ata, igual ao modelo da Secretaria: rodapés de LEM/Optativo, termo do(a) Secretário(a),
+    // assinaturas, legenda e o quadro "Movimento Escolar" — tudo em branco, para preenchimento à caneta.
+    private static void Fechamento(IContainer container)
+    {
+        container.DefaultTextStyle(x => x.FontSize(9)).Column(col =>
+        {
+            col.Spacing(6);
+            col.Item().Text("*Língua Estrangeira Moderna - LEM: ________________________________");
+            col.Item().Text("*Componente Optativo: ________________________________");
+            col.Item().PaddingTop(4).Text(
+                "E, para constar, eu, ____________________________________________, Secretário(a), lavrarei a presente ata " +
+                "que vai assinada também pelo(a) Diretor(a) da Unidade de Ensino.");
+
+            col.Item().PaddingTop(24).Row(row =>
+            {
+                row.RelativeItem().PaddingHorizontal(30).Column(assinatura =>
+                {
+                    assinatura.Item().LineHorizontal(0.8f);
+                    assinatura.Item().AlignCenter().Text("Diretor(a)").Bold();
+                });
+                row.RelativeItem().PaddingHorizontal(30).Column(assinatura =>
+                {
+                    assinatura.Item().LineHorizontal(0.8f);
+                    assinatura.Item().AlignCenter().Text("Chefe de Secretaria Escolar").Bold();
+                });
+            });
+
+            col.Item().PaddingTop(16).Row(row =>
+            {
+                row.RelativeItem(1).Column(legenda =>
+                {
+                    legenda.Item().Text("Legenda").Bold();
+                    legenda.Item().Text("PD - Parecer Descritivo");
+                    legenda.Item().Text("PP - Aprovado(a) para Estudos em Regime de Progressão Parcial");
+                });
+
+                row.RelativeItem(1.4f).Table(quadro =>
+                {
+                    quadro.ColumnsDefinition(c =>
+                    {
+                        c.RelativeColumn(1.3f);
+                        c.RelativeColumn(1.2f);
+                        c.RelativeColumn(0.5f);
+                        c.RelativeColumn(1.4f);
+                        c.RelativeColumn(0.5f);
+                        c.RelativeColumn(1f);
+                        c.RelativeColumn(0.5f);
+                    });
+
+                    quadro.Cell().RowSpan(2).Element(CelulaQuadro).AlignMiddle().Text("Movimento Escolar:");
+                    foreach (var rotulo in new[] { "Matrícula Inicial:", "Deixou de frequentar:", "Aprovação:" })
+                    {
+                        quadro.Cell().Element(CelulaQuadro).Text(rotulo);
+                        quadro.Cell().Element(CelulaQuadro).Text(string.Empty);
+                    }
+
+                    foreach (var rotulo in new[] { "Transferência:", "Matrícula Final:", "Reprovação:" })
+                    {
+                        quadro.Cell().Element(CelulaQuadro).Text(rotulo);
+                        quadro.Cell().Element(CelulaQuadro).Text(string.Empty);
+                    }
+                });
+            });
+        });
+    }
+
+    private static IContainer CelulaQuadro(IContainer container) =>
+        container.Border(0.8f).BorderColor(Colors.Grey.Darken1).PaddingVertical(4).PaddingHorizontal(3).DefaultTextStyle(x => x.FontSize(8));
 }

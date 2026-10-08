@@ -20,4 +20,20 @@ public interface IAtaRepository
 
     Task AtualizarAsync(Ata ata, CancellationToken cancellationToken = default);
     Task AtualizarItemAsync(AtaAluno item, CancellationToken cancellationToken = default);
+
+    // Ajusta as linhas de uma Ata em Rascunho à turma atual: inclui alunos novos, remove (exclusão lógica) os
+    // que saíram da turma e grava o resultado recalculado das demais — tudo numa única transação.
+    Task SincronizarItensAsync(
+        IReadOnlyList<AtaAluno> novos,
+        IReadOnlyList<AtaAluno> atualizados,
+        IReadOnlyList<AtaAluno> removidos,
+        CancellationToken cancellationToken = default);
+
+    // Grava a "foto" oficial ao finalizar: troca as notas por disciplina guardadas de cada aluno pelas
+    // atuais, atualiza o resultado dos alunos e o status da Ata, numa única transação.
+    Task FinalizarComResultadosAsync(
+        Ata ata,
+        IReadOnlyList<AtaAluno> itens,
+        IReadOnlyList<AtaAlunoDisciplina> disciplinas,
+        CancellationToken cancellationToken = default);
 }

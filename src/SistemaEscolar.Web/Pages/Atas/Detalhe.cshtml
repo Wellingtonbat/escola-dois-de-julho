@@ -68,7 +68,10 @@
 <section class="panel">
     <div class="panel-header">
         <p style="font-size:1.05rem;font-weight:700;margin:0 0 0.15rem">Resultado final por aluno</p>
-        <p class="text-muted" style="margin:0;font-size:0.82rem">Matrícula e Avaliação Final salvas automaticamente ao sair do campo.</p>
+        <p class="text-muted" style="margin:0;font-size:0.82rem">
+            O resultado é calculado pelo sistema a partir das notas e da Avaliação Final (lançada pela Diretoria em Resultados).
+            Marque à mão apenas Transferido(a) ou Deixou de frequentar. A matrícula é salva ao sair do campo.
+        </p>
     </div>
     <div class="panel-body" style="padding:0">
         <div class="panel-table-wrap">
@@ -79,10 +82,8 @@
                         <th rowspan="2">Matrícula</th>
                         <th rowspan="2">Nome</th>
                         <th colspan="@ata.DisciplinasColunas.Count" class="text-center">Disciplinas — resultado final do ano</th>
-                        <th rowspan="2" title="Total de Pontos">TP</th>
-                        <th rowspan="2" title="Média do Curso">MC</th>
-                        <th rowspan="2" title="Avaliação Final">AvF</th>
-                        <th rowspan="2" title="Resultado Final">RF</th>
+                        <th rowspan="2">Resultado</th>
+                        <th rowspan="2">Apto a Cursar</th>
                     </tr>
                     <tr>
                         @foreach (var coluna in ata.DisciplinasColunas)
@@ -95,7 +96,7 @@
                     @if (ata.Itens.Count == 0)
                     {
                         <tr>
-                            <td colspan="@(7 + ata.DisciplinasColunas.Count)" class="text-center text-muted">Nenhum aluno ativo nesta turma.</td>
+                            <td colspan="@(5 + ata.DisciplinasColunas.Count)" class="text-center text-muted">Nenhum aluno nesta turma.</td>
                         </tr>
                     }
                     else
@@ -114,25 +115,29 @@
                                 {
                                     var disciplina = item.Disciplinas.FirstOrDefault(d => d.DisciplinaId == coluna.DisciplinaId);
                                     <td class="text-center @(disciplina is not null && disciplina.ResultadoFinalAno < 5m ? "text-danger fw-semibold" : null)">
-                                        @(disciplina is null ? "—" : disciplina.ResultadoFinalAno.ToString("0.0"))
+                                        @(item.RFManual ? "" : disciplina is null ? "—" : disciplina.ResultadoFinalAno.ToString("0.0"))
                                     </td>
                                 }
-                                <td class="text-center" style="font-weight:700">@item.TP.ToString("0.0")</td>
-                                <td class="text-center" style="font-weight:700">@item.MC.ToString("0.0")</td>
-                                <td>
-                                    <input type="text" inputmode="decimal" class="field-input" style="width:4.5rem" data-avf
-                                           value="@(item.AvF?.ToString("0.0"))" placeholder="0 a 10"
-                                           @(ata.PodeEditar && item.AvFHabilitado ? null : "disabled") />
+                                <td style="min-width:11rem">
+                                    <span class="status-pill @(item.RF switch { "Aprovado" => "status-open", "Conservado" => "status-danger", "Pendente" => "status-warn", _ => "status-neutral" })"
+                                          title="@item.Pendencia">@item.RFDescricao</span>
+                                    @if (item.Pendencia is not null)
+                                    {
+                                        <div class="text-muted" style="font-size:0.72rem;white-space:normal;max-width:16rem">@item.Pendencia</div>
+                                    }
+                                    @if (ata.PodeEditar && !finalizada)
+                                    {
+                                        <select class="form-select form-select-sm mt-1" data-rf style="width:11rem" title="Marcar à mão apenas transferência ou abandono">
+                                            @if (item.AlunoAtivo)
+                                            {
+                                                <option value="Automatico" selected="@(!item.RFManual)">Automático</option>
+                                            }
+                                            <option value="Transferido" selected="@(item.RF == "Transferido")">Transferido(a)</option>
+                                            <option value="DeixouDeFrequentar" selected="@(item.RF == "DeixouDeFrequentar")">Deixou de frequentar</option>
+                                        </select>
+                                    }
                                 </td>
-                                <td>
-                                    <select class="form-select form-select-sm" data-rf style="width:9rem"
-                                            @(ata.PodeEditar ? null : "disabled")>
-                                        @foreach (var valor in new[] { "Pendente", "Aprovado", "Conservado", "Transferido" })
-                                        {
-                                            <option value="@valor" selected="@(valor == item.RF)">@valor</option>
-                                        }
-                                    </select>
-                                </td>
+                                <td>@(item.AptoACursar ?? "")</td>
                             </tr>
                         }
                     }
@@ -167,7 +172,6 @@
                 document.querySelectorAll("tr[data-linha]").forEach((linha) => {
                     const ataAlunoId = linha.dataset.ataAlunoId;
                     const matriculaInput = linha.querySelector("[data-matricula]");
-                    const avfInput = linha.querySelector("[data-avf]");
                     const rfSelect = linha.querySelector("[data-rf]");
 
                     let agendamento = null;
@@ -185,24 +189,11 @@
                         }));
                     }
 
-                    if (avfInput) {
-                        avfInput.addEventListener("change", () => agendar(async () => {
-                            const dados = await postHandler("SalvarAvF", { ataAlunoId, valor: avfInput.value });
-                            if (!dados.succeeded) {
-                                alert(dados.error || "Não foi possível salvar a Avaliação Final.");
-                                return;
-                            }
-                            // RF (e os botões Finalizar/Gerar PDF) dependem do conjunto da turma inteira —
-                            // recarrega para refletir o estado atualizado de todo mundo.
-                            window.location.reload();
-                        }));
-                    }
-
                     if (rfSelect) {
                         rfSelect.addEventListener("change", async () => {
                             const dados = await postHandler("DefinirRF", { ataAlunoId, rf: rfSelect.value });
                             if (!dados.succeeded) {
-                                alert(dados.error || "Não foi possível salvar a situação final.");
+                                alert(dados.error || "Não foi possível salvar o resultado.");
                                 return;
                             }
                             window.location.reload();

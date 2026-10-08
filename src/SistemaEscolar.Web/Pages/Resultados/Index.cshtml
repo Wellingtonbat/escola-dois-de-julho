@@ -174,7 +174,7 @@
                         <th>Professor</th>
                         <th>Ano</th>
                         <th>Média Final</th>
-                        <th>Recuperação Final</th>
+                        <th>Avaliação Final</th>
                         <th>Resultado Final</th>
                         <th>Situação</th>
                         <th>Motivo</th>
@@ -213,7 +213,7 @@
                                     <td>@item.AnoLetivo</td>
                                     <td>@item.MediaFinal.ToString("0.00")</td>
                                     <td>
-                                        @if (item.RecuperacaoFinalDisponivel && User.PodeAlterarNotas())
+                                        @if (item.RecuperacaoFinalDisponivel && User.PodeLancarAvaliacaoFinal())
                                         {
                                             <form method="post" asp-page-handler="SalvarRecuperacaoFinal" class="d-flex gap-1 align-items-center">
                                                 <input type="hidden" name="alunoId" value="@item.AlunoId" />
@@ -229,8 +229,8 @@
                                                 <input type="text" inputmode="decimal" name="recuperacaoFinal" class="form-control form-control-sm"
                                                        style="width:70px" placeholder="0 a 10"
                                                        value="@(item.RecuperacaoFinal?.ToString("0.##"))" />
-                                                <button type="submit" class="btn btn-sm btn-outline-primary" title="Salvar Recuperação Final"
-                                                        onclick="return confirm('Confirma o lançamento da Recuperação Final para este aluno nesta disciplina?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary" title="Salvar Avaliação Final"
+                                                        onclick="return confirm('Confirma o lançamento da Avaliação Final para este aluno nesta disciplina?');">
                                                     Salvar
                                                 </button>
                                             </form>
