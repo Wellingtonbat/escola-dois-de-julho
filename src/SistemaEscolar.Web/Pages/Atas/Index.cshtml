@@ -111,7 +111,7 @@
                                     <span class="status-pill @(ata.Status == "Finalizada" ? "status-open" : "status-warn")">@ata.Status</span>
                                 </td>
                                 <td>@ata.AlunosComResultado de @ata.TotalAlunos</td>
-                                <td class="text-muted">@(ata.FinalizadaEmUtc.HasValue ? ata.FinalizadaEmUtc.Value.ToString("dd/MM/yyyy") : "—")</td>
+                                <td class="text-muted">@(ata.FinalizadaEmUtc.HasValue ? HorarioBrasilia.DeUtc(ata.FinalizadaEmUtc.Value).ToString("dd/MM/yyyy") : "—")</td>
                                 <td>
                                     <div class="actions-cell">
                                         @if (ata.TodosComResultado)

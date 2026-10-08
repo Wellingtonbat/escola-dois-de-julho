@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Atas;
 using SistemaEscolar.Web.Extensions;
 
@@ -143,7 +144,7 @@ public sealed class DetalheModel : PageModel
                             {
                                 if (ata.FinalizadaEmUtc.HasValue)
                                 {
-                                    direita.Item().AlignRight().Text($"Finalizada em {ata.FinalizadaEmUtc.Value:dd/MM/yyyy}")
+                                    direita.Item().AlignRight().Text($"Finalizada em {HorarioBrasilia.DeUtc(ata.FinalizadaEmUtc.Value):dd/MM/yyyy}")
                                         .FontSize(7.5f).FontColor(Colors.Grey.Darken1);
                                 }
                                 direita.Item().AlignRight().Text("ATA DE RESULTADOS FINAIS").Bold().FontSize(13);

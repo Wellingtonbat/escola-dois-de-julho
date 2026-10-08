@@ -9,9 +9,6 @@ public sealed class AuditoriaService : IAuditoriaService
 {
     private static readonly CultureInfo PtBr = new("pt-BR");
 
-    // Horário de Brasília (UTC-3, sem horário de verão desde 2019). Evita depender do nome do fuso do servidor.
-    private static readonly TimeSpan OffsetBrasilia = TimeSpan.FromHours(-3);
-
     private const int TamanhoPaginaMaximo = 100;
     private const int MaxCamposPorRegistro = 14;
 
@@ -119,8 +116,8 @@ public sealed class AuditoriaService : IAuditoriaService
         var acao = filtro.Acao is "criado" or "alterado" or "excluido" ? filtro.Acao : null;
 
         // As datas do filtro são dias de Brasília; no banco tudo está em UTC.
-        DateTime? deUtc = filtro.DataInicial.HasValue ? filtro.DataInicial.Value.Date - OffsetBrasilia : null;
-        DateTime? ateUtc = filtro.DataFinal.HasValue ? filtro.DataFinal.Value.Date.AddDays(1) - OffsetBrasilia : null;
+        DateTime? deUtc = filtro.DataInicial.HasValue ? HorarioBrasilia.ParaUtc(filtro.DataInicial.Value.Date) : null;
+        DateTime? ateUtc = filtro.DataFinal.HasValue ? HorarioBrasilia.ParaUtc(filtro.DataFinal.Value.Date.AddDays(1)) : null;
 
         var (registros, total) = await _repository.ListarAsync(
             deUtc, ateUtc, filtro.Usuario, tabela, acao, (pagina - 1) * tamanho, tamanho, cancellationToken);
@@ -217,7 +214,7 @@ public sealed class AuditoriaService : IAuditoriaService
 
         return new AuditoriaItemDto(
             registro.Id,
-            registro.CreatedAtUtc + OffsetBrasilia,
+            HorarioBrasilia.DeUtc(registro.CreatedAtUtc),
             DescreverUsuario(registro, nomes),
             registro.UserName,
             DescreverEntidade(registro.TableName),
@@ -490,7 +487,7 @@ public sealed class AuditoriaService : IAuditoriaService
                     // Datas gravadas em UTC (terminam em "Z") são mostradas no horário de Brasília.
                     if (data.Kind == DateTimeKind.Utc)
                     {
-                        data += OffsetBrasilia;
+                        data = HorarioBrasilia.DeUtc(data);
                     }
 
                     return texto.Length > 10 ? data.ToString("dd/MM/yyyy HH:mm", PtBr) : data.ToString("dd/MM/yyyy", PtBr);

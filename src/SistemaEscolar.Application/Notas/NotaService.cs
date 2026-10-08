@@ -203,7 +203,7 @@ public sealed class NotaService : INotaService
         }
 
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !EhDiretoria())
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !EhDiretoria())
         {
             return false;
         }
@@ -232,7 +232,7 @@ public sealed class NotaService : INotaService
         }
 
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !EhDiretoria())
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !EhDiretoria())
         {
             return false;
         }
@@ -316,9 +316,9 @@ public sealed class NotaService : INotaService
             return NotaCreateResult.Fail("Não há período de lançamento configurado com este identificador.");
         }
 
-        if (!PeriodoDisponibilidade.EstaAberto(periodo, DateTime.UtcNow) && !EhDiretoria())
+        if (!PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !EhDiretoria())
         {
-            return NotaCreateResult.Fail(PeriodoDisponibilidade.ObterMotivoFechado(periodo, DateTime.UtcNow));
+            return NotaCreateResult.Fail(PeriodoDisponibilidade.ObterMotivoFechado(periodo, HorarioBrasilia.Agora));
         }
 
         var alunos = await _alunoService.ListarAsync(null, cancellationToken);

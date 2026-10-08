@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
 using SistemaEscolar.Web.Extensions;
@@ -32,7 +33,7 @@ public sealed class CreateModel : PageModel
             return RedirectToPage("/Turmas/Index");
         }
 
-        Input.AnoLetivo = DateTime.UtcNow.Year;
+        Input.AnoLetivo = HorarioBrasilia.Agora.Year;
         await LoadSeriesAsync();
         return Page();
     }

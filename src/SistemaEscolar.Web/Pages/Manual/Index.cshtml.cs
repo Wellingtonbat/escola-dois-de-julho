@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using SistemaEscolar.Application.Abstractions;
 
 namespace SistemaEscolar.Web.Pages.Manual;
 
@@ -51,7 +52,7 @@ public sealed class IndexModel : PageModel
 
                     // Capa
                     column.Item().Text($"Versão da aplicação: {appVersion}").FontSize(9).FontColor(Colors.Grey.Darken1);
-                    column.Item().Text($"Data de emissão: {DateTime.Now:dd/MM/yyyy}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                    column.Item().Text($"Data de emissão: {HorarioBrasilia.Agora:dd/MM/yyyy}").FontSize(9).FontColor(Colors.Grey.Darken1);
 
                     Paragrafo(column,
                         "Este manual explica, de um jeito bem simples, como usar o Sistema Escolar. " +

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Dashboard;
 using SistemaEscolar.Application.Disciplinas;
@@ -106,13 +107,13 @@ public class IndexModel : PageModel
         }
 
         var periodos = await _periodoService.ListarAsync(null, cancellationToken);
-        var hoje = DateTime.UtcNow;
+        var hoje = HorarioBrasilia.Agora;
         PeriodosAbertosComDataVencida = periodos
             .Where(p => PeriodoDisponibilidade.EstaForaDaJanelaPorExcecaoManual(p, hoje))
             .OrderBy(p => p.AnoLetivo).ThenBy(p => p.Trimestre)
             .ToList();
         AnosDisponiveis = periodos.Select(p => p.AnoLetivo).Distinct().OrderByDescending(x => x).ToList();
-        var anoLetivo = AnoLetivo ?? AnosDisponiveis.FirstOrDefault(DateTime.Now.Year);
+        var anoLetivo = AnoLetivo ?? AnosDisponiveis.FirstOrDefault(HorarioBrasilia.Agora.Year);
 
         Professores = (await _professorService.ListarAsync(null, cancellationToken))
             .Where(p => p.IsAtivo)

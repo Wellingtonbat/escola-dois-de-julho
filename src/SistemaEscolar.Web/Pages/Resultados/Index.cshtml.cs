@@ -5,6 +5,7 @@ using ClosedXML.Excel;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Resultados;
@@ -49,7 +50,7 @@ public sealed class IndexModel : PageModel
     public string? Busca { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public int AnoLetivo { get; set; } = DateTime.UtcNow.Year;
+    public int AnoLetivo { get; set; } = HorarioBrasilia.Agora.Year;
 
     [BindProperty(SupportsGet = true)]
     public string? Turma { get; set; }
@@ -332,7 +333,7 @@ public sealed class IndexModel : PageModel
                 page.Header().Column(col =>
                 {
                     col.Item().Text("Relatório de Resultados Acadêmicos").Bold().FontSize(14);
-                    col.Item().Text($"Ano Letivo: {AnoLetivo} | Gerado em: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                    col.Item().Text($"Ano Letivo: {AnoLetivo} | Gerado em: {HorarioBrasilia.Agora:dd/MM/yyyy HH:mm}");
                 });
 
                 page.Content().Column(content =>

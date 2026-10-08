@@ -1,3 +1,4 @@
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
 
@@ -193,7 +194,7 @@ public sealed class AlunoService : IAlunoService
             return (AlunoCreateResult.Fail("O nome do aluno é obrigatório."), cpf, nomeCompleto, null);
         }
 
-        if (request.DataNascimento == default || request.DataNascimento > DateTime.UtcNow.Date)
+        if (request.DataNascimento == default || request.DataNascimento > HorarioBrasilia.Hoje)
         {
             return (AlunoCreateResult.Fail("A data de nascimento é obrigatória e deve ser válida."), cpf, nomeCompleto, null);
         }

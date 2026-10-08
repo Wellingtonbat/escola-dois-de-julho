@@ -25,7 +25,7 @@ public sealed class PeriodoService : IPeriodoService
         // não apenas o campo IsAberto isolado — por isso é aplicado aqui, em memória, e não no repositório.
         var repositoryFilter = filter is null ? null : new PeriodoListFilter(filter.AnoLetivo, filter.Trimestre, null);
         var periodos = await _periodoRepository.GetAllAsync(repositoryFilter, cancellationToken);
-        var hoje = DateTime.UtcNow;
+        var hoje = HorarioBrasilia.Agora;
 
         var dtos = periodos
             .OrderByDescending(x => x.AnoLetivo)
