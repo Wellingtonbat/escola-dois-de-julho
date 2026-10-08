@@ -39,18 +39,13 @@ public sealed class IndexModel : PageModel
                 page.Margin(2f, Unit.Centimetre);
                 page.DefaultTextStyle(x => x.FontSize(10.5f));
 
-                page.Header()
-                    .PaddingBottom(6)
-                    .Text("Manual de Utilização - Sistema Escolar")
-                    .SemiBold()
-                    .FontSize(15)
-                    .FontColor(Colors.Blue.Darken1);
-
                 page.Content().Column(column =>
                 {
                     column.Spacing(6);
 
-                    // Capa
+                    // Capa: o título aparece só aqui, na primeira página.
+                    column.Item().PaddingBottom(6).Text("Manual de Utilização - Escola Dois de Julho")
+                        .SemiBold().FontSize(15).FontColor(Colors.Blue.Darken1);
                     column.Item().Text($"Versão da aplicação: {appVersion}").FontSize(9).FontColor(Colors.Grey.Darken1);
                     column.Item().Text($"Data de emissão: {HorarioBrasilia.Agora:dd/MM/yyyy}").FontSize(9).FontColor(Colors.Grey.Darken1);
 
@@ -97,6 +92,7 @@ public sealed class IndexModel : PageModel
                         "fica sabendo como a escola está indo — quantos alunos estão indo bem, quantos precisam de atenção e quantas notas " +
                         "ainda faltam lançar. Diretor, Vice-Diretor, Coordenador e Secretária veem o painel completo; o Professor vê os " +
                         "mesmos gráficos, com uma diferença que explico no final desta seção.");
+                    Print(column, imagens["dashboard-admin"], "Visão geral do Painel Inicial (Diretor, Vice-Diretor, Coordenador ou Secretária).");
 
                     Paragrafo(column,
                         "Começando pelos filtros, lá em cima: Professor, Turma, Disciplina, Ano letivo e Trimestre. Funciona como uma " +
@@ -105,6 +101,7 @@ public sealed class IndexModel : PageModel
                         "sem recarregar a página. Logo acima dos cartões aparece uma frase lembrando o que está filtrado (por exemplo, " +
                         "\"7º Ano A · Todas as disciplinas · 1º Trimestre/2026\"). O botão \"Limpar\" volta tudo para a escola inteira. " +
                         "Detalhe: o campo Turma só mostra as turmas do ano letivo escolhido.");
+                    Print(column, imagens["dash-filtros"], "Os filtros do Painel Inicial: escolha o que quer ver e clique em \"Filtrar\".");
 
                     Paragrafo(column, "Agora, os quatro cartões coloridos do topo. Eles sempre acompanham os filtros:");
                     Bullet(column,
@@ -122,40 +119,46 @@ public sealed class IndexModel : PageModel
                     Bullet(column,
                         "Períodos em aberto — quantos trimestres estão liberados para lançar notas hoje, de quantos existem no ano (ex.: " +
                         "\"1 / 3\"). Conta o trimestre que está dentro das datas dele ou que foi aberto manualmente pela Direção.");
+                    Print(column, imagens["dash-cartoes"], "Os quatro cartões do topo: alunos, aprovação, notas que faltam e trimestres abertos.");
 
                     Paragrafo(column, "Descendo um pouco, vêm os gráficos:");
                     Bullet(column,
                         "Média por disciplina — é preciso escolher uma turma para ele aparecer. Cada barra é uma matéria, com a média " +
                         "das notas daquela turma; a linha tracejada marca o 5,0, então dá para ver na hora quem está abaixo. Se uma " +
                         "matéria ainda não tem nenhuma nota no período, ela aparece com um tracinho (\"—\") em vez de sumir.");
+                    PrintMenor(column, imagens["dash-media-disciplina"], "Média por disciplina de uma turma, com a linha tracejada do 5,0.");
                     Bullet(column,
                         "Aprovados x Reprovados x Pendentes — o gráfico redondo (de rosca). Ele divide todas as notas esperadas em três " +
                         "fatias: as lançadas com 5,0 ou mais, as lançadas abaixo de 5,0 e as que ainda faltam lançar. O número grande " +
                         "no meio é o mesmo da \"Aprovação geral\" do cartão lá de cima.");
+                    PrintMenor(column, imagens["dash-rosca"], "Gráfico de rosca: aprovados, reprovados e notas que ainda faltam lançar.");
                     Bullet(column,
                         "Evolução por trimestre — uma linha que mostra a média do 1º, 2º e 3º trimestres, para você ver se a turma (ou a " +
                         "escola) está melhorando ou piorando ao longo do ano. Por isso ele mostra sempre os três trimestres, mesmo que você " +
                         "tenha escolhido um trimestre no filtro.");
+                    PrintMenor(column, imagens["dash-evolucao"], "Evolução da média ao longo dos trimestres.");
                     Bullet(column,
                         "Turmas por índice de aprovação — um ranking: de um lado, as 5 turmas com mais notas acima da média; do outro, as " +
                         "5 que mais precisam de atenção. Se a escola tiver poucas turmas, elas são divididas entre os dois lados, sem " +
                         "repetir nenhuma. Como a ideia é comparar as turmas entre si, este quadro mostra todas as turmas, mesmo com uma " +
                         "turma escolhida no filtro.");
+                    PrintMenor(column, imagens["dash-ranking"], "Ranking: turmas com melhor desempenho e turmas que precisam de atenção.");
                     Bullet(column,
                         "Mapa de pendências — uma tabela que cruza turmas (nas linhas) com disciplinas (nas colunas). Cada quadradinho " +
                         "mostra quantas notas já foram lançadas de quantas deveriam existir, e a cor ajuda a achar o problema rápido: " +
                         "verde = tudo lançado; amarelo = falta pouco (até 30%); vermelho = falta muito (mais de 30%). Assim como o " +
                         "ranking, ele mostra todas as turmas, para você enxergar a escola inteira de uma vez.");
+                    Print(column, imagens["dash-mapa"], "Mapa de pendências: cada quadradinho mostra notas lançadas / notas esperadas.");
 
                     Paragrafo(column,
                         "E o Professor? Ele vê esses mesmos gráficos, mas no lugar do filtro de Professor aparece o campo \"Visão\", com " +
                         "duas opções: \"Minhas turmas\" (o padrão), que mostra só as turmas e disciplinas dele, e \"Escola inteira\", " +
                         "para ele comparar o desempenho das suas turmas com o da escola. Ele não consegue escolher outro professor. Mais " +
                         "detalhes na seção 15.");
+                    Print(column, imagens["dash-visao-professor"], "Filtros vistos pelo Professor: no lugar de \"Professor\" aparece o campo \"Visão\".");
                     Paragrafo(column,
                         "Uma dica final: se algum número parecer estranho, confira primeiro os filtros (a frase acima dos cartões mostra " +
                         "o que está selecionado) e se as notas daquele período já foram todas lançadas.");
-                    Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Vice-Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
 
                     column.Item().PageBreak();
                     Titulo(column, "5. Alunos");
@@ -372,6 +375,13 @@ public sealed class IndexModel : PageModel
         column.Item().AlignCenter().Text(legenda).FontSize(8.5f).FontColor(Colors.Grey.Darken1).Italic();
     }
 
+    // Para recortes de um gráfico só (metade da tela): mais estreito e centralizado, para não ficar gigante.
+    private static void PrintMenor(ColumnDescriptor column, byte[] imagem, string legenda)
+    {
+        column.Item().PaddingTop(4).AlignCenter().Width(330).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Image(imagem).FitWidth();
+        column.Item().AlignCenter().Text(legenda).FontSize(8.5f).FontColor(Colors.Grey.Darken1).Italic();
+    }
+
     private static void TabelaPermissoes(ColumnDescriptor column)
     {
         column.Item().PaddingTop(6).Table(table =>
@@ -441,6 +451,8 @@ public sealed class IndexModel : PageModel
             "login", "dashboard-admin", "alunos", "disciplinas", "professores", "turmas", "series",
             "periodos-diretor", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
             "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
+            "dash-filtros", "dash-cartoes", "dash-media-disciplina", "dash-rosca", "dash-evolucao", "dash-ranking", "dash-mapa",
+            "dash-visao-professor",
         };
 
         return nomes.ToDictionary(nome => nome, nome => System.IO.File.ReadAllBytes(Path.Combine(pasta, $"{nome}.png")));
