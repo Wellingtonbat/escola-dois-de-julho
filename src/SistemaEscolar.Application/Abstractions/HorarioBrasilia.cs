@@ -14,5 +14,8 @@ public static class HorarioBrasilia
 
     public static DateTime DeUtc(DateTime utc) => utc + Offset;
 
-    public static DateTime ParaUtc(DateTime horarioBrasilia) => horarioBrasilia - Offset;
+    // O resultado sai marcado como UTC: datas vindas de formulário/URL chegam sem fuso (Kind=Unspecified) e o
+    // PostgreSQL recusa compará-las com colunas "timestamp with time zone" (erro 500 nos filtros da Auditoria).
+    public static DateTime ParaUtc(DateTime horarioBrasilia) =>
+        DateTime.SpecifyKind(horarioBrasilia - Offset, DateTimeKind.Utc);
 }
