@@ -261,10 +261,41 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Reprovado — média final menor que 5,0, mesmo depois de considerar a Avaliação Final (quando existir).");
                     Bullet(column, "Pendente — ainda falta lançar alguma nota do ano; o sistema ainda não consegue calcular o resultado final.");
                     Paragrafo(column,
-                        "Quando um aluno fecha os 3 trimestres com média abaixo de 5,0 em alguma disciplina, esta tela mostra um campinho " +
-                        "para lançar a \"Avaliação Final\" dele — a última chance de recuperar no ano. Só o Diretor e o Vice-Diretor " +
-                        "lançam essa nota. Vale a maior: se a Avaliação Final for maior que a média, ela passa a valer, e a situação muda " +
-                        "automaticamente para Aprovado.");
+                        "E se o aluno terminar o ano abaixo da média? Aí entra a Avaliação Final — a última chance dele recuperar a " +
+                        "disciplina no ano. Ela é lançada aqui mesmo, na tela de Resultados, e só pelo Diretor ou pelo Vice-Diretor. " +
+                        "Os outros perfis conseguem ver a nota, mas não lançam.");
+                    Paragrafo(column,
+                        "Quando ela pode ser lançada? Só depois que os 3 trimestres daquela disciplina já foram lançados e, mesmo assim, " +
+                        "a média do ano ficou abaixo de 5,0. Enquanto isso não acontece, o campinho nem aparece — e é isso mesmo, porque " +
+                        "ainda não dá para saber se o aluno vai precisar dela.");
+                    Paragrafo(column, "Passo a passo para lançar:");
+                    Bullet(column,
+                        "1º — Entre com o seu usuário de Diretor ou Vice-Diretor e clique em \"Resultados\" no menu lateral.");
+                    Bullet(column,
+                        "2º — Nos filtros, escolha o Ano letivo, a Turma e, em Situação, clique em \"Reprovados\". Clique em \"Filtrar\". " +
+                        "Assim a lista mostra só quem está precisando da Avaliação Final, sem você ter que procurar aluno por aluno.");
+                    Print(column, imagens["avf-filtro"], "Filtro de Resultados com a turma escolhida e a situação \"Reprovados\".");
+                    Bullet(column,
+                        "3º — Na coluna \"Avaliação Final\", ache o aluno e digite a nota no campinho (de 0 a 10; pode usar vírgula, " +
+                        "como 6,5). Depois clique em \"Salvar\" e confirme na janelinha que aparece.");
+                    Print(column, imagens["avf-tabela"], "O campinho da Avaliação Final: o primeiro aluno ainda está esperando a nota; o segundo já tem a dele lançada.");
+                    Bullet(column,
+                        "4º — Pronto! O Resultado Final e a Situação do aluno se atualizam na hora.");
+                    Paragrafo(column,
+                        "Como o sistema usa essa nota? Vale sempre a maior entre a média do ano e a Avaliação Final. Um exemplo: o aluno " +
+                        "terminou Matemática com média 3,0. Se tirar 6,0 na Avaliação Final, o resultado dele vira 6,0 e ele fica " +
+                        "Aprovado. Se tirar 2,0, continua valendo o 3,0 (a nota maior) e ele fica Reprovado na disciplina — e, na Ata, " +
+                        "aparece como Conservado(a).");
+                    Paragrafo(column, "Algumas situações que costumam gerar dúvida:");
+                    Bullet(column,
+                        "Lancei a nota errada — é só digitar a nota certa no mesmo campinho e clicar em \"Salvar\" de novo. A nova nota " +
+                        "substitui a anterior (e a troca fica registrada na Auditoria).");
+                    Bullet(column,
+                        "O aluno não fez a prova — enquanto não houver nota, ele fica \"Pendente\" na Ata e a Ata não pode ser finalizada. " +
+                        "Se ele faltou de vez, lance 0: aí vale a média dele, e a Ata mostra o resultado.");
+                    Bullet(column,
+                        "O campinho não aparece — confira se os 3 trimestres daquela disciplina já foram lançados, se a média do ano " +
+                        "está mesmo abaixo de 5,0 e se você entrou com um usuário de Diretor ou Vice-Diretor.");
                     Paragrafo(column,
                         "A Ata de Resultados Finais (menu Atas) usa exatamente esses resultados. Enquanto está em Rascunho, ela acompanha " +
                         "as notas e a Avaliação Final em tempo real e calcula o resultado de cada aluno: Aprovado(a) quando todas as " +
@@ -453,7 +484,7 @@ public sealed class IndexModel : PageModel
             "periodos-diretor", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
             "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
             "dash-filtros", "dash-cartoes", "dash-media-disciplina", "dash-rosca", "dash-evolucao", "dash-ranking", "dash-mapa",
-            "dash-visao-professor",
+            "dash-visao-professor", "avf-filtro", "avf-tabela",
         };
 
         return nomes.ToDictionary(nome => nome, nome => System.IO.File.ReadAllBytes(Path.Combine(pasta, $"{nome}.png")));

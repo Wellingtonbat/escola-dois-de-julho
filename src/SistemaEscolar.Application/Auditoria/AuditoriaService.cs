@@ -15,7 +15,7 @@ public sealed class AuditoriaService : IAuditoriaService
     private static readonly IReadOnlyList<AuditoriaEntidadeDto> EntidadesConhecidas = new[]
     {
         new AuditoriaEntidadeDto("Notas", "Notas"),
-        new AuditoriaEntidadeDto("RecuperacoesFinais", "Recuperação final"),
+        new AuditoriaEntidadeDto("RecuperacoesFinais", "Avaliação Final"),
         new AuditoriaEntidadeDto("Alunos", "Alunos"),
         new AuditoriaEntidadeDto("Professores", "Professores"),
         new AuditoriaEntidadeDto("ProfessorAtribuicoes", "Vínculos de professor"),
