@@ -58,7 +58,11 @@ if (dashKpis) {
   }
 
   function renderKpis(dados) {
-    document.getElementById("dash-kpis-caption").textContent = `Visão geral da escola — ano letivo ${dados.anoLetivo}`;
+    document.getElementById("dash-kpis-caption").textContent = descreverEscopo(dados, {
+      comTurma: true,
+      comDisciplina: true,
+      comProfessor: true,
+    });
     const k = dados.kpis;
     dashKpis.innerHTML = `
       <article class="kpi-card kpi-card-icon">
@@ -137,6 +141,10 @@ if (dashKpis) {
     const pctAprovados = (d.aprovados / d.total) * 100;
     const pctReprovados = (d.reprovados / d.total) * 100;
     const pctPendentes = (d.pendentes / d.total) * 100;
+    // Centro da rosca = mesma "Aprovação geral" do card: aprovados entre as notas já lançadas. As fatias
+    // e a legenda continuam mostrando a proporção de cada situação no total (incluindo pendentes).
+    const lancados = d.aprovados + d.reprovados;
+    const textoAprovacao = lancados > 0 ? `${formatarDecimal((d.aprovados / lancados) * 100, 0)}%` : "—";
 
     const arcoAprovados = (pctAprovados / 100) * circunferencia;
     const arcoReprovados = (pctReprovados / 100) * circunferencia;
@@ -156,7 +164,7 @@ if (dashKpis) {
                   stroke="${corReprovados}" stroke-dasharray="${arcoReprovados} ${circunferencia}" stroke-dashoffset="${-arcoAprovados}"/>
           <circle cx="50" cy="50" r="42" fill="none" stroke-width="12" stroke-linecap="round" transform="rotate(-90 50 50)"
                   stroke="${corPendentes}" stroke-dasharray="${arcoPendentes} ${circunferencia}" stroke-dashoffset="${-(arcoAprovados + arcoReprovados)}"/>
-          <text x="50" y="47" text-anchor="middle" font-size="17" font-weight="800" fill="#0F1D40" font-family="Figtree, system-ui, sans-serif">${formatarDecimal(pctAprovados, 0)}%</text>
+          <text x="50" y="47" text-anchor="middle" font-size="17" font-weight="800" fill="#0F1D40" font-family="Figtree, system-ui, sans-serif">${textoAprovacao}</text>
           <text x="50" y="61" text-anchor="middle" font-size="7" fill="#5B6785" font-family="Figtree, system-ui, sans-serif">aprovação</text>
         </svg>
         <div>
@@ -354,9 +362,25 @@ if (dashKpis) {
     }
   }
 
+  // O select de Turma traz as turmas de todos os anos; mostra só as do ano letivo escolhido e desmarca a
+  // turma selecionada se ela for de outro ano.
+  function sincronizarTurmasComAno() {
+    for (const opcao of filtroTurma.options) {
+      if (!opcao.value) continue;
+      const outroAno = opcao.dataset.ano !== filtroAno.value;
+      opcao.hidden = outroAno;
+      opcao.disabled = outroAno; // Safari ignora "hidden" em <option>
+    }
+    if (filtroTurma.selectedOptions[0]?.disabled) filtroTurma.value = "";
+  }
+
+  filtroAno.addEventListener("change", sincronizarTurmasComAno);
+  sincronizarTurmasComAno();
+
   botaoFiltrar?.addEventListener("click", carregarDados);
   botaoLimpar?.addEventListener("click", () => {
-    filtroProfessor.value = "";
+    // Para o Professor, o campo "Visão" volta para "Minhas turmas" (data-padrao); para a gestão, todos.
+    filtroProfessor.value = filtroProfessor.dataset.padrao ?? "";
     filtroTurma.value = "";
     filtroDisciplina.value = "";
     filtroTrimestre.value = "";

@@ -28,6 +28,8 @@ public static class ClaimsPrincipalExtensions
 
     public static bool PodeAlterarNotas(this ClaimsPrincipal user) => PermissoesPerfil.PodeAlterarNotas(user.IsInRole);
 
+    public static bool PodeLancarAvaliacaoFinal(this ClaimsPrincipal user) => PermissoesPerfil.PodeLancarAvaliacaoFinal(user.IsInRole);
+
     public static bool PodeAcessarAtas(this ClaimsPrincipal user) => PermissoesPerfil.PodeAcessarAtas(user.IsInRole);
 
     public static bool PodeEditarAtaFinalizada(this ClaimsPrincipal user) => PermissoesPerfil.PodeEditarAtaFinalizada(user.IsInRole);

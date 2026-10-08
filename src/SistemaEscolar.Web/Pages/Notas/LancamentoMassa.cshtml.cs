@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Notas;
@@ -121,7 +122,7 @@ public sealed class LancamentoMassaModel : PageModel
             .Select(x => (Guid?)x.Id)
             .FirstOrDefault();
 
-        var hoje = DateTime.UtcNow;
+        var hoje = HorarioBrasilia.Agora;
         // Fora do período aberto, somente a Diretoria (Diretor ou Vice-Diretor) altera notas.
         PodeEditar = PeriodoDisponibilidade.EstaAberto(periodo, hoje) || User.EhDiretoria();
 

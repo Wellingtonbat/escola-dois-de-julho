@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using SistemaEscolar.Application.Abstractions;
 
 namespace SistemaEscolar.Web.Pages.Manual;
 
@@ -38,29 +39,24 @@ public sealed class IndexModel : PageModel
                 page.Margin(2f, Unit.Centimetre);
                 page.DefaultTextStyle(x => x.FontSize(10.5f));
 
-                page.Header()
-                    .PaddingBottom(6)
-                    .Text("Manual de Utilização - Sistema Escolar")
-                    .SemiBold()
-                    .FontSize(15)
-                    .FontColor(Colors.Blue.Darken1);
-
                 page.Content().Column(column =>
                 {
                     column.Spacing(6);
 
-                    // Capa
+                    // Capa: o título aparece só aqui, na primeira página.
+                    column.Item().PaddingBottom(6).Text("Manual de Utilização - Escola Dois de Julho")
+                        .SemiBold().FontSize(15).FontColor(Colors.Blue.Darken1);
                     column.Item().Text($"Versão da aplicação: {appVersion}").FontSize(9).FontColor(Colors.Grey.Darken1);
-                    column.Item().Text($"Data de emissão: {DateTime.Now:dd/MM/yyyy}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                    column.Item().Text($"Data de emissão: {HorarioBrasilia.Agora:dd/MM/yyyy}").FontSize(9).FontColor(Colors.Grey.Darken1);
 
                     Paragrafo(column,
-                        "Este manual explica, de um jeito bem simples, como usar o Sistema Escolar. " +
+                        "Este manual explica, de um jeito bem simples, como usar o sistema da Escola Dois de Julho. " +
                         "Não se preocupe se você nunca usou o sistema antes: vamos explicar cada tela como se " +
                         "estivéssemos mostrando pessoalmente, com direito a fotos de cada parte!");
 
-                    Titulo(column, "1. O que é o Sistema Escolar?");
+                    Titulo(column, "1. O que é o sistema da Escola Dois de Julho?");
                     Paragrafo(column,
-                        "Pense no Sistema Escolar como um caderno gigante e organizado da escola, só que dentro do computador. " +
+                        "Pense no sistema da Escola Dois de Julho como um caderno gigante e organizado da escola, só que dentro do computador. " +
                         "Nele ficam guardados os nomes dos alunos, as turmas, as disciplinas, os professores e as notas de cada trimestre. " +
                         "Em vez de folhear páginas de papel, você clica em telas — e o sistema faz as contas de média sozinho!");
 
@@ -92,18 +88,77 @@ public sealed class IndexModel : PageModel
 
                     Titulo(column, "4. O Painel Inicial (Dashboard)");
                     Paragrafo(column,
-                        "É a primeira tela que você vê depois de entrar. Para o Diretor, o Vice-Diretor, o Coordenador e a Secretária, ela é um painel " +
-                        "de controle bem completo e colorido: lá em cima ficam os filtros — Professor, Turma, Disciplina e Ano/Trimestre. " +
-                        "Escolha o que quiser conferir e clique em \"Filtrar\": todos os gráficos da tela se atualizam na hora, sem precisar " +
-                        "recarregar a página.");
-                    Bullet(column, "Cartões coloridos no topo — sempre mostram números da escola inteira: quantos alunos, o percentual geral de aprovação, quantas notas ainda estão pendentes de lançamento e quantos trimestres estão abertos.");
-                    Bullet(column, "Gráfico \"Aprovados x Reprovados x Pendentes\" — um gráfico de rosca que mostra a proporção de cada situação, considerando os filtros escolhidos.");
-                    Bullet(column, "Gráfico \"Média por disciplina\" — aparece depois que você escolhe uma turma, comparando a média de cada matéria dentro dela.");
-                    Bullet(column, "Gráfico \"Evolução por trimestre\" — mostra se a média está subindo ou caindo ao longo do ano.");
-                    Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação.");
-                    Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
-                    Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 15.");
-                    Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Vice-Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
+                        "É a primeira tela que aparece depois que você entra. Pense nela como o painel de um carro: num olhar só, você " +
+                        "fica sabendo como a escola está indo — quantos alunos estão indo bem, quantos precisam de atenção e quantas notas " +
+                        "ainda faltam lançar. Diretor, Vice-Diretor, Coordenador e Secretária veem o painel completo; o Professor vê os " +
+                        "mesmos gráficos, com uma diferença que explico no final desta seção.");
+                    Print(column, imagens["dashboard-admin"], "Visão geral do Painel Inicial (Diretor, Vice-Diretor, Coordenador ou Secretária).");
+
+                    Paragrafo(column,
+                        "Começando pelos filtros, lá em cima: Professor, Turma, Disciplina, Ano letivo e Trimestre. Funciona como uma " +
+                        "lupa. Se você não escolher nada, vê a escola inteira no ano todo. Quer ver só o 7º Ano A no 1º trimestre? " +
+                        "Escolha a turma, escolha o trimestre e clique em \"Filtrar\" — os números e os gráficos se atualizam na hora, " +
+                        "sem recarregar a página. Logo acima dos cartões aparece uma frase lembrando o que está filtrado (por exemplo, " +
+                        "\"7º Ano A · Todas as disciplinas · 1º Trimestre/2026\"). O botão \"Limpar\" volta tudo para a escola inteira. " +
+                        "Detalhe: o campo Turma só mostra as turmas do ano letivo escolhido.");
+                    Print(column, imagens["dash-filtros"], "Os filtros do Painel Inicial: escolha o que quer ver e clique em \"Filtrar\".");
+
+                    Paragrafo(column, "Agora, os quatro cartões coloridos do topo. Eles sempre acompanham os filtros:");
+                    Bullet(column,
+                        "Alunos matriculados — quantos alunos ativos existem no recorte escolhido. Aluno que foi transferido ou saiu da " +
+                        "escola (inativo) não entra nessa conta, nem em nenhum outro número do painel.");
+                    Bullet(column,
+                        "Aprovação geral — de todas as notas de trimestre que já foram lançadas, quantas ficaram com 5,0 ou mais. Repare " +
+                        "que só conta o que já foi lançado: se a escola lançou 100 notas e 80 ficaram acima da média, aparece 80%, mesmo " +
+                        "que ainda faltem outras notas para lançar.");
+                    Bullet(column,
+                        "Pendências de lançamento — quantas notas ainda faltam. A conta é simples: o sistema sabe quantas notas deveriam " +
+                        "existir (cada aluno, em cada disciplina da turma dele, em cada trimestre) e tira as que já foram lançadas. " +
+                        "Uma turma de 30 alunos com 10 disciplinas, no ano todo, deveria ter 30 × 10 × 3 = 900 notas; se 600 já foram " +
+                        "lançadas, faltam 300.");
+                    Bullet(column,
+                        "Períodos em aberto — quantos trimestres estão liberados para lançar notas hoje, de quantos existem no ano (ex.: " +
+                        "\"1 / 3\"). Conta o trimestre que está dentro das datas dele ou que foi aberto manualmente pela Direção.");
+                    Print(column, imagens["dash-cartoes"], "Os quatro cartões do topo: alunos, aprovação, notas que faltam e trimestres abertos.");
+
+                    Paragrafo(column, "Descendo um pouco, vêm os gráficos:");
+                    Bullet(column,
+                        "Média por disciplina — é preciso escolher uma turma para ele aparecer. Cada barra é uma matéria, com a média " +
+                        "das notas daquela turma; a linha tracejada marca o 5,0, então dá para ver na hora quem está abaixo. Se uma " +
+                        "matéria ainda não tem nenhuma nota no período, ela aparece com um tracinho (\"—\") em vez de sumir.");
+                    PrintMenor(column, imagens["dash-media-disciplina"], "Média por disciplina de uma turma, com a linha tracejada do 5,0.");
+                    Bullet(column,
+                        "Aprovados x Reprovados x Pendentes — o gráfico redondo (de rosca). Ele divide todas as notas esperadas em três " +
+                        "fatias: as lançadas com 5,0 ou mais, as lançadas abaixo de 5,0 e as que ainda faltam lançar. O número grande " +
+                        "no meio é o mesmo da \"Aprovação geral\" do cartão lá de cima.");
+                    PrintMenor(column, imagens["dash-rosca"], "Gráfico de rosca: aprovados, reprovados e notas que ainda faltam lançar.");
+                    Bullet(column,
+                        "Evolução por trimestre — uma linha que mostra a média do 1º, 2º e 3º trimestres, para você ver se a turma (ou a " +
+                        "escola) está melhorando ou piorando ao longo do ano. Por isso ele mostra sempre os três trimestres, mesmo que você " +
+                        "tenha escolhido um trimestre no filtro.");
+                    PrintMenor(column, imagens["dash-evolucao"], "Evolução da média ao longo dos trimestres.");
+                    Bullet(column,
+                        "Turmas por índice de aprovação — um ranking: de um lado, as 5 turmas com mais notas acima da média; do outro, as " +
+                        "5 que mais precisam de atenção. Se a escola tiver poucas turmas, elas são divididas entre os dois lados, sem " +
+                        "repetir nenhuma. Como a ideia é comparar as turmas entre si, este quadro mostra todas as turmas, mesmo com uma " +
+                        "turma escolhida no filtro.");
+                    PrintMenor(column, imagens["dash-ranking"], "Ranking: turmas com melhor desempenho e turmas que precisam de atenção.");
+                    Bullet(column,
+                        "Mapa de pendências — uma tabela que cruza turmas (nas linhas) com disciplinas (nas colunas). Cada quadradinho " +
+                        "mostra quantas notas já foram lançadas de quantas deveriam existir, e a cor ajuda a achar o problema rápido: " +
+                        "verde = tudo lançado; amarelo = falta pouco (até 30%); vermelho = falta muito (mais de 30%). Assim como o " +
+                        "ranking, ele mostra todas as turmas, para você enxergar a escola inteira de uma vez.");
+                    Print(column, imagens["dash-mapa"], "Mapa de pendências: cada quadradinho mostra notas lançadas / notas esperadas.");
+
+                    Paragrafo(column,
+                        "E o Professor? Ele vê esses mesmos gráficos, mas no lugar do filtro de Professor aparece o campo \"Visão\", com " +
+                        "duas opções: \"Minhas turmas\" (o padrão), que mostra só as turmas e disciplinas dele, e \"Escola inteira\", " +
+                        "para ele comparar o desempenho das suas turmas com o da escola. Ele não consegue escolher outro professor. Mais " +
+                        "detalhes na seção 15.");
+                    Print(column, imagens["dash-visao-professor"], "Filtros vistos pelo Professor: no lugar de \"Professor\" aparece o campo \"Visão\".");
+                    Paragrafo(column,
+                        "Uma dica final: se algum número parecer estranho, confira primeiro os filtros (a frase acima dos cartões mostra " +
+                        "o que está selecionado) e se as notas daquele período já foram todas lançadas.");
 
                     column.Item().PageBreak();
                     Titulo(column, "5. Alunos");
@@ -160,9 +215,10 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column,
                         "É onde as notas de cada aluno, em cada disciplina e período, são lançadas. Para cada lançamento existem até 4 números:");
                     Bullet(column, "Avaliação 1, Avaliação 2 e Avaliação 3 — as três provas/atividades do trimestre (de 0 a 10).");
-                    Bullet(column, "Recuperação Paralela — uma nota extra, opcional, para quem precisa recuperar.");
+                    Bullet(column, "Recuperação Paralela — uma nota extra, para quem não alcançou 5,0 no trimestre.");
                     Paragrafo(column, "O sistema faz as contas sozinho, seguindo esta receita:");
-                    Bullet(column, "Resultado da Unidade = a média das 3 avaliações.");
+                    Bullet(column, "Resultado da Unidade = a soma das 3 avaliações (por exemplo, 3,0 + 2,5 + 3,5 = 9,0). A soma não pode passar de 10,0.");
+                    Bullet(column, "Recuperação Paralela = só fica liberada quando essa soma dá menos de 5,0.");
                     Bullet(column, "Resultado Final da Unidade = o maior valor entre o Resultado da Unidade e a Recuperação Paralela (quando ela existir).");
                     Paragrafo(column,
                         "Importante: se o período estiver Fechado, somente o Diretor ou o Vice-Diretor conseguem editar ou excluir uma nota já lançada nele. " +
@@ -202,12 +258,51 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column,
                         "É o boletim final. Junta as notas de todas as disciplinas de um aluno no ano e mostra a situação dele:");
                     Bullet(column, "Aprovado — média final igual ou maior que 5,0, com todas as notas do ano lançadas.");
-                    Bullet(column, "Reprovado — média final menor que 5,0, mesmo depois de considerar a Recuperação Final (quando existir).");
+                    Bullet(column, "Reprovado — média final menor que 5,0, mesmo depois de considerar a Avaliação Final (quando existir).");
                     Bullet(column, "Pendente — ainda falta lançar alguma nota do ano; o sistema ainda não consegue calcular o resultado final.");
                     Paragrafo(column,
-                        "Quando um aluno fica com média abaixo de 5,0 em alguma disciplina, esta tela mostra um campinho para lançar a " +
-                        "\"Recuperação Final\" dele — a última chance de recuperar no ano. Se a nota da recuperação for maior que a média, " +
-                        "ela passa a valer, e a situação do aluno muda automaticamente para Aprovado.");
+                        "E se o aluno terminar o ano abaixo da média? Aí entra a Avaliação Final — a última chance dele recuperar a " +
+                        "disciplina no ano. Ela é lançada aqui mesmo, na tela de Resultados, e só pelo Diretor ou pelo Vice-Diretor. " +
+                        "Os outros perfis conseguem ver a nota, mas não lançam.");
+                    Paragrafo(column,
+                        "Quando ela pode ser lançada? Só depois que os 3 trimestres daquela disciplina já foram lançados e, mesmo assim, " +
+                        "a média do ano ficou abaixo de 5,0. Enquanto isso não acontece, o campinho nem aparece — e é isso mesmo, porque " +
+                        "ainda não dá para saber se o aluno vai precisar dela.");
+                    Paragrafo(column, "Passo a passo para lançar:");
+                    Bullet(column,
+                        "1º — Entre com o seu usuário de Diretor ou Vice-Diretor e clique em \"Resultados\" no menu lateral.");
+                    Bullet(column,
+                        "2º — Nos filtros, escolha o Ano letivo, a Turma e, em Situação, clique em \"Reprovados\". Clique em \"Filtrar\". " +
+                        "Assim a lista mostra só quem está precisando da Avaliação Final, sem você ter que procurar aluno por aluno.");
+                    Print(column, imagens["avf-filtro"], "Filtro de Resultados com a turma escolhida e a situação \"Reprovados\".");
+                    Bullet(column,
+                        "3º — Na coluna \"Avaliação Final\", ache o aluno e digite a nota no campinho (de 0 a 10; pode usar vírgula, " +
+                        "como 6,5). Depois clique em \"Salvar\" e confirme na janelinha que aparece.");
+                    Print(column, imagens["avf-tabela"], "O campinho da Avaliação Final: o primeiro aluno ainda está esperando a nota; o segundo já tem a dele lançada.");
+                    Bullet(column,
+                        "4º — Pronto! O Resultado Final e a Situação do aluno se atualizam na hora.");
+                    Paragrafo(column,
+                        "Como o sistema usa essa nota? Vale sempre a maior entre a média do ano e a Avaliação Final. Um exemplo: o aluno " +
+                        "terminou Matemática com média 3,0. Se tirar 6,0 na Avaliação Final, o resultado dele vira 6,0 e ele fica " +
+                        "Aprovado. Se tirar 2,0, continua valendo o 3,0 (a nota maior) e ele fica Reprovado na disciplina — e, na Ata, " +
+                        "aparece como Conservado(a).");
+                    Paragrafo(column, "Algumas situações que costumam gerar dúvida:");
+                    Bullet(column,
+                        "Lancei a nota errada — é só digitar a nota certa no mesmo campinho e clicar em \"Salvar\" de novo. A nova nota " +
+                        "substitui a anterior (e a troca fica registrada na Auditoria).");
+                    Bullet(column,
+                        "O aluno não fez a prova — enquanto não houver nota, ele fica \"Pendente\" na Ata e a Ata não pode ser finalizada. " +
+                        "Se ele faltou de vez, lance 0: aí vale a média dele, e a Ata mostra o resultado.");
+                    Bullet(column,
+                        "O campinho não aparece — confira se os 3 trimestres daquela disciplina já foram lançados, se a média do ano " +
+                        "está mesmo abaixo de 5,0 e se você entrou com um usuário de Diretor ou Vice-Diretor.");
+                    Paragrafo(column,
+                        "A Ata de Resultados Finais (menu Atas) usa exatamente esses resultados. Enquanto está em Rascunho, ela acompanha " +
+                        "as notas e a Avaliação Final em tempo real e calcula o resultado de cada aluno: Aprovado(a) quando todas as " +
+                        "disciplinas ficam com 5,0 ou mais; Conservado(a) quando alguma fica abaixo de 5,0 mesmo depois da Avaliação Final; " +
+                        "e Pendente enquanto falta alguma nota ou alguma Avaliação Final. Alunos inativos (quem saiu da escola) entram como " +
+                        "Transferido(a), e só para eles dá para trocar para Deixou de frequentar. A coluna Apto a Cursar é preenchida pela " +
+                        "série. Ao finalizar, a Ata é \"congelada\" com as notas daquele momento.");
                     Paragrafo(column,
                         "Nesta tela também dá para filtrar por turma, série e situação, buscar por aluno, disciplina ou professor, e " +
                         "exportar a lista em CSV, Excel (XLSX) ou PDF. Na exportação em Excel, cada disciplina ganha sua própria aba, " +
@@ -238,12 +333,16 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Acesso — somente Diretor e Vice-Diretor veem esta tela; para os demais perfis o menu \"Auditoria\" nem aparece. Registros anteriores a esta função podem aparecer como \"Sistema / não identificado\", pois na época o sistema ainda não guardava quem fez a ação.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "15. O que o Professor enxerga (visão simplificada)");
+                    Titulo(column, "15. O que o Professor enxerga");
                     Paragrafo(column,
                         "Quando um Professor entra no sistema, o menu lateral aparece bem mais curto: só Dashboard, Notas, Resultados e o botão " +
                         "para baixar este manual. Ele não vê Alunos, Disciplinas, Turmas, Séries, Períodos nem Usuários — essas telas ficam " +
                         "escondidas de propósito, porque não fazem parte do trabalho dele.");
                     Print(column, imagens["dashboard-professor"], "Painel Inicial visto por um Professor: repare no menu lateral bem mais curto.");
+                    Paragrafo(column,
+                        "No Painel Inicial, o Professor vê os mesmos gráficos da Direção. No lugar do filtro de Professor existe o campo " +
+                        "\"Visão\": \"Minhas turmas\" (o padrão) mostra só as turmas e disciplinas vinculadas a ele, e \"Escola inteira\" " +
+                        "mostra os números gerais da escola, para comparação. Ele não consegue escolher outro professor.");
                     Paragrafo(column,
                         "Além do menu mais curto, dentro de Notas e Resultados o Professor só enxerga os próprios alunos: exatamente os alunos " +
                         "das turmas e disciplinas que estão vinculadas a ele na tela de Professores. Ele nunca vê notas ou resultados de turmas " +
@@ -268,7 +367,7 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
                     Titulo(column, "18. Controle de versão");
-                    Paragrafo(column, $"Este manual acompanha a versão {appVersion} do Sistema Escolar, desenvolvido por Well Tech.");
+                    Paragrafo(column, $"Este manual acompanha a versão {appVersion} do sistema da Escola Dois de Julho, desenvolvido por Well Tech.");
                 });
 
                 page.Footer()
@@ -305,6 +404,13 @@ public sealed class IndexModel : PageModel
     private static void Print(ColumnDescriptor column, byte[] imagem, string legenda)
     {
         column.Item().PaddingTop(4).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Image(imagem).FitWidth();
+        column.Item().AlignCenter().Text(legenda).FontSize(8.5f).FontColor(Colors.Grey.Darken1).Italic();
+    }
+
+    // Para recortes de um gráfico só (metade da tela): mais estreito e centralizado, para não ficar gigante.
+    private static void PrintMenor(ColumnDescriptor column, byte[] imagem, string legenda)
+    {
+        column.Item().PaddingTop(4).AlignCenter().Width(330).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Image(imagem).FitWidth();
         column.Item().AlignCenter().Text(legenda).FontSize(8.5f).FontColor(Colors.Grey.Darken1).Italic();
     }
 
@@ -345,7 +451,7 @@ public sealed class IndexModel : PageModel
                 Celula(professor, professor is "Não");
             }
 
-            Linha("Ver o Painel Inicial", "Sim", "Sim", "Sim", "Sim (versão simplificada)");
+            Linha("Ver o Painel Inicial", "Sim", "Sim", "Sim", "Sim (suas turmas ou escola inteira)");
             Linha("Cadastrar/editar Alunos", "Sim", "Sim", "Sim", "Não");
             Linha("Cadastrar/editar Disciplinas", "Sim", "Sim", "Sim", "Não");
             Linha("Cadastrar/editar Professores", "Sim", "Sim", "Sim", "Não");
@@ -358,7 +464,7 @@ public sealed class IndexModel : PageModel
             Linha("Usar o Lançamento de Notas em Massa", "Sim (todas)", "Não", "Não", "Só as suas turmas");
             Linha("Editar/excluir Nota em período Fechado", "Sim", "Não", "Não", "Não");
             Linha("Ver/exportar Resultados", "Sim (todos)", "Sim (todos)", "Sim (todos)", "Só os seus alunos");
-            Linha("Lançar a Recuperação Final", "Sim", "Não", "Não", "Só os seus alunos");
+            Linha("Lançar a Avaliação Final", "Sim", "Não", "Não", "Não");
             Linha("Baixar o Boletim do Aluno em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Baixar os Boletins de uma Turma em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Gerenciar Usuários (Coord./Secretária)", "Sim", "Sim", "Sim", "Não");
@@ -377,6 +483,8 @@ public sealed class IndexModel : PageModel
             "login", "dashboard-admin", "alunos", "disciplinas", "professores", "turmas", "series",
             "periodos-diretor", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
             "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
+            "dash-filtros", "dash-cartoes", "dash-media-disciplina", "dash-rosca", "dash-evolucao", "dash-ranking", "dash-mapa",
+            "dash-visao-professor", "avf-filtro", "avf-tabela",
         };
 
         return nomes.ToDictionary(nome => nome, nome => System.IO.File.ReadAllBytes(Path.Combine(pasta, $"{nome}.png")));

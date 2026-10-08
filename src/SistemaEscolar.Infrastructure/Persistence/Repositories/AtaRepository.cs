@@ -98,4 +98,67 @@ public sealed class AtaRepository : IAtaRepository
         _context.Set<AtaAluno>().Update(item);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task SincronizarItensAsync(
+        IReadOnlyList<AtaAluno> novos,
+        IReadOnlyList<AtaAluno> atualizados,
+        IReadOnlyList<AtaAluno> removidos,
+        CancellationToken cancellationToken = default)
+    {
+        if (novos.Count == 0 && atualizados.Count == 0 && removidos.Count == 0)
+        {
+            return;
+        }
+
+        await using var transacao = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+        // Primeiro as exclusões lógicas (índice único AtaId+AlunoId só vale para não excluídos), depois as inclusões.
+        foreach (var item in removidos)
+        {
+            item.IsDeleted = true;
+            _context.Set<AtaAluno>().Update(item);
+        }
+
+        foreach (var item in atualizados)
+        {
+            _context.Set<AtaAluno>().Update(item);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _context.Set<AtaAluno>().AddRange(novos);
+        await _context.SaveChangesAsync(cancellationToken);
+        await transacao.CommitAsync(cancellationToken);
+    }
+
+    public async Task FinalizarComResultadosAsync(
+        Ata ata,
+        IReadOnlyList<AtaAluno> itens,
+        IReadOnlyList<AtaAlunoDisciplina> disciplinas,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transacao = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+        var itemIds = itens.Select(x => x.Id).ToList();
+        var antigas = await _context.Set<AtaAlunoDisciplina>()
+            .Where(x => !x.IsDeleted && itemIds.Contains(x.AtaAlunoId))
+            .ToListAsync(cancellationToken);
+        foreach (var antiga in antigas)
+        {
+            antiga.IsDeleted = true;
+        }
+
+        foreach (var item in itens)
+        {
+            _context.Set<AtaAluno>().Update(item);
+        }
+
+        _context.Atas.Update(ata);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Em um segundo SaveChanges para não esbarrar no índice único (AtaAlunoId+DisciplinaId) das antigas.
+        _context.Set<AtaAlunoDisciplina>().AddRange(disciplinas);
+        await _context.SaveChangesAsync(cancellationToken);
+        await transacao.CommitAsync(cancellationToken);
+    }
 }

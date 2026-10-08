@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Auditoria;
 using SistemaEscolar.Web.Extensions;
 
@@ -10,9 +11,6 @@ public sealed class IndexModel : PageModel
 {
     private const int PageSizeFixo = 50;
     private const int DiasPadrao = 30;
-
-    // Horário de Brasília (UTC-3), o mesmo usado pela AuditoriaService.
-    private static readonly TimeSpan OffsetBrasilia = TimeSpan.FromHours(-3);
 
     private readonly IAuditoriaService _auditoriaService;
 
@@ -56,7 +54,7 @@ public sealed class IndexModel : PageModel
         }
 
         // Primeira abertura da tela: últimos 30 dias. Se o usuário limpar uma data e filtrar, respeita a escolha.
-        var hoje = (DateTime.UtcNow + OffsetBrasilia).Date;
+        var hoje = HorarioBrasilia.Hoje;
         if (!Request.Query.ContainsKey(nameof(De)))
         {
             De = hoje.AddDays(-DiasPadrao);

@@ -12,7 +12,6 @@ public interface IAtaService
     Task<AtaDetalheDto?> ObterDetalheAsync(Guid ataId, CancellationToken cancellationToken = default);
 
     Task<AtaResult> SalvarMatriculaAsync(Guid ataAlunoId, string? matriculaPrefeitura, CancellationToken cancellationToken = default);
-    Task<AtaResult> SalvarAvFAsync(Guid ataAlunoId, decimal? valor, CancellationToken cancellationToken = default);
     Task<AtaResult> DefinirRFManualAsync(Guid ataAlunoId, string rf, CancellationToken cancellationToken = default);
 
     Task<AtaResult> FinalizarAsync(Guid ataId, CancellationToken cancellationToken = default);

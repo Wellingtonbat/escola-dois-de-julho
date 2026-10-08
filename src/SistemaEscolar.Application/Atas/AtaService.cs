@@ -2,6 +2,7 @@ using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Resultados;
+using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
 using SistemaEscolar.Application.Usuarios;
 using SistemaEscolar.Domain.Entities;
@@ -20,6 +21,7 @@ public sealed class AtaService : IAtaService
     private readonly IDisciplinaService _disciplinaService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUsuarioService _usuarioService;
+    private readonly ISerieService _serieService;
 
     public AtaService(
         IAtaRepository ataRepository,
@@ -28,7 +30,8 @@ public sealed class AtaService : IAtaService
         IResultadoAcademicoService resultadoAcademicoService,
         IDisciplinaService disciplinaService,
         ICurrentUserService currentUserService,
-        IUsuarioService usuarioService)
+        IUsuarioService usuarioService,
+        ISerieService serieService)
     {
         _ataRepository = ataRepository;
         _turmaService = turmaService;
@@ -37,6 +40,7 @@ public sealed class AtaService : IAtaService
         _disciplinaService = disciplinaService;
         _currentUserService = currentUserService;
         _usuarioService = usuarioService;
+        _serieService = serieService;
     }
 
     public async Task<IReadOnlyList<AtaListItemDto>> ListarAsync(int? anoLetivo = null, CancellationToken cancellationToken = default)
@@ -110,17 +114,6 @@ public sealed class AtaService : IAtaService
             return (AtaResult.Fail("Esta turma já tem uma Ata cadastrada."), null);
         }
 
-        var alunos = (await _alunoService.ListarAsync(new AlunoListFilter(null, null, turmaId, true), cancellationToken))
-            .OrderBy(x => x.NomeCompleto)
-            .ToList();
-
-        var resultados = await _resultadoAcademicoService.ListarAsync(
-            new ResultadoAcademicoFilter(turma.AnoLetivo, turma.Nome, null, "todos"), cancellationToken);
-        var resultadosPorAluno = resultados.ToLookup(x => x.AlunoId);
-
-        var codigoPorDisciplina = (await _disciplinaService.ListarAsync(null, cancellationToken))
-            .ToDictionary(x => x.Id, x => x.Codigo);
-
         var ata = new Ata
         {
             Id = Guid.NewGuid(),
@@ -128,43 +121,9 @@ public sealed class AtaService : IAtaService
             Status = AtaConstantes.StatusRascunho
         };
 
-        var itens = new List<(AtaAluno Item, IReadOnlyList<AtaAlunoDisciplina> Disciplinas)>();
-        foreach (var aluno in alunos)
-        {
-            var resultadosDoAluno = resultadosPorAluno[aluno.Id].ToList();
-
-            var disciplinas = resultadosDoAluno
-                .Select(r => new AtaAlunoDisciplina
-                {
-                    Id = Guid.NewGuid(),
-                    DisciplinaId = r.DisciplinaId,
-                    DisciplinaNome = r.Disciplina,
-                    DisciplinaCodigo = codigoPorDisciplina.GetValueOrDefault(r.DisciplinaId, string.Empty),
-                    ResultadoFinalAno = r.ResultadoFinalAno
-                })
-                .ToList();
-
-            // Só fica "Aprovado" automático quando toda disciplina já está com o ano completo e média
-            // final ≥ 5 (é exatamente isso que Situacao == "Aprovado" já garante em Resultados). Qualquer
-            // disciplina pendente ou abaixo da média deixa o aluno como "Pendente", liberando o AvF.
-            var todasAprovadas = disciplinas.Count > 0 && resultadosDoAluno.All(r => r.Situacao == "Aprovado");
-
-            var item = new AtaAluno
-            {
-                Id = Guid.NewGuid(),
-                AlunoId = aluno.Id,
-                TP = Math.Round(disciplinas.Sum(d => d.ResultadoFinalAno), 2),
-                // MC (Média do Curso) é a média mínima de aprovação — referência fixa, não a média das
-                // notas do próprio aluno (essa é a Situação/RF, já calculada por disciplina).
-                MC = AtaConstantes.MediaAprovacao,
-                AvF = null,
-                RF = todasAprovadas ? AtaConstantes.RFAprovado : AtaConstantes.RFPendente
-            };
-
-            itens.Add((item, disciplinas));
-        }
-
-        await _ataRepository.CriarComItensAsync(ata, itens, cancellationToken);
+        // As linhas (uma por aluno da turma) são criadas pela montagem do rascunho, a mesma usada ao abrir a Ata.
+        await _ataRepository.CriarComItensAsync(ata, Array.Empty<(AtaAluno, IReadOnlyList<AtaAlunoDisciplina>)>(), cancellationToken);
+        await MontarRascunhoAsync(ata, turma, cancellationToken);
         return (AtaResult.Success(), ata.Id);
     }
 
@@ -182,51 +141,30 @@ public sealed class AtaService : IAtaService
             return null;
         }
 
-        var alunos = (await _alunoService.ListarAsync(null, cancellationToken)).ToDictionary(x => x.Id);
+        var montagem = ata.Status == AtaConstantes.StatusRascunho
+            ? await MontarRascunhoAsync(ata, turma, cancellationToken)
+            : await MontarFinalizadaAsync(ata, turma, cancellationToken);
 
-        var itensEntidade = (await _ataRepository.GetItensAsync(ataId, cancellationToken))
-            .OrderBy(x => alunos.TryGetValue(x.AlunoId, out var al) ? al.NomeCompleto : string.Empty, StringComparer.OrdinalIgnoreCase)
+        var series = await _serieService.ListarAsync(null, cancellationToken);
+
+        var itens = montagem.Linhas
+            .OrderBy(x => x.Aluno?.NomeCompleto ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .Select((linha, indice) =>
+            {
+                var semNotas = AtaConstantes.EhRFManual(linha.Item.RF);
+                return new AtaAlunoItemDto(
+                    linha.Item.Id,
+                    linha.Item.AlunoId,
+                    indice + 1,
+                    linha.Aluno?.NomeCompleto ?? "Aluno não encontrado",
+                    linha.Aluno?.MatriculaPrefeitura,
+                    linha.Aluno?.IsAtivo ?? false,
+                    semNotas ? Array.Empty<AtaAlunoDisciplinaDto>() : linha.Disciplinas,
+                    linha.Item.RF,
+                    linha.Item.RF == AtaConstantes.RFPendente ? linha.Pendencia : null,
+                    AtaCalculo.AptoACursar(linha.Item.RF, turma.SerieId, series));
+            })
             .ToList();
-        var disciplinasPorItem = (await _ataRepository.GetDisciplinasAsync(itensEntidade.Select(x => x.Id).ToList(), cancellationToken))
-            .ToLookup(x => x.AtaAlunoId);
-
-        var disciplinasColunas = disciplinasPorItem
-            .SelectMany(g => g)
-            .GroupBy(x => x.DisciplinaId)
-            .Select(g => new AtaDisciplinaColunaDto(g.Key, g.First().DisciplinaNome, g.First().DisciplinaCodigo))
-            .OrderBy(x => x.Nome, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var itens = new List<AtaAlunoItemDto>();
-        var numero = 1;
-        foreach (var item in itensEntidade)
-        {
-            var aluno = alunos.TryGetValue(item.AlunoId, out var a) ? a : null;
-            var disciplinasDoItem = disciplinasPorItem[item.Id]
-                .OrderBy(x => x.DisciplinaNome, StringComparer.OrdinalIgnoreCase)
-                .Select(x => new AtaAlunoDisciplinaDto(x.DisciplinaId, x.DisciplinaNome, x.DisciplinaCodigo, x.ResultadoFinalAno))
-                .ToList();
-
-            // O campo AvF só fica desabilitado quando o aluno foi aprovado automaticamente (toda
-            // disciplina ≥ 5, sem precisar de AvF) ou quando a situação foi definida manualmente como
-            // Transferido. Em qualquer outro caso (Pendente, Conservado, ou Aprovado através do AvF)
-            // ele continua editável.
-            var avfHabilitado = item.RF != AtaConstantes.RFTransferido
-                && !(item.RF == AtaConstantes.RFAprovado && !item.AvF.HasValue);
-
-            itens.Add(new AtaAlunoItemDto(
-                item.Id,
-                item.AlunoId,
-                numero++,
-                aluno?.NomeCompleto ?? "Aluno não encontrado",
-                aluno?.MatriculaPrefeitura,
-                disciplinasDoItem,
-                item.TP,
-                item.MC,
-                item.AvF,
-                avfHabilitado,
-                item.RF));
-        }
 
         var podeEditar = ata.Status == AtaConstantes.StatusRascunho
             ? PermissoesPerfil.PodeAcessarAtas(_currentUserService.IsInRole)
@@ -246,8 +184,134 @@ public sealed class AtaService : IAtaService
             podeEditar,
             ata.FinalizadaEmUtc,
             ata.FinalizadaPorNome,
-            disciplinasColunas,
+            montagem.Colunas,
             itens);
+    }
+
+    private sealed record LinhaAta(AtaAluno Item, AlunoListItemDto? Aluno, IReadOnlyList<AtaAlunoDisciplinaDto> Disciplinas, string? Pendencia);
+
+    private sealed record MontagemAta(IReadOnlyList<AtaDisciplinaColunaDto> Colunas, IReadOnlyList<LinhaAta> Linhas);
+
+    // Enquanto a Ata está em Rascunho, ela reflete sempre a situação atual da turma: notas e Avaliação Final
+    // lançadas depois da criação da Ata entram na hora, alunos que entraram na turma ganham uma linha e quem
+    // saiu da turma deixa de aparecer. Alunos inativos (transferidos/desistentes) entram como Transferido(a).
+    // O resultado recalculado é gravado na linha para a lista de Atas mostrar o andamento.
+    private async Task<MontagemAta> MontarRascunhoAsync(Ata ata, TurmaListItemDto turma, CancellationToken cancellationToken)
+    {
+        var alunosDaTurma = await _alunoService.ListarAsync(new AlunoListFilter(null, null, turma.Id, null), cancellationToken);
+        var idsDaTurma = alunosDaTurma.Select(x => x.Id).ToHashSet();
+
+        var resultados = (await _resultadoAcademicoService.ListarAsync(
+                new ResultadoAcademicoFilter(turma.AnoLetivo, turma.Nome, null, "todos"), cancellationToken))
+            .Where(x => idsDaTurma.Contains(x.AlunoId))
+            .ToList();
+        var resultadosPorAluno = resultados.ToLookup(x => x.AlunoId);
+        var disciplinasComLancamento = resultados.Select(x => x.DisciplinaId).ToHashSet();
+
+        var colunas = await MontarColunasAsync(turma.SerieId, disciplinasComLancamento, cancellationToken);
+
+        var existentes = await _ataRepository.GetItensAsync(ata.Id, cancellationToken);
+        var existentesPorAluno = existentes.GroupBy(x => x.AlunoId).ToDictionary(g => g.Key, g => g.First());
+
+        var novos = new List<AtaAluno>();
+        var atualizados = new List<AtaAluno>();
+        var linhas = new List<LinhaAta>();
+
+        foreach (var aluno in alunosDaTurma)
+        {
+            var item = existentesPorAluno.GetValueOrDefault(aluno.Id);
+            if (item is null)
+            {
+                item = new AtaAluno
+                {
+                    Id = Guid.NewGuid(),
+                    AtaId = ata.Id,
+                    AlunoId = aluno.Id,
+                    MC = AtaConstantes.MediaAprovacao,
+                    RF = aluno.IsAtivo ? AtaConstantes.RFPendente : AtaConstantes.RFTransferido
+                };
+                novos.Add(item);
+            }
+
+            var rfAnterior = item.RF;
+            var tpAnterior = item.TP;
+
+            // Aluno ativo: resultado sempre calculado pelo sistema. Aluno inativo (a escola inativa quem sai):
+            // Transferido(a) por padrão, ou Deixou de frequentar se marcado na Ata — sem notas na linha.
+            AtaCalculo.ResultadoAluno calculo;
+            if (aluno.IsAtivo)
+            {
+                calculo = AtaCalculo.Calcular(colunas, resultadosPorAluno[aluno.Id].ToList(), disciplinasComLancamento);
+                item.RF = calculo.RF;
+            }
+            else
+            {
+                if (!AtaConstantes.EhRFManual(item.RF))
+                {
+                    item.RF = AtaConstantes.RFTransferido;
+                }
+
+                calculo = new AtaCalculo.ResultadoAluno(Array.Empty<AtaAlunoDisciplinaDto>(), item.RF, null);
+            }
+
+            item.TP = Math.Round(calculo.Disciplinas.Sum(d => d.ResultadoFinalAno), 2);
+
+            if (!novos.Contains(item) && (item.RF != rfAnterior || item.TP != tpAnterior))
+            {
+                atualizados.Add(item);
+            }
+
+            linhas.Add(new LinhaAta(item, aluno, calculo.Disciplinas, calculo.Pendencia));
+        }
+
+        var removidos = existentes.Where(x => !idsDaTurma.Contains(x.AlunoId)).ToList();
+        await _ataRepository.SincronizarItensAsync(novos, atualizados, removidos, cancellationToken);
+
+        return new MontagemAta(colunas, linhas);
+    }
+
+    // Ata finalizada: mostra exatamente a "foto" gravada no fechamento (notas por disciplina e resultado).
+    private async Task<MontagemAta> MontarFinalizadaAsync(Ata ata, TurmaListItemDto turma, CancellationToken cancellationToken)
+    {
+        var itens = await _ataRepository.GetItensAsync(ata.Id, cancellationToken);
+        var disciplinasPorItem = (await _ataRepository.GetDisciplinasAsync(itens.Select(x => x.Id).ToList(), cancellationToken))
+            .ToLookup(x => x.AtaAlunoId);
+        var alunos = (await _alunoService.ListarAsync(null, cancellationToken)).ToDictionary(x => x.Id);
+
+        var colunas = (await MontarColunasAsync(turma.SerieId, new HashSet<Guid>(), cancellationToken)).ToList();
+        foreach (var gravada in disciplinasPorItem.SelectMany(g => g).GroupBy(x => x.DisciplinaId))
+        {
+            if (colunas.All(c => c.DisciplinaId != gravada.Key))
+            {
+                colunas.Add(new AtaDisciplinaColunaDto(gravada.Key, gravada.First().DisciplinaNome, gravada.First().DisciplinaCodigo));
+            }
+        }
+
+        var linhas = itens
+            .Select(item => new LinhaAta(
+                item,
+                alunos.GetValueOrDefault(item.AlunoId),
+                disciplinasPorItem[item.Id]
+                    .Select(x => new AtaAlunoDisciplinaDto(x.DisciplinaId, x.DisciplinaNome, x.DisciplinaCodigo, x.ResultadoFinalAno))
+                    .ToList(),
+                null))
+            .ToList();
+
+        return new MontagemAta(colunas.OrderBy(x => x.Nome, StringComparer.OrdinalIgnoreCase).ToList(), linhas);
+    }
+
+    // Colunas da Ata: as disciplinas ativas da série da turma (inclusive as sem nenhuma nota, que saem como
+    // "—", como no modelo oficial), mais qualquer outra disciplina que tenha lançamento na turma.
+    private async Task<IReadOnlyList<AtaDisciplinaColunaDto>> MontarColunasAsync(
+        Guid serieId,
+        IReadOnlySet<Guid> disciplinasComLancamento,
+        CancellationToken cancellationToken)
+    {
+        return (await _disciplinaService.ListarAsync(null, cancellationToken))
+            .Where(d => (d.IsAtiva && d.Series.Any(s => s.SerieId == serieId)) || disciplinasComLancamento.Contains(d.Id))
+            .OrderBy(d => d.Nome, StringComparer.OrdinalIgnoreCase)
+            .Select(d => new AtaDisciplinaColunaDto(d.Id, d.Nome, d.Codigo))
+            .ToList();
     }
 
     // Usada no cabeçalho da Ata em PDF. Prioriza o Diretor; sem Diretor cadastrado, usa o Vice-Diretor
@@ -272,47 +336,39 @@ public sealed class AtaService : IAtaService
         return await AtualizarMatriculaDoAlunoAsync(contexto.Item!.AlunoId, matriculaPrefeitura, cancellationToken);
     }
 
-    public async Task<AtaResult> SalvarAvFAsync(Guid ataAlunoId, decimal? valor, CancellationToken cancellationToken = default)
+    // Único resultado escolhido à mão: para aluno inativo, Transferido(a) ou Deixou de frequentar. Aluno ativo
+    // tem sempre o resultado calculado; para transferir, a Secretaria inativa o aluno no cadastro de Alunos.
+    public async Task<AtaResult> DefinirRFManualAsync(Guid ataAlunoId, string rf, CancellationToken cancellationToken = default)
     {
+        if (!AtaConstantes.EhRFManual(rf))
+        {
+            return AtaResult.Fail("Resultado inválido.");
+        }
+
         var contexto = await CarregarItemEditavelAsync(ataAlunoId, cancellationToken);
         if (!contexto.Result.Succeeded)
         {
             return contexto.Result;
-        }
-
-        if (valor.HasValue && (valor.Value < 0m || valor.Value > 10m))
-        {
-            return AtaResult.Fail("A Avaliação Final deve estar entre 0 e 10.");
         }
 
         var item = contexto.Item!;
-        item.AvF = valor.HasValue ? Math.Round(valor.Value, 2) : null;
-        item.RF = valor switch
-        {
-            null => AtaConstantes.RFPendente,
-            { } v when v >= AtaConstantes.MediaAprovacao => AtaConstantes.RFAprovado,
-            _ => AtaConstantes.RFConservado
-        };
 
+        // Ata finalizada é uma "foto" e não é recalculada: para mudar o resultado, é preciso antes
+        // "Habilitar para Edição" (volta a Rascunho e passa a acompanhar as notas de novo).
+        var ata = await _ataRepository.GetByIdAsync(item.AtaId, cancellationToken);
+        if (ata?.Status == AtaConstantes.StatusFinalizada)
+        {
+            return AtaResult.Fail("Ata finalizada: use \"Habilitar para Edição\" antes de alterar o resultado.");
+        }
+
+        var aluno = await _alunoService.ObterPorIdAsync(item.AlunoId, cancellationToken);
+        if (aluno is null || aluno.IsAtivo)
+        {
+            return AtaResult.Fail("O resultado de aluno ativo é calculado pelo sistema. Para transferir, inative o aluno no cadastro de Alunos.");
+        }
+
+        item.RF = rf;
         await _ataRepository.AtualizarItemAsync(item, cancellationToken);
-        return AtaResult.Success();
-    }
-
-    public async Task<AtaResult> DefinirRFManualAsync(Guid ataAlunoId, string rf, CancellationToken cancellationToken = default)
-    {
-        if (!AtaConstantes.ValoresRF.Contains(rf))
-        {
-            return AtaResult.Fail("Situação final inválida.");
-        }
-
-        var contexto = await CarregarItemEditavelAsync(ataAlunoId, cancellationToken);
-        if (!contexto.Result.Succeeded)
-        {
-            return contexto.Result;
-        }
-
-        contexto.Item!.RF = rf;
-        await _ataRepository.AtualizarItemAsync(contexto.Item, cancellationToken);
         return AtaResult.Success();
     }
 
@@ -334,18 +390,37 @@ public sealed class AtaService : IAtaService
             return AtaResult.Fail("Esta Ata já está finalizada.");
         }
 
-        var itens = await _ataRepository.GetItensAsync(ataId, cancellationToken);
-        if (itens.Count == 0 || itens.Any(x => x.RF == AtaConstantes.RFPendente))
+        var turma = await _turmaService.ObterPorIdAsync(ata.TurmaId, cancellationToken);
+        if (turma is null)
+        {
+            return AtaResult.Fail("Turma não encontrada.");
+        }
+
+        // Recalcula na hora de fechar, para a "foto" oficial sair com as notas mais recentes.
+        var montagem = await MontarRascunhoAsync(ata, turma, cancellationToken);
+        if (montagem.Linhas.Count == 0 || montagem.Linhas.Any(x => x.Item.RF == AtaConstantes.RFPendente))
         {
             return AtaResult.Fail("Ainda há aluno(s) sem resultado final definido.");
         }
+
+        var disciplinas = montagem.Linhas
+            .SelectMany(linha => linha.Disciplinas.Select(d => new AtaAlunoDisciplina
+            {
+                Id = Guid.NewGuid(),
+                AtaAlunoId = linha.Item.Id,
+                DisciplinaId = d.DisciplinaId,
+                DisciplinaNome = d.DisciplinaNome,
+                DisciplinaCodigo = d.DisciplinaCodigo,
+                ResultadoFinalAno = d.ResultadoFinalAno
+            }))
+            .ToList();
 
         ata.Status = AtaConstantes.StatusFinalizada;
         ata.FinalizadaEmUtc = DateTime.UtcNow;
         ata.FinalizadaPorUserId = _currentUserService.UserId;
         ata.FinalizadaPorNome = _currentUserService.FullName ?? _currentUserService.UserName;
 
-        await _ataRepository.AtualizarAsync(ata, cancellationToken);
+        await _ataRepository.FinalizarComResultadosAsync(ata, montagem.Linhas.Select(x => x.Item).ToList(), disciplinas, cancellationToken);
         return AtaResult.Success();
     }
 

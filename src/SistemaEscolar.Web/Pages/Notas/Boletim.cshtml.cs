@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Notas;
@@ -101,7 +102,7 @@ public sealed class BoletimModel : PageModel
             return RedirectToPage("/Notas/Index");
         }
 
-        var hoje = DateTime.UtcNow;
+        var hoje = HorarioBrasilia.Agora;
         var periodoSelecionado = PeriodoId.HasValue
             ? periodosDoAno.FirstOrDefault(x => x.Id == PeriodoId.Value)
             : null;

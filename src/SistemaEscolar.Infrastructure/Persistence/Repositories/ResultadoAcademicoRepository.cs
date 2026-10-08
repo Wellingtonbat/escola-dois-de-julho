@@ -149,8 +149,8 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
             var motivo = situacao switch
             {
                 "Pendente" => "Lançamentos incompletos no ano letivo.",
-                "Reprovado" => recuperacaoFinal.HasValue ? "Recuperação final não atingiu a média mínima." : "Média final abaixo de 5,0.",
-                _ => recuperacaoFinal.HasValue && mediaFinal < MediaAprovacao ? "Aprovado por recuperação final." : "Aprovado por média final."
+                "Reprovado" => recuperacaoFinal.HasValue ? "Avaliação Final não atingiu a média mínima." : "Média final abaixo de 5,0.",
+                _ => recuperacaoFinal.HasValue && mediaFinal < MediaAprovacao ? "Aprovado pela Avaliação Final." : "Aprovado por média final."
             };
 
             return new ResultadoAcademicoDto(

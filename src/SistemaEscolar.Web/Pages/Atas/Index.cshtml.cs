@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Atas;
 using SistemaEscolar.Web.Extensions;
 
@@ -36,7 +37,7 @@ public sealed class IndexModel : PageModel
         var todas = await _ataService.ListarAsync(null, cancellationToken);
         AnosDisponiveis = todas.Select(x => x.AnoLetivo).Distinct().OrderByDescending(x => x).ToList();
 
-        var anoSelecionado = AnoLetivo ?? AnosDisponiveis.FirstOrDefault(DateTime.UtcNow.Year);
+        var anoSelecionado = AnoLetivo ?? AnosDisponiveis.FirstOrDefault(HorarioBrasilia.Agora.Year);
 
         var filtradas = todas.Where(x => x.AnoLetivo == anoSelecionado);
         filtradas = Status switch
