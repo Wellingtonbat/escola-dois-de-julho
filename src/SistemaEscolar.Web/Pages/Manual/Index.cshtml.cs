@@ -93,17 +93,68 @@ public sealed class IndexModel : PageModel
 
                     Titulo(column, "4. O Painel Inicial (Dashboard)");
                     Paragrafo(column,
-                        "É a primeira tela que você vê depois de entrar. Para o Diretor, o Vice-Diretor, o Coordenador e a Secretária, ela é um painel " +
-                        "de controle bem completo e colorido: lá em cima ficam os filtros — Professor, Turma, Disciplina e Ano/Trimestre. " +
-                        "Escolha o que quiser conferir e clique em \"Filtrar\": todos os gráficos da tela se atualizam na hora, sem precisar " +
-                        "recarregar a página.");
-                    Bullet(column, "Cartões coloridos no topo — quantos alunos, o percentual de aprovação nas notas já lançadas, quantas notas ainda faltam lançar e quantos trimestres estão abertos para lançamento hoje. Assim como os gráficos, eles acompanham os filtros escolhidos.");
-                    Bullet(column, "Gráfico \"Aprovados x Reprovados x Pendentes\" — um gráfico de rosca que mostra a proporção de cada situação, considerando os filtros escolhidos.");
-                    Bullet(column, "Gráfico \"Média por disciplina\" — aparece depois que você escolhe uma turma, comparando a média de cada matéria dentro dela.");
-                    Bullet(column, "Gráfico \"Evolução por trimestre\" — mostra se a média está subindo ou caindo ao longo do ano.");
-                    Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação (com poucas turmas, elas são divididas entre as duas colunas, sem repetir).");
-                    Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
-                    Paragrafo(column, "O Professor também vê esses gráficos, mas no lugar do filtro de Professor aparece o campo \"Visão\", como você verá na seção 15.");
+                        "É a primeira tela que aparece depois que você entra. Pense nela como o painel de um carro: num olhar só, você " +
+                        "fica sabendo como a escola está indo — quantos alunos estão indo bem, quantos precisam de atenção e quantas notas " +
+                        "ainda faltam lançar. Diretor, Vice-Diretor, Coordenador e Secretária veem o painel completo; o Professor vê os " +
+                        "mesmos gráficos, com uma diferença que explico no final desta seção.");
+
+                    Paragrafo(column,
+                        "Começando pelos filtros, lá em cima: Professor, Turma, Disciplina, Ano letivo e Trimestre. Funciona como uma " +
+                        "lupa. Se você não escolher nada, vê a escola inteira no ano todo. Quer ver só o 7º Ano A no 1º trimestre? " +
+                        "Escolha a turma, escolha o trimestre e clique em \"Filtrar\" — os números e os gráficos se atualizam na hora, " +
+                        "sem recarregar a página. Logo acima dos cartões aparece uma frase lembrando o que está filtrado (por exemplo, " +
+                        "\"7º Ano A · Todas as disciplinas · 1º Trimestre/2026\"). O botão \"Limpar\" volta tudo para a escola inteira. " +
+                        "Detalhe: o campo Turma só mostra as turmas do ano letivo escolhido.");
+
+                    Paragrafo(column, "Agora, os quatro cartões coloridos do topo. Eles sempre acompanham os filtros:");
+                    Bullet(column,
+                        "Alunos matriculados — quantos alunos ativos existem no recorte escolhido. Aluno que foi transferido ou saiu da " +
+                        "escola (inativo) não entra nessa conta, nem em nenhum outro número do painel.");
+                    Bullet(column,
+                        "Aprovação geral — de todas as notas de trimestre que já foram lançadas, quantas ficaram com 5,0 ou mais. Repare " +
+                        "que só conta o que já foi lançado: se a escola lançou 100 notas e 80 ficaram acima da média, aparece 80%, mesmo " +
+                        "que ainda faltem outras notas para lançar.");
+                    Bullet(column,
+                        "Pendências de lançamento — quantas notas ainda faltam. A conta é simples: o sistema sabe quantas notas deveriam " +
+                        "existir (cada aluno, em cada disciplina da turma dele, em cada trimestre) e tira as que já foram lançadas. " +
+                        "Uma turma de 30 alunos com 10 disciplinas, no ano todo, deveria ter 30 × 10 × 3 = 900 notas; se 600 já foram " +
+                        "lançadas, faltam 300.");
+                    Bullet(column,
+                        "Períodos em aberto — quantos trimestres estão liberados para lançar notas hoje, de quantos existem no ano (ex.: " +
+                        "\"1 / 3\"). Conta o trimestre que está dentro das datas dele ou que foi aberto manualmente pela Direção.");
+
+                    Paragrafo(column, "Descendo um pouco, vêm os gráficos:");
+                    Bullet(column,
+                        "Média por disciplina — é preciso escolher uma turma para ele aparecer. Cada barra é uma matéria, com a média " +
+                        "das notas daquela turma; a linha tracejada marca o 5,0, então dá para ver na hora quem está abaixo. Se uma " +
+                        "matéria ainda não tem nenhuma nota no período, ela aparece com um tracinho (\"—\") em vez de sumir.");
+                    Bullet(column,
+                        "Aprovados x Reprovados x Pendentes — o gráfico redondo (de rosca). Ele divide todas as notas esperadas em três " +
+                        "fatias: as lançadas com 5,0 ou mais, as lançadas abaixo de 5,0 e as que ainda faltam lançar. O número grande " +
+                        "no meio é o mesmo da \"Aprovação geral\" do cartão lá de cima.");
+                    Bullet(column,
+                        "Evolução por trimestre — uma linha que mostra a média do 1º, 2º e 3º trimestres, para você ver se a turma (ou a " +
+                        "escola) está melhorando ou piorando ao longo do ano. Por isso ele mostra sempre os três trimestres, mesmo que você " +
+                        "tenha escolhido um trimestre no filtro.");
+                    Bullet(column,
+                        "Turmas por índice de aprovação — um ranking: de um lado, as 5 turmas com mais notas acima da média; do outro, as " +
+                        "5 que mais precisam de atenção. Se a escola tiver poucas turmas, elas são divididas entre os dois lados, sem " +
+                        "repetir nenhuma. Como a ideia é comparar as turmas entre si, este quadro mostra todas as turmas, mesmo com uma " +
+                        "turma escolhida no filtro.");
+                    Bullet(column,
+                        "Mapa de pendências — uma tabela que cruza turmas (nas linhas) com disciplinas (nas colunas). Cada quadradinho " +
+                        "mostra quantas notas já foram lançadas de quantas deveriam existir, e a cor ajuda a achar o problema rápido: " +
+                        "verde = tudo lançado; amarelo = falta pouco (até 30%); vermelho = falta muito (mais de 30%). Assim como o " +
+                        "ranking, ele mostra todas as turmas, para você enxergar a escola inteira de uma vez.");
+
+                    Paragrafo(column,
+                        "E o Professor? Ele vê esses mesmos gráficos, mas no lugar do filtro de Professor aparece o campo \"Visão\", com " +
+                        "duas opções: \"Minhas turmas\" (o padrão), que mostra só as turmas e disciplinas dele, e \"Escola inteira\", " +
+                        "para ele comparar o desempenho das suas turmas com o da escola. Ele não consegue escolher outro professor. Mais " +
+                        "detalhes na seção 15.");
+                    Paragrafo(column,
+                        "Uma dica final: se algum número parecer estranho, confira primeiro os filtros (a frase acima dos cartões mostra " +
+                        "o que está selecionado) e se as notas daquele período já foram todas lançadas.");
                     Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Vice-Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
 
                     column.Item().PageBreak();
