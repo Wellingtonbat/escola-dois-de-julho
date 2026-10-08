@@ -28,6 +28,18 @@ public sealed class HorarioBrasiliaTests
     }
 
     [Fact]
+    public void ParaUtc_DataSemFusoVindaDaUrl_SaiComoUtc()
+    {
+        // "De=2026-09-08" na URL chega como Kind=Unspecified; o Npgsql só aceita UTC em timestamptz.
+        var deFiltro = new DateTime(2026, 9, 8);
+
+        var utc = HorarioBrasilia.ParaUtc(deFiltro);
+
+        Assert.Equal(DateTimeKind.Utc, utc.Kind);
+        Assert.Equal(new DateTime(2026, 9, 8, 3, 0, 0, DateTimeKind.Utc), utc);
+    }
+
+    [Fact]
     public void Periodo_ContinuaAbertoNaNoiteDoUltimoDia()
     {
         var periodo = Periodo(new DateTime(2026, 9, 1), new DateTime(2026, 10, 30));
