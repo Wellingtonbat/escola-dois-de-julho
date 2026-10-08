@@ -3,13 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaEscolar.Application.Abstractions;
-using SistemaEscolar.Application.Alunos;
 using SistemaEscolar.Application.Dashboard;
 using SistemaEscolar.Application.Disciplinas;
-using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
-using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
 using SistemaEscolar.Web.Extensions;
 
@@ -17,34 +14,22 @@ namespace SistemaEscolar.Web.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly ILogger<IndexModel> _logger;
-    private readonly IAlunoService _alunoService;
     private readonly IProfessorService _professorService;
     private readonly ITurmaService _turmaService;
     private readonly IDisciplinaService _disciplinaService;
-    private readonly ISerieService _serieService;
-    private readonly INotaService _notaService;
     private readonly IPeriodoService _periodoService;
     private readonly IDashboardService _dashboardService;
 
     public IndexModel(
-        ILogger<IndexModel> logger,
-        IAlunoService alunoService,
         IProfessorService professorService,
         ITurmaService turmaService,
         IDisciplinaService disciplinaService,
-        ISerieService serieService,
-        INotaService notaService,
         IPeriodoService periodoService,
         IDashboardService dashboardService)
     {
-        _logger = logger;
-        _alunoService = alunoService;
         _professorService = professorService;
         _turmaService = turmaService;
         _disciplinaService = disciplinaService;
-        _serieService = serieService;
-        _notaService = notaService;
         _periodoService = periodoService;
         _dashboardService = dashboardService;
     }
@@ -64,14 +49,11 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid? DisciplinaId { get; set; }
 
-    public bool PodeVerDashboardCompleto { get; private set; }
+    // Professor sem perfil de gestão: no lugar do select de Professor, vê o campo "Visão" com
+    // "Minhas turmas" (o próprio ProfessorId, padrão) e "Escola inteira" (sem professor).
+    public bool EhApenasProfessor { get; private set; }
 
-    public int TotalAlunos { get; private set; }
-    public int TotalProfessores { get; private set; }
-    public int TotalTurmas { get; private set; }
-    public int TotalSeries { get; private set; }
-    public int TotalDisciplinas { get; private set; }
-    public int TotalPendenciasNota { get; private set; }
+    public Guid? ProfessorLogadoId { get; private set; }
 
     public IReadOnlyList<int> AnosDisponiveis { get; private set; } = Array.Empty<int>();
     public IReadOnlyList<SelectListItem> Professores { get; private set; } = Array.Empty<SelectListItem>();
@@ -88,40 +70,36 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        PodeVerDashboardCompleto = CanVerDashboardCompleto();
-
-        if (!PodeVerDashboardCompleto)
-        {
-            var alunos = await _alunoService.ListarAsync(null, cancellationToken);
-            var professores = await _professorService.ListarAsync(null, cancellationToken);
-            var turmas = await _turmaService.ListarAsync(null, cancellationToken);
-            var disciplinas = await _disciplinaService.ListarAsync(null, cancellationToken);
-            var series = await _serieService.ListarAsync(null, cancellationToken);
-            var notasPendentes = await _notaService.ListarAsync(new NotaListFilter(null, null, null, false), cancellationToken);
-
-            TotalAlunos = alunos.Count;
-            TotalProfessores = professores.Count;
-            TotalTurmas = turmas.Count;
-            TotalDisciplinas = disciplinas.Count;
-            TotalSeries = series.Count;
-            TotalPendenciasNota = notasPendentes.Count;
-            return;
-        }
+        EhApenasProfessor = User.EhApenasProfessor();
 
         var periodos = await _periodoService.ListarAsync(null, cancellationToken);
-        var hoje = HorarioBrasilia.Agora;
-        PeriodosAbertosComDataVencida = periodos
-            .Where(p => PeriodoDisponibilidade.EstaForaDaJanelaPorExcecaoManual(p, hoje))
-            .OrderBy(p => p.AnoLetivo).ThenBy(p => p.Trimestre)
-            .ToList();
+        if (!EhApenasProfessor)
+        {
+            var hoje = HorarioBrasilia.Agora;
+            PeriodosAbertosComDataVencida = periodos
+                .Where(p => PeriodoDisponibilidade.EstaForaDaJanelaPorExcecaoManual(p, hoje))
+                .OrderBy(p => p.AnoLetivo).ThenBy(p => p.Trimestre)
+                .ToList();
+        }
+
         AnosDisponiveis = periodos.Select(p => p.AnoLetivo).Distinct().OrderByDescending(x => x).ToList();
         var anoLetivo = AnoLetivo ?? AnosDisponiveis.FirstOrDefault(HorarioBrasilia.Agora.Year);
 
-        Professores = (await _professorService.ListarAsync(null, cancellationToken))
-            .Where(p => p.IsAtivo)
-            .OrderBy(p => p.NomeCompleto)
-            .Select(p => new SelectListItem(p.NomeCompleto, p.Id.ToString()))
-            .ToList();
+        if (EhApenasProfessor)
+        {
+            var escopo = await _professorService.ObterEscopoPorUsuarioAsync(User.Identity?.Name, cancellationToken);
+            ProfessorLogadoId = escopo?.ProfessorId ?? Guid.Empty;
+            // Primeira abertura: "Minhas turmas". O serviço garante que o professor só filtre por ele mesmo.
+            ProfessorId ??= ProfessorLogadoId;
+        }
+        else
+        {
+            Professores = (await _professorService.ListarAsync(null, cancellationToken))
+                .Where(p => p.IsAtivo)
+                .OrderBy(p => p.NomeCompleto)
+                .Select(p => new SelectListItem(p.NomeCompleto, p.Id.ToString()))
+                .ToList();
+        }
 
         Turmas = (await _turmaService.ListarAsync(new TurmaListFilter(null, null, null, true), cancellationToken))
             .OrderBy(t => t.Nome)
@@ -145,7 +123,7 @@ public class IndexModel : PageModel
         Guid? disciplinaId,
         CancellationToken cancellationToken)
     {
-        if (!CanVerDashboardCompleto())
+        if (!PodeVerDashboard())
         {
             return Forbid();
         }
@@ -155,6 +133,6 @@ public class IndexModel : PageModel
         return new JsonResult(dados);
     }
 
-    private bool CanVerDashboardCompleto() =>
-        User.EhGestao();
+    private bool PodeVerDashboard() =>
+        User.EhGestao() || User.IsInRole(Perfis.Professor);
 }

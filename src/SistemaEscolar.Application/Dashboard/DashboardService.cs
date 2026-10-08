@@ -18,7 +18,8 @@ public sealed class DashboardService : IDashboardService
     private readonly IDisciplinaService _disciplinaService;
     private readonly IProfessorService _professorService;
     private readonly IPeriodoService _periodoService;
-    private readonly INotaService _notaService;
+    private readonly INotaRepository _notaRepository;
+    private readonly ICurrentUserService _currentUserService;
 
     public DashboardService(
         IAlunoService alunoService,
@@ -26,18 +27,22 @@ public sealed class DashboardService : IDashboardService
         IDisciplinaService disciplinaService,
         IProfessorService professorService,
         IPeriodoService periodoService,
-        INotaService notaService)
+        INotaRepository notaRepository,
+        ICurrentUserService currentUserService)
     {
         _alunoService = alunoService;
         _turmaService = turmaService;
         _disciplinaService = disciplinaService;
         _professorService = professorService;
         _periodoService = periodoService;
-        _notaService = notaService;
+        _notaRepository = notaRepository;
+        _currentUserService = currentUserService;
     }
 
     public async Task<DashboardDadosDto> ObterDadosAsync(DashboardFiltroDto filtro, CancellationToken cancellationToken = default)
     {
+        filtro = await AplicarEscopoDoProfessorAsync(filtro, cancellationToken);
+
         var alunos = await _alunoService.ListarAsync(null, cancellationToken);
         // Só as turmas do ano letivo filtrado: turmas de anos anteriores não têm alunos nem lançamentos neste
         // ano e apareciam no Mapa de Pendências (0 de 0) e nos demais cálculos por turma.
@@ -49,11 +54,18 @@ public sealed class DashboardService : IDashboardService
         var periodosAno = (await _periodoService.ListarAsync(null, cancellationToken))
             .Where(p => p.AnoLetivo == filtro.AnoLetivo)
             .ToList();
-        var notasAno = await _notaService.ListarAsync(new NotaListFilter(null, filtro.AnoLetivo, null, null), cancellationToken);
+        // Direto do repositório: o INotaService restringe a lista aos lançamentos do professor logado, o que
+        // impediria a visão "Escola inteira" dele. O recorte por professor é feito aqui, pelo filtro.
+        var notasAno = await _notaRepository.GetAllAsync(new NotaListFilter(null, filtro.AnoLetivo, null, null), cancellationToken);
 
         var turmaSelecionada = filtro.TurmaId.HasValue ? turmas.FirstOrDefault(t => t.Id == filtro.TurmaId.Value) : null;
         var disciplinaSelecionada = filtro.DisciplinaId.HasValue ? disciplinas.FirstOrDefault(d => d.Id == filtro.DisciplinaId.Value) : null;
-        var professorSelecionado = filtro.ProfessorId.HasValue ? professores.FirstOrDefault(p => p.Id == filtro.ProfessorId.Value) : null;
+        // Professor informado mas não encontrado entre os ativos (ex.: professor logado sem cadastro vinculado):
+        // recorte vazio, em vez de cair no "sem filtro" e mostrar a escola inteira.
+        var professorSelecionado = filtro.ProfessorId.HasValue
+            ? professores.FirstOrDefault(p => p.Id == filtro.ProfessorId.Value)
+                ?? new ProfessorListItemDto(filtro.ProfessorId.Value, string.Empty, string.Empty, string.Empty, Array.Empty<ProfessorAtribuicaoDto>(), false)
+            : null;
 
         var donut = CalcularDonut(filtro, alunos, turmas, disciplinas, periodosAno, notasAno, turmaSelecionada, disciplinaSelecionada, professorSelecionado);
         var kpis = CalcularKpis(filtro, alunos, turmas, periodosAno, donut, turmaSelecionada, professorSelecionado);
@@ -78,6 +90,20 @@ public sealed class DashboardService : IDashboardService
             heatmapTurmas,
             heatmapDisciplinas,
             heatmapCelulas);
+    }
+
+    // Professor (sem perfil de gestão) escolhe entre "Minhas turmas" (o próprio ProfessorId) e "Escola inteira"
+    // (ProfessorId nulo), que só mostra números agregados. Qualquer outro professor informado no filtro é
+    // trocado pelo dele, para que ele não consiga ver o recorte individual de um colega.
+    private async Task<DashboardFiltroDto> AplicarEscopoDoProfessorAsync(DashboardFiltroDto filtro, CancellationToken cancellationToken)
+    {
+        if (filtro.ProfessorId is null || !PermissoesPerfil.EhApenasProfessor(_currentUserService.IsInRole))
+        {
+            return filtro;
+        }
+
+        var escopo = await _professorService.ObterEscopoPorUsuarioAsync(_currentUserService.UserName, cancellationToken);
+        return filtro with { ProfessorId = escopo?.ProfessorId ?? Guid.Empty };
     }
 
     // Cards do topo: seguem o mesmo recorte dos gráficos (professor, turma, disciplina e trimestre). Antes,

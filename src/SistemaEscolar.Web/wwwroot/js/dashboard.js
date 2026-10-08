@@ -375,7 +375,8 @@ if (dashKpis) {
 
   botaoFiltrar?.addEventListener("click", carregarDados);
   botaoLimpar?.addEventListener("click", () => {
-    filtroProfessor.value = "";
+    // Para o Professor, o campo "Visão" volta para "Minhas turmas" (data-padrao); para a gestão, todos.
+    filtroProfessor.value = filtroProfessor.dataset.padrao ?? "";
     filtroTurma.value = "";
     filtroDisciplina.value = "";
     filtroTrimestre.value = "";

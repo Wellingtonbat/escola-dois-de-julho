@@ -4,78 +4,48 @@
     ViewData["Title"] = "Painel Inicial";
 }
 
-@if (!Model.PodeVerDashboardCompleto)
+@if (Model.PeriodosAbertosComDataVencida.Count > 0)
 {
-    <section class="panel">
-        <div class="panel-header d-flex align-items-center justify-content-between">
-            <div>
-                <h1 class="h5 mb-1">Visão Geral</h1>
-                <p class="text-muted mb-0">Acompanhamento rápido dos principais indicadores acadêmicos.</p>
-            </div>
-            @* <span class="badge text-bg-primary">Ambiente de desenvolvimento</span> *@
+    <div class="alert alert-danger d-flex align-items-start gap-2 mb-3">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" class="flex-shrink-0 mt-1"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
+        <div>
+            <strong>Atenção: há período(s) aberto(s) manualmente além da data final.</strong>
+            <ul class="mb-0 mt-1">
+                @foreach (var periodo in Model.PeriodosAbertosComDataVencida)
+                {
+                    <li>@periodo.Descricao — data final era @periodo.DataFinal.ToString("dd/MM/yyyy"). Lembre-se de fechar assim que o lançamento retroativo terminar.</li>
+                }
+            </ul>
         </div>
-        <div class="panel-body">
-            <div class="kpi-grid">
-                <article class="kpi-card kpi-card-icon">
-                    <div><span class="kpi-label">Alunos</span><strong class="kpi-value">@Model.TotalAlunos</strong></div>
-                    <span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5zM6 12v5c3 2 9 2 12 0v-5" /></svg></span>
-                </article>
-                <article class="kpi-card kpi-card-icon">
-                    <div><span class="kpi-label">Professores</span><strong class="kpi-value">@Model.TotalProfessores</strong></div>
-                    <span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /></svg></span>
-                </article>
-                <article class="kpi-card kpi-card-icon">
-                    <div><span class="kpi-label">Turmas</span><strong class="kpi-value">@Model.TotalTurmas</strong></div>
-                    <span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></svg></span>
-                </article>
-                <article class="kpi-card kpi-card-icon">
-                    <div><span class="kpi-label">Pendências de Nota</span><strong class="kpi-value">@Model.TotalPendenciasNota</strong></div>
-                    <span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a1 1 0 0 0 .86 1.5h18.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0z" /></svg></span>
-                </article>
-            </div>
-
-            <div class="kpi-grid mt-3">
-                <article class="kpi-card kpi-card-icon">
-                    <div><span class="kpi-label">Disciplinas</span><strong class="kpi-value">@Model.TotalDisciplinas</strong></div>
-                    <span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM6.5 17H20v4H6.5A2.5 2.5 0 0 1 4 18.5" /></svg></span>
-                </article>
-                <article class="kpi-card kpi-card-icon">
-                    <div><span class="kpi-label">Séries</span><strong class="kpi-value">@Model.TotalSeries</strong></div>
-                    <span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg></span>
-                </article>
-            </div>
-        </div>
-    </section>
+    </div>
 }
-else
-{
-    @if (Model.PeriodosAbertosComDataVencida.Count > 0)
-    {
-        <div class="alert alert-danger d-flex align-items-start gap-2 mb-3">
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" class="flex-shrink-0 mt-1"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.891 0 1.439-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" /></svg>
-            <div>
-                <strong>Atenção: há período(s) aberto(s) manualmente além da data final.</strong>
-                <ul class="mb-0 mt-1">
-                    @foreach (var periodo in Model.PeriodosAbertosComDataVencida)
-                    {
-                        <li>@periodo.Descricao — data final era @periodo.DataFinal.ToString("dd/MM/yyyy"). Lembre-se de fechar assim que o lançamento retroativo terminar.</li>
-                    }
-                </ul>
-            </div>
-        </div>
-    }
-    <h1 class="h5 mb-1">Visão Geral</h1>
-    <p class="text-muted mb-3 small">Escolha um professor, turma, disciplina ou período para detalhar os indicadores abaixo.</p>
+<h1 class="h5 mb-1">Visão Geral</h1>
+<p class="text-muted mb-3 small">
+    @(Model.EhApenasProfessor
+        ? "Veja os indicadores das suas turmas ou compare com a escola inteira."
+        : "Escolha um professor, turma, disciplina ou período para detalhar os indicadores abaixo.")
+</p>
 
-    <div class="filter-panel mb-3">
-        <div class="filter-panel-header">
-            <span class="filter-icon-badge" aria-hidden="true">
-                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 2.5A.5.5 0 0 1 2 2h12a.5.5 0 0 1 .4.8L10 8.9V13.5a.5.5 0 0 1-.74.44l-2-1.1a.5.5 0 0 1-.26-.44V8.9L1.6 2.8a.5.5 0 0 1-.1-.3Z" /></svg>
-            </span>
-            <span class="filter-panel-title">Filtros</span>
-        </div>
-        <div class="filter-bar">
-            <div class="filter-field">
+<div class="filter-panel mb-3">
+    <div class="filter-panel-header">
+        <span class="filter-icon-badge" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 2.5A.5.5 0 0 1 2 2h12a.5.5 0 0 1 .4.8L10 8.9V13.5a.5.5 0 0 1-.74.44l-2-1.1a.5.5 0 0 1-.26-.44V8.9L1.6 2.8a.5.5 0 0 1-.1-.3Z" /></svg>
+        </span>
+        <span class="filter-panel-title">Filtros</span>
+    </div>
+    <div class="filter-bar">
+        <div class="filter-field">
+            @if (Model.EhApenasProfessor)
+            {
+                @* Mesmo id do select de Professor: o dashboard.js envia o valor como professorId (vazio = escola inteira). *@
+                <label for="dash-professor">Visão</label>
+                <select id="dash-professor" class="form-select" data-padrao="@Model.ProfessorLogadoId">
+                    <option value="@Model.ProfessorLogadoId" selected="@(Model.ProfessorId == Model.ProfessorLogadoId)">Minhas turmas</option>
+                    <option value="" selected="@(Model.ProfessorId != Model.ProfessorLogadoId)">Escola inteira</option>
+                </select>
+            }
+            else
+            {
                 <label for="dash-professor">Professor</label>
                 <select id="dash-professor" class="form-select">
                     <option value="">Todos os professores</option>
@@ -84,110 +54,110 @@ else
                         <option value="@professor.Value" selected="@(Model.ProfessorId.HasValue && professor.Value == Model.ProfessorId.Value.ToString())">@professor.Text</option>
                     }
                 </select>
-            </div>
-            <div class="filter-field">
-                <label for="dash-turma">Turma</label>
-                <select id="dash-turma" class="form-select">
-                    <option value="">Todas as turmas</option>
-                    @foreach (var turma in Model.Turmas)
-                    {
-                        <option value="@turma.Id" data-ano="@turma.AnoLetivo" hidden="@(Model.Dados != null && turma.AnoLetivo != Model.Dados.AnoLetivo)" disabled="@(Model.Dados != null && turma.AnoLetivo != Model.Dados.AnoLetivo)" selected="@(Model.TurmaId == turma.Id)">@turma.Nome (@turma.SerieNome)</option>
-                    }
-                </select>
-            </div>
-            <div class="filter-field">
-                <label for="dash-disciplina">Disciplina</label>
-                <select id="dash-disciplina" class="form-select">
-                    <option value="">Todas as disciplinas</option>
-                    @foreach (var disciplina in Model.Disciplinas)
-                    {
-                        <option value="@disciplina.Value" selected="@(Model.DisciplinaId.HasValue && disciplina.Value == Model.DisciplinaId.Value.ToString())">@disciplina.Text</option>
-                    }
-                </select>
-            </div>
-            <div class="filter-field">
-                <label for="dash-ano">Ano letivo</label>
-                <select id="dash-ano" class="form-select">
-                    @foreach (var ano in Model.AnosDisponiveis)
-                    {
-                        <option value="@ano" selected="@(Model.Dados != null && ano == Model.Dados.AnoLetivo)">@ano</option>
-                    }
-                </select>
-            </div>
-            <div class="filter-field">
-                <label for="dash-trimestre">Trimestre</label>
-                <select id="dash-trimestre" class="form-select">
-                    <option value="">Ano completo</option>
-                    <option value="1" selected="@(Model.Trimestre == 1)">1º Trimestre</option>
-                    <option value="2" selected="@(Model.Trimestre == 2)">2º Trimestre</option>
-                    <option value="3" selected="@(Model.Trimestre == 3)">3º Trimestre</option>
-                </select>
-            </div>
-            <div class="filter-actions">
-                <button type="button" id="dash-filtrar" class="btn btn-primary">Filtrar</button>
-                <button type="button" id="dash-limpar" class="btn btn-outline-secondary">Limpar</button>
-            </div>
+            }
+        </div>
+        <div class="filter-field">
+            <label for="dash-turma">Turma</label>
+            <select id="dash-turma" class="form-select">
+                <option value="">Todas as turmas</option>
+                @foreach (var turma in Model.Turmas)
+                {
+                    <option value="@turma.Id" data-ano="@turma.AnoLetivo" hidden="@(Model.Dados != null && turma.AnoLetivo != Model.Dados.AnoLetivo)" disabled="@(Model.Dados != null && turma.AnoLetivo != Model.Dados.AnoLetivo)" selected="@(Model.TurmaId == turma.Id)">@turma.Nome (@turma.SerieNome)</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="dash-disciplina">Disciplina</label>
+            <select id="dash-disciplina" class="form-select">
+                <option value="">Todas as disciplinas</option>
+                @foreach (var disciplina in Model.Disciplinas)
+                {
+                    <option value="@disciplina.Value" selected="@(Model.DisciplinaId.HasValue && disciplina.Value == Model.DisciplinaId.Value.ToString())">@disciplina.Text</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="dash-ano">Ano letivo</label>
+            <select id="dash-ano" class="form-select">
+                @foreach (var ano in Model.AnosDisponiveis)
+                {
+                    <option value="@ano" selected="@(Model.Dados != null && ano == Model.Dados.AnoLetivo)">@ano</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="dash-trimestre">Trimestre</label>
+            <select id="dash-trimestre" class="form-select">
+                <option value="">Ano completo</option>
+                <option value="1" selected="@(Model.Trimestre == 1)">1º Trimestre</option>
+                <option value="2" selected="@(Model.Trimestre == 2)">2º Trimestre</option>
+                <option value="3" selected="@(Model.Trimestre == 3)">3º Trimestre</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="button" id="dash-filtrar" class="btn btn-primary">Filtrar</button>
+            <button type="button" id="dash-limpar" class="btn btn-outline-secondary">Limpar</button>
+        </div>
+    </div>
+</div>
+
+<div id="dash-charts-area" class="position-relative">
+    <div id="dash-loading-overlay" class="dashboard-loading-overlay d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
         </div>
     </div>
 
-    <div id="dash-charts-area" class="position-relative">
-        <div id="dash-loading-overlay" class="dashboard-loading-overlay d-none">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Carregando...</span>
-            </div>
+    <p class="chart-card-caption mb-2" id="dash-kpis-caption"></p>
+    <div id="dash-kpis" class="kpi-grid mb-3"></div>
+
+<div class="charts-row cols-2 mb-3">
+    <section class="panel">
+        <div class="panel-header">
+            <p class="chart-card-title">Média por disciplina</p>
+            <p class="chart-card-caption" id="dash-barras-caption"></p>
         </div>
-
-        <p class="chart-card-caption mb-2" id="dash-kpis-caption"></p>
-        <div id="dash-kpis" class="kpi-grid mb-3"></div>
-
-    <div class="charts-row cols-2 mb-3">
-        <section class="panel">
-            <div class="panel-header">
-                <p class="chart-card-title">Média por disciplina</p>
-                <p class="chart-card-caption" id="dash-barras-caption"></p>
-            </div>
-            <div class="panel-body" id="dash-barras"></div>
-        </section>
-
-        <section class="panel">
-            <div class="panel-header">
-                <p class="chart-card-title">Aprovados x Reprovados x Pendentes</p>
-                <p class="chart-card-caption" id="dash-donut-caption"></p>
-            </div>
-            <div class="panel-body" id="dash-donut"></div>
-        </section>
-    </div>
-
-    <div class="charts-row cols-2 mb-3">
-        <section class="panel">
-            <div class="panel-header">
-                <p class="chart-card-title">Evolução por trimestre</p>
-                <p class="chart-card-caption" id="dash-linha-caption"></p>
-            </div>
-            <div class="panel-body" id="dash-linha"></div>
-        </section>
-
-        <section class="panel">
-            <div class="panel-header">
-                <p class="chart-card-title">Turmas por índice de aprovação</p>
-                <p class="chart-card-caption" id="dash-ranking-caption"></p>
-            </div>
-            <div class="panel-body" id="dash-ranking"></div>
-        </section>
-    </div>
+        <div class="panel-body" id="dash-barras"></div>
+    </section>
 
     <section class="panel">
         <div class="panel-header">
-            <p class="chart-card-title">Mapa de pendências — turma x disciplina</p>
-            <p class="chart-card-caption" id="dash-heatmap-caption"></p>
+            <p class="chart-card-title">Aprovados x Reprovados x Pendentes</p>
+            <p class="chart-card-caption" id="dash-donut-caption"></p>
         </div>
-        <div class="panel-body" id="dash-heatmap"></div>
+        <div class="panel-body" id="dash-donut"></div>
     </section>
+</div>
+
+<div class="charts-row cols-2 mb-3">
+    <section class="panel">
+        <div class="panel-header">
+            <p class="chart-card-title">Evolução por trimestre</p>
+            <p class="chart-card-caption" id="dash-linha-caption"></p>
+        </div>
+        <div class="panel-body" id="dash-linha"></div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <p class="chart-card-title">Turmas por índice de aprovação</p>
+            <p class="chart-card-caption" id="dash-ranking-caption"></p>
+        </div>
+        <div class="panel-body" id="dash-ranking"></div>
+    </section>
+</div>
+
+<section class="panel">
+    <div class="panel-header">
+        <p class="chart-card-title">Mapa de pendências — turma x disciplina</p>
+        <p class="chart-card-caption" id="dash-heatmap-caption"></p>
     </div>
+    <div class="panel-body" id="dash-heatmap"></div>
+</section>
+</div>
 
-    <script id="dash-dados-iniciais" type="application/json">@Html.Raw(Model.DadosIniciaisJson)</script>
+<script id="dash-dados-iniciais" type="application/json">@Html.Raw(Model.DadosIniciaisJson)</script>
 
-    @section Scripts {
-        <script src="~/js/dashboard.js" asp-append-version="true"></script>
-    }
+@section Scripts {
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
 }

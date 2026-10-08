@@ -136,7 +136,8 @@ public sealed class DashboardServiceTests
             new DisciplinaServiceStub(new[] { Matematica }),
             new ProfessorServiceStub(),
             new PeriodoServiceStub(Periodos),
-            new NotaServiceStub(notas));
+            new NotaRepositoryStub(notas),
+            Gestao);
 
         var dados = await servico.ObterDadosAsync(new DashboardFiltroDto(Ano, null, null, null, null));
 
@@ -145,14 +146,99 @@ public sealed class DashboardServiceTests
         Assert.Empty(dados.RankingMelhores.Select(x => x.Turma).Intersect(dados.RankingAtencao.Select(x => x.Turma)));
     }
 
+    private static readonly FakeCurrentUserService Gestao = new("diretor", Perfis.Diretor);
+
+    private static readonly ProfessorListItemDto ProfessoraTurmaA = Professor("Professora da turma A", TurmaA);
+    private static readonly ProfessorListItemDto ProfessoraTurmaC = Professor("Professora da turma C", TurmaC);
+
+    [Fact]
+    public async Task Professor_EscolaInteira_VeOsNumerosDaEscola()
+    {
+        var servico = CriarServicoParaProfessor(ProfessoraTurmaC);
+
+        var dados = await servico.ObterDadosAsync(new DashboardFiltroDto(Ano, null, null, null, null));
+
+        Assert.Equal(6, dados.Kpis.TotalAlunos);
+        Assert.Equal(14, dados.Kpis.PendenciasLancamento);
+        Assert.Equal(3, dados.HeatmapCelulas.Count);
+    }
+
+    [Fact]
+    public async Task Professor_MinhasTurmas_VeSoAsProprias()
+    {
+        var servico = CriarServicoParaProfessor(ProfessoraTurmaC);
+
+        var dados = await servico.ObterDadosAsync(new DashboardFiltroDto(Ano, null, ProfessoraTurmaC.Id, null, null));
+
+        Assert.Equal(2, dados.Kpis.TotalAlunos);
+        Assert.Equal(new[] { TurmaC.Nome }, dados.HeatmapCelulas.Select(c => c.Turma));
+    }
+
+    [Fact]
+    public async Task Professor_NaoConsegueVerORecorteDeOutroProfessor()
+    {
+        var servico = CriarServicoParaProfessor(ProfessoraTurmaC);
+
+        var dados = await servico.ObterDadosAsync(new DashboardFiltroDto(Ano, null, ProfessoraTurmaA.Id, null, null));
+
+        Assert.Equal(ProfessoraTurmaC.NomeCompleto, dados.ProfessorSelecionadoNome);
+        Assert.Equal(new[] { TurmaC.Nome }, dados.HeatmapCelulas.Select(c => c.Turma));
+    }
+
+    [Fact]
+    public async Task Professor_SemCadastroVinculado_MinhasTurmasFicaVazio()
+    {
+        var servico = CriarServico(
+            new FakeCurrentUserService("sem-cadastro", Perfis.Professor),
+            escopo: null,
+            ProfessoraTurmaA, ProfessoraTurmaC);
+
+        var dados = await servico.ObterDadosAsync(new DashboardFiltroDto(Ano, null, ProfessoraTurmaA.Id, null, null));
+
+        Assert.Equal(0, dados.Kpis.TotalAlunos);
+        Assert.Equal(0, dados.Kpis.PendenciasLancamento);
+        Assert.Empty(dados.HeatmapCelulas);
+    }
+
+    [Fact]
+    public async Task Gestao_PodeFiltrarQualquerProfessor()
+    {
+        var dados = await CriarServico(ProfessoraTurmaA, ProfessoraTurmaC)
+            .ObterDadosAsync(new DashboardFiltroDto(Ano, null, ProfessoraTurmaA.Id, null, null));
+
+        Assert.Equal(ProfessoraTurmaA.NomeCompleto, dados.ProfessorSelecionadoNome);
+    }
+
     private static DashboardService CriarServico(params ProfessorListItemDto[] professores) =>
+        CriarServico(Gestao, null, professores);
+
+    private static DashboardService CriarServicoParaProfessor(ProfessorListItemDto professorLogado) =>
+        CriarServico(
+            new FakeCurrentUserService(professorLogado.UsuarioCpf, Perfis.Professor),
+            new ProfessorEscopoDto(
+                professorLogado.Id,
+                professorLogado.Atribuicoes.Select(a => a.TurmaId).ToList(),
+                professorLogado.Atribuicoes.Select(a => a.DisciplinaId).ToList(),
+                new[] { SerieId }),
+            ProfessoraTurmaA, ProfessoraTurmaC);
+
+    private static DashboardService CriarServico(
+        ICurrentUserService usuario,
+        ProfessorEscopoDto? escopo,
+        params ProfessorListItemDto[] professores) =>
         new(
             new AlunoServiceStub(Alunos),
             new TurmaServiceStub(new[] { TurmaA, TurmaB, TurmaC, TurmaAnoPassado }),
             new DisciplinaServiceStub(new[] { Matematica }),
-            new ProfessorServiceStub(professores),
+            new ProfessorServiceStub(professores, escopo),
             new PeriodoServiceStub(Periodos),
-            new NotaServiceStub(Notas));
+            new NotaRepositoryStub(Notas),
+            usuario);
+
+    private static ProfessorListItemDto Professor(string nome, TurmaListItemDto turma) =>
+        new(Guid.NewGuid(), nome, "p@escola", Guid.NewGuid().ToString("N")[..11],
+            new[] { new ProfessorAtribuicaoDto(turma.Id, turma.Nome, "6º Ano", Matematica.Id, Matematica.Nome) },
+            true);
 
     private static TurmaListItemDto Turma(string nome, int ano) =>
         new(Guid.NewGuid(), nome, SerieId, "6º Ano", "Matutino", ano, true);

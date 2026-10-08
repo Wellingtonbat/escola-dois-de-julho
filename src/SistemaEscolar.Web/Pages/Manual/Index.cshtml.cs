@@ -103,7 +103,7 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Gráfico \"Evolução por trimestre\" — mostra se a média está subindo ou caindo ao longo do ano.");
                     Bullet(column, "Ranking de turmas — lista lado a lado as 5 turmas com melhor e as 5 com pior índice de aprovação (com poucas turmas, elas são divididas entre as duas colunas, sem repetir).");
                     Bullet(column, "Mapa de pendências — uma tabela colorida que cruza turma com disciplina, mostrando de relance onde ainda faltam notas para lançar.");
-                    Paragrafo(column, "Já para o Professor, o Painel Inicial continua bem mais simples, como você verá na seção 15.");
+                    Paragrafo(column, "O Professor também vê esses gráficos, mas no lugar do filtro de Professor aparece o campo \"Visão\", como você verá na seção 15.");
                     Print(column, imagens["dashboard-admin"], "Painel Inicial visto por Diretor, Vice-Diretor, Coordenador ou Secretária, com uma turma selecionada nos filtros.");
 
                     column.Item().PageBreak();
@@ -239,12 +239,16 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Acesso — somente Diretor e Vice-Diretor veem esta tela; para os demais perfis o menu \"Auditoria\" nem aparece. Registros anteriores a esta função podem aparecer como \"Sistema / não identificado\", pois na época o sistema ainda não guardava quem fez a ação.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "15. O que o Professor enxerga (visão simplificada)");
+                    Titulo(column, "15. O que o Professor enxerga");
                     Paragrafo(column,
                         "Quando um Professor entra no sistema, o menu lateral aparece bem mais curto: só Dashboard, Notas, Resultados e o botão " +
                         "para baixar este manual. Ele não vê Alunos, Disciplinas, Turmas, Séries, Períodos nem Usuários — essas telas ficam " +
                         "escondidas de propósito, porque não fazem parte do trabalho dele.");
                     Print(column, imagens["dashboard-professor"], "Painel Inicial visto por um Professor: repare no menu lateral bem mais curto.");
+                    Paragrafo(column,
+                        "No Painel Inicial, o Professor vê os mesmos gráficos da Direção. No lugar do filtro de Professor existe o campo " +
+                        "\"Visão\": \"Minhas turmas\" (o padrão) mostra só as turmas e disciplinas vinculadas a ele, e \"Escola inteira\" " +
+                        "mostra os números gerais da escola, para comparação. Ele não consegue escolher outro professor.");
                     Paragrafo(column,
                         "Além do menu mais curto, dentro de Notas e Resultados o Professor só enxerga os próprios alunos: exatamente os alunos " +
                         "das turmas e disciplinas que estão vinculadas a ele na tela de Professores. Ele nunca vê notas ou resultados de turmas " +
@@ -346,7 +350,7 @@ public sealed class IndexModel : PageModel
                 Celula(professor, professor is "Não");
             }
 
-            Linha("Ver o Painel Inicial", "Sim", "Sim", "Sim", "Sim (versão simplificada)");
+            Linha("Ver o Painel Inicial", "Sim", "Sim", "Sim", "Sim (suas turmas ou escola inteira)");
             Linha("Cadastrar/editar Alunos", "Sim", "Sim", "Sim", "Não");
             Linha("Cadastrar/editar Disciplinas", "Sim", "Sim", "Sim", "Não");
             Linha("Cadastrar/editar Professores", "Sim", "Sim", "Sim", "Não");

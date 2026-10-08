@@ -5,10 +5,12 @@ namespace SistemaEscolar.Tests.Support;
 internal sealed class ProfessorServiceStub : IProfessorService
 {
     private readonly IReadOnlyList<ProfessorListItemDto> _professores;
+    private readonly ProfessorEscopoDto? _escopoDoUsuario;
 
-    public ProfessorServiceStub(IReadOnlyList<ProfessorListItemDto>? professores = null)
+    public ProfessorServiceStub(IReadOnlyList<ProfessorListItemDto>? professores = null, ProfessorEscopoDto? escopoDoUsuario = null)
     {
         _professores = professores ?? Array.Empty<ProfessorListItemDto>();
+        _escopoDoUsuario = escopoDoUsuario;
     }
 
     public Task<IReadOnlyList<ProfessorListItemDto>> ListarAsync(ProfessorListFilter? filter = null, CancellationToken cancellationToken = default) =>
@@ -30,7 +32,7 @@ internal sealed class ProfessorServiceStub : IProfessorService
         Task.FromResult(false);
 
     public Task<ProfessorEscopoDto?> ObterEscopoPorUsuarioAsync(string? userName, CancellationToken cancellationToken = default) =>
-        Task.FromResult<ProfessorEscopoDto?>(null);
+        Task.FromResult(_escopoDoUsuario);
 
     public Task<ProfessorCreateResult> RedefinirSenhaAsync(Guid id, string novaSenha, CancellationToken cancellationToken = default) =>
         Task.FromResult(ProfessorCreateResult.Fail("not implemented in test stub"));
