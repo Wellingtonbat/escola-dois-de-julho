@@ -50,13 +50,13 @@ public sealed class IndexModel : PageModel
                     column.Item().Text($"Data de emissão: {HorarioBrasilia.Agora:dd/MM/yyyy}").FontSize(9).FontColor(Colors.Grey.Darken1);
 
                     Paragrafo(column,
-                        "Este manual explica, de um jeito bem simples, como usar o Sistema Escolar. " +
+                        "Este manual explica, de um jeito bem simples, como usar o sistema da Escola Dois de Julho. " +
                         "Não se preocupe se você nunca usou o sistema antes: vamos explicar cada tela como se " +
                         "estivéssemos mostrando pessoalmente, com direito a fotos de cada parte!");
 
-                    Titulo(column, "1. O que é o Sistema Escolar?");
+                    Titulo(column, "1. O que é o sistema da Escola Dois de Julho?");
                     Paragrafo(column,
-                        "Pense no Sistema Escolar como um caderno gigante e organizado da escola, só que dentro do computador. " +
+                        "Pense no sistema da Escola Dois de Julho como um caderno gigante e organizado da escola, só que dentro do computador. " +
                         "Nele ficam guardados os nomes dos alunos, as turmas, as disciplinas, os professores e as notas de cada trimestre. " +
                         "Em vez de folhear páginas de papel, você clica em telas — e o sistema faz as contas de média sozinho!");
 
@@ -215,9 +215,10 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column,
                         "É onde as notas de cada aluno, em cada disciplina e período, são lançadas. Para cada lançamento existem até 4 números:");
                     Bullet(column, "Avaliação 1, Avaliação 2 e Avaliação 3 — as três provas/atividades do trimestre (de 0 a 10).");
-                    Bullet(column, "Recuperação Paralela — uma nota extra, opcional, para quem precisa recuperar.");
+                    Bullet(column, "Recuperação Paralela — uma nota extra, para quem não alcançou 5,0 no trimestre.");
                     Paragrafo(column, "O sistema faz as contas sozinho, seguindo esta receita:");
-                    Bullet(column, "Resultado da Unidade = a média das 3 avaliações.");
+                    Bullet(column, "Resultado da Unidade = a soma das 3 avaliações (por exemplo, 3,0 + 2,5 + 3,5 = 9,0). A soma não pode passar de 10,0.");
+                    Bullet(column, "Recuperação Paralela = só fica liberada quando essa soma dá menos de 5,0.");
                     Bullet(column, "Resultado Final da Unidade = o maior valor entre o Resultado da Unidade e a Recuperação Paralela (quando ela existir).");
                     Paragrafo(column,
                         "Importante: se o período estiver Fechado, somente o Diretor ou o Vice-Diretor conseguem editar ou excluir uma nota já lançada nele. " +
@@ -335,7 +336,7 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
                     Titulo(column, "18. Controle de versão");
-                    Paragrafo(column, $"Este manual acompanha a versão {appVersion} do Sistema Escolar, desenvolvido por Well Tech.");
+                    Paragrafo(column, $"Este manual acompanha a versão {appVersion} do sistema da Escola Dois de Julho, desenvolvido por Well Tech.");
                 });
 
                 page.Footer()
