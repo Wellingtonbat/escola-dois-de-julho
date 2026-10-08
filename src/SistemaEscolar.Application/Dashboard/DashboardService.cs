@@ -56,7 +56,13 @@ public sealed class DashboardService : IDashboardService
             .ToList();
         // Direto do repositório: o INotaService restringe a lista aos lançamentos do professor logado, o que
         // impediria a visão "Escola inteira" dele. O recorte por professor é feito aqui, pelo filtro.
-        var notasAno = await _notaRepository.GetAllAsync(new NotaListFilter(null, filtro.AnoLetivo, null, null), cancellationToken);
+        var notasAno = FiltrarNotasValidas(
+            filtro,
+            alunos,
+            turmas,
+            disciplinas,
+            periodosAno,
+            await _notaRepository.GetAllAsync(new NotaListFilter(null, filtro.AnoLetivo, null, null), cancellationToken));
 
         var turmaSelecionada = filtro.TurmaId.HasValue ? turmas.FirstOrDefault(t => t.Id == filtro.TurmaId.Value) : null;
         var disciplinaSelecionada = filtro.DisciplinaId.HasValue ? disciplinas.FirstOrDefault(d => d.Id == filtro.DisciplinaId.Value) : null;
@@ -91,6 +97,45 @@ public sealed class DashboardService : IDashboardService
             heatmapDisciplinas,
             heatmapCelulas);
     }
+
+    // Uma casa decimal com o arredondamento escolar (5,65 -> 5,7). O padrão do Math.Round é o "bancário"
+    // (arredonda o 5 para o par: 5,65 -> 5,6), o que fazia o dashboard divergir da conta feita à mão.
+    private static decimal Arredondar(decimal valor) => Math.Round(valor, 1, MidpointRounding.AwayFromZero);
+
+    // Só entram no dashboard as notas que também entram na conta de "esperadas": aluno ativo, numa turma ativa
+    // do ano letivo, em disciplina ativa da série da turma e num período do ano. Antes, as notas de um aluno
+    // inativo (transferido/desistente) ou de uma disciplina desvinculada da série contavam como lançadas sem
+    // contar como esperadas — o que diminuía as pendências e distorcia aprovados/reprovados. A turma é a do
+    // aluno hoje (TurmaId é preenchido aqui para os filtros por turma e por professor).
+    private static IReadOnlyList<NotaListItemDto> FiltrarNotasValidas(
+        DashboardFiltroDto filtro,
+        IReadOnlyList<AlunoListItemDto> alunos,
+        IReadOnlyList<TurmaListItemDto> turmasDoAno,
+        IReadOnlyList<DisciplinaListItemDto> disciplinas,
+        IReadOnlyList<PeriodoListItemDto> periodosAno,
+        IReadOnlyList<NotaListItemDto> notas)
+    {
+        var seriePorTurma = turmasDoAno.ToDictionary(t => t.Id, t => t.SerieId);
+        var turmaPorAluno = alunos
+            .Where(a => a.IsAtivo && a.AnoLetivo == filtro.AnoLetivo && a.TurmaId.HasValue && seriePorTurma.ContainsKey(a.TurmaId.Value))
+            .ToDictionary(a => a.Id, a => a.TurmaId!.Value);
+        var seriesPorDisciplina = disciplinas.ToDictionary(d => d.Id, d => d.Series.Select(s => s.SerieId).ToHashSet());
+        var periodos = periodosAno.Select(p => p.Id).ToHashSet();
+
+        return notas
+            .Where(n => periodos.Contains(n.PeriodoLancamentoId)
+                && turmaPorAluno.TryGetValue(n.AlunoId, out var turmaId)
+                && seriesPorDisciplina.TryGetValue(n.DisciplinaId, out var series)
+                && series.Contains(seriePorTurma[turmaId]))
+            .Select(n => n with { TurmaId = turmaPorAluno[n.AlunoId] })
+            .ToList();
+    }
+
+    // Recorte de um professor: lançamentos feitos por ele nas turmas/disciplinas atribuídas a ele — o mesmo
+    // critério usado para contar as notas esperadas desse professor.
+    private static bool EhDoProfessor(NotaListItemDto nota, ProfessorListItemDto professor) =>
+        nota.ProfessorId == professor.Id
+        && professor.Atribuicoes.Any(a => a.TurmaId == nota.TurmaId && a.DisciplinaId == nota.DisciplinaId);
 
     // Professor (sem perfil de gestão) escolhe entre "Minhas turmas" (o próprio ProfessorId) e "Escola inteira"
     // (ProfessorId nulo), que só mostra números agregados. Qualquer outro professor informado no filtro é
@@ -133,7 +178,7 @@ public sealed class DashboardService : IDashboardService
         }
 
         var lancados = donut.Aprovados + donut.Reprovados;
-        var percentualAprovacao = lancados > 0 ? Math.Round(100m * donut.Aprovados / lancados, 1) : 0m;
+        var percentualAprovacao = lancados > 0 ? Arredondar(100m * donut.Aprovados / lancados) : 0m;
 
         var periodosConsiderados = filtro.Trimestre.HasValue
             ? periodosAno.Where(p => p.Trimestre == filtro.Trimestre.Value).ToList()
@@ -256,7 +301,7 @@ public sealed class DashboardService : IDashboardService
             .Select(d =>
             {
                 var notasDaDisciplina = baseParaBarras[d.Id];
-                var media = notasDaDisciplina.Any() ? Math.Round(notasDaDisciplina.Average(x => x.ResultadoFinalUnidade), 1) : (decimal?)null;
+                var media = notasDaDisciplina.Any() ? Arredondar(notasDaDisciplina.Average(x => x.ResultadoFinalUnidade)) : (decimal?)null;
                 return new DashboardBarraDisciplinaDto(d.Nome, media);
             })
             .OrderByDescending(x => x.Media.HasValue)
@@ -292,7 +337,7 @@ public sealed class DashboardService : IDashboardService
 
         if (professorSelecionado is not null)
         {
-            filtradas = filtradas.Where(n => n.ProfessorId == professorSelecionado.Id);
+            filtradas = filtradas.Where(n => EhDoProfessor(n, professorSelecionado));
         }
 
         return filtradas;
@@ -320,7 +365,7 @@ public sealed class DashboardService : IDashboardService
 
         if (professorSelecionado is not null)
         {
-            baseParaEvolucao = baseParaEvolucao.Where(n => n.ProfessorId == professorSelecionado.Id);
+            baseParaEvolucao = baseParaEvolucao.Where(n => EhDoProfessor(n, professorSelecionado));
         }
 
         var baseList = baseParaEvolucao.ToList();
@@ -328,7 +373,7 @@ public sealed class DashboardService : IDashboardService
         return new[] { 1, 2, 3 }.Select(trimestre =>
         {
             var doTrimestre = baseList.Where(n => n.Trimestre == trimestre).ToList();
-            decimal? media = doTrimestre.Count > 0 ? Math.Round(doTrimestre.Average(n => n.ResultadoFinalUnidade), 1) : null;
+            decimal? media = doTrimestre.Count > 0 ? Arredondar(doTrimestre.Average(n => n.ResultadoFinalUnidade)) : null;
             return new DashboardEvolucaoTrimestreDto(trimestre, media);
         }).ToList();
     }
@@ -356,7 +401,7 @@ public sealed class DashboardService : IDashboardService
 
         if (professorSelecionado is not null)
         {
-            baseParaRanking = baseParaRanking.Where(n => n.ProfessorId == professorSelecionado.Id);
+            baseParaRanking = baseParaRanking.Where(n => EhDoProfessor(n, professorSelecionado));
         }
 
         var turmaIdPorAluno = alunos.ToDictionary(a => a.Id, a => a.TurmaId);
@@ -367,7 +412,7 @@ public sealed class DashboardService : IDashboardService
             .GroupBy(n => turmaIdPorAluno[n.AlunoId]!.Value)
             .Select(g => new DashboardRankingTurmaDto(
                 nomeTurmaPorId[g.Key],
-                Math.Round(100m * g.Count(x => x.ResultadoFinalUnidade >= MediaAprovacao) / g.Count(), 1),
+                Arredondar(100m * g.Count(x => x.ResultadoFinalUnidade >= MediaAprovacao) / g.Count()),
                 g.Select(x => x.AlunoId).Distinct().Count()))
             .OrderByDescending(x => x.PercentualAprovacao)
             .ToList();
@@ -404,7 +449,7 @@ public sealed class DashboardService : IDashboardService
 
         if (professorSelecionado is not null)
         {
-            notasConsideradas = notasConsideradas.Where(n => n.ProfessorId == professorSelecionado.Id);
+            notasConsideradas = notasConsideradas.Where(n => EhDoProfessor(n, professorSelecionado));
         }
 
         var notasConsideradasList = notasConsideradas.ToList();

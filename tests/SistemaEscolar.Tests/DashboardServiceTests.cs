@@ -33,6 +33,8 @@ public sealed class DashboardServiceTests
         Aluno(TurmaB), Aluno(TurmaB),
         Aluno(TurmaC), Aluno(TurmaC),
         Aluno(TurmaAnoPassado),
+        // Transferido: continua com nota lançada, mas não deve contar em nada.
+        Aluno(TurmaA) with { IsAtivo = false },
     };
 
     private static readonly PeriodoListItemDto[] Periodos =
@@ -49,6 +51,7 @@ public sealed class DashboardServiceTests
         Nota(Alunos[1], 7m),
         Nota(Alunos[2], 3m),
         Nota(Alunos[3], 6m),
+        Nota(Alunos[7], 2m),
     };
 
     [Fact]
@@ -65,6 +68,39 @@ public sealed class DashboardServiceTests
         // Só o 2º trimestre está dentro da janela de datas.
         Assert.Equal(1, dados.Kpis.PeriodosAbertos);
         Assert.Equal(3, dados.Kpis.TotalPeriodos);
+    }
+
+    [Fact]
+    public async Task AlunoInativo_NaoContaComoLancadoNemNoRanking()
+    {
+        var dados = await CriarServico().ObterDadosAsync(new DashboardFiltroDto(Ano, null, null, TurmaA.Id, null));
+
+        // Turma A: 2 alunos ativos x 3 trimestres = 6 esperados, 2 lançados e aprovados. A nota 2,0 do aluno
+        // inativo não pode virar "reprovado" nem reduzir as pendências.
+        Assert.Equal(2, dados.Donut.Aprovados);
+        Assert.Equal(0, dados.Donut.Reprovados);
+        Assert.Equal(4, dados.Donut.Pendentes);
+        Assert.Equal(100m, dados.RankingMelhores.Single(r => r.Turma == TurmaA.Nome).PercentualAprovacao);
+        Assert.Equal(new decimal?[] { 7.5m, null, null }, dados.EvolucaoTrimestres.Select(e => e.Media));
+    }
+
+    [Fact]
+    public async Task Medias_UsamArredondamentoEscolar()
+    {
+        // Turma B: notas 3,0 e 6,0 com 0,3 a mais = média 4,65 -> 4,7 (o arredondamento bancário daria 4,6).
+        var notas = new[] { Nota(Alunos[2], 3.3m), Nota(Alunos[3], 6m) };
+        var servico = new DashboardService(
+            new AlunoServiceStub(Alunos),
+            new TurmaServiceStub(new[] { TurmaA, TurmaB, TurmaC }),
+            new DisciplinaServiceStub(new[] { Matematica }),
+            new ProfessorServiceStub(),
+            new PeriodoServiceStub(Periodos),
+            new NotaRepositoryStub(notas),
+            Gestao);
+
+        var dados = await servico.ObterDadosAsync(new DashboardFiltroDto(Ano, null, null, TurmaB.Id, null));
+
+        Assert.Equal(4.7m, dados.EvolucaoTrimestres.Single(e => e.Trimestre == 1).Media);
     }
 
     [Fact]
