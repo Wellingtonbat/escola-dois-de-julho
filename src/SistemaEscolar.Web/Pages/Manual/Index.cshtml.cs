@@ -75,7 +75,7 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column,
                         "Cada pessoa que usa o sistema tem um \"crachá\" chamado perfil. O crachá decide quais portas (telas) essa " +
                         "pessoa pode abrir. Existem 5 crachás diferentes:");
-                    Bullet(column, "Diretor(a) — o crachá mais completo. Pode fazer absolutamente tudo no sistema, inclusive coisas que mais ninguém pode, como alterar notas com o trimestre fechado e excluir um período.");
+                    Bullet(column, "Diretor(a) — o crachá mais completo. Pode fazer absolutamente tudo no sistema, inclusive coisas que mais ninguém pode, como alterar notas com o trimestre fechado.");
                     Bullet(column, "Vice-Diretor(a) — tem exatamente as mesmas permissões do Diretor. Na escola, costuma ser um professor: ele continua com as turmas e disciplinas dele, como qualquer professor, mas enxerga e faz tudo o que o Diretor faz. Quem marca um professor como Vice-Diretor é o Diretor (ou outro Vice-Diretor), na tela de Professores.");
                     Bullet(column, "Coordenador(a) — cuida do dia a dia acadêmico (alunos, turmas, professores) e pode abrir e fechar trimestres. As notas são só de consulta: o Coordenador vê tudo, mas não altera nenhuma nota.");
                     Bullet(column, "Secretária — cuida dos cadastros e consulta as notas, mas não altera nenhuma nota e também não abre nem fecha trimestres.");
@@ -467,7 +467,6 @@ public sealed class IndexModel : PageModel
             Linha("Cadastrar/editar Turmas e Séries", "Sim", "Sim", "Sim", "Não");
             Linha("Ver Períodos de Lançamento", "Sim", "Sim", "Sim", "Não");
             Linha("Abrir/Fechar um Período", "Sim", "Sim", "Não", "Não");
-            Linha("Excluir um Período", "Sim", "Não", "Não", "Não");
             Linha("Ver Notas (consulta)", "Sim (todas)", "Sim (todas)", "Sim (todas)", "Só as suas turmas");
             Linha("Lançar/editar/excluir Notas (período Aberto)", "Sim (todas)", "Não", "Não", "Só as suas turmas");
             Linha("Usar o Lançamento de Notas em Massa", "Sim (todas)", "Não", "Não", "Só as suas turmas");

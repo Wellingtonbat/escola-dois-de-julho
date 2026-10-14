@@ -139,7 +139,7 @@ public sealed class IndexModel : PageModel
     {
         if (!User.PodeExcluirPeriodo())
         {
-            TempData["ErrorMessage"] = "Somente Diretor ou Vice-Diretor podem excluir períodos.";
+            TempData["ErrorMessage"] = "A exclusão de períodos está desativada. Para encerrar o lançamento, use Fechar.";
             return RedirectToPage();
         }
 

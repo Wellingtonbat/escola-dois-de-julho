@@ -110,4 +110,15 @@ public sealed class PermissoesPerfilTests
         Assert.Equal("Secretária", Perfis.Descrever(Perfis.Secretaria));
         Assert.Equal("Diretor", Perfis.Descrever(Perfis.Diretor));
     }
+
+    [Theory]
+    [InlineData(Perfis.Diretor)]
+    [InlineData(Perfis.ViceDiretor)]
+    [InlineData(Perfis.Coordenador)]
+    [InlineData(Perfis.Secretaria)]
+    [InlineData(Perfis.Professor)]
+    public void ExclusaoDePeriodo_DesativadaParaTodosOsPerfis(string perfil)
+    {
+        Assert.False(PermissoesPerfil.PodeExcluirPeriodo(Perfil(perfil)));
+    }
 }
