@@ -1,5 +1,4 @@
 using SistemaEscolar.Application.Abstractions;
-using SistemaEscolar.Application.Notas;
 
 namespace SistemaEscolar.Application.Periodos;
 
@@ -7,16 +6,13 @@ public sealed class PeriodoService : IPeriodoService
 {
     private readonly IPeriodoRepository _periodoRepository;
     private readonly ICurrentUserService _currentUserService;
-    private readonly INotaRepository _notaRepository;
 
     public PeriodoService(
         IPeriodoRepository periodoRepository,
-        ICurrentUserService currentUserService,
-        INotaRepository notaRepository)
+        ICurrentUserService currentUserService)
     {
         _periodoRepository = periodoRepository;
         _currentUserService = currentUserService;
-        _notaRepository = notaRepository;
     }
 
     public async Task<IReadOnlyList<PeriodoListItemDto>> ListarAsync(PeriodoListFilter? filter = null, CancellationToken cancellationToken = default)
@@ -133,11 +129,8 @@ public sealed class PeriodoService : IPeriodoService
             return PeriodoCreateResult.Fail("Período não encontrado.");
         }
 
-        if (await _notaRepository.TemPendenciasAsync(periodo.Id, cancellationToken))
-        {
-            return PeriodoCreateResult.Fail("Não é possível fechar o período com lançamentos pendentes.");
-        }
-
+        // Fechar é permitido mesmo com lançamentos pendentes: a tela mostra antes a lista do que falta
+        // (IPendenciasLancamentoService) e quem fecha decide. Fechado, só a Diretoria lança notas nele.
         periodo.IsAberto = false;
         periodo.AbertoManualmente = false;
         await _periodoRepository.UpdateAsync(periodo, cancellationToken);

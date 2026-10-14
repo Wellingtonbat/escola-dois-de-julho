@@ -36,8 +36,9 @@ public static class PermissoesPerfil
     public static bool PodeAbrirFecharPeriodo(Func<string, bool> isInRole) =>
         EhDiretoria(isInRole) || EhCoordenacao(isInRole);
 
-    public static bool PodeExcluirPeriodo(Func<string, bool> isInRole) =>
-        EhDiretoria(isInRole);
+    // Exclusão de períodos desativada para todos os perfis: um período carrega as notas do trimestre, e a escola
+    // passou a fechar o período (com a lista de pendências) em vez de excluí-lo.
+    public static bool PodeExcluirPeriodo(Func<string, bool> isInRole) => false;
 
     // Ver a lista de notas, boletins e resultados (consulta).
     public static bool PodeAcessarNotas(Func<string, bool> isInRole) =>

@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IDisciplinaService, DisciplinaService>();
         services.AddScoped<INotaService, NotaService>();
         services.AddScoped<IPeriodoService, PeriodoService>();
+        services.AddScoped<IPendenciasLancamentoService, PendenciasLancamentoService>();
         services.AddScoped<IProfessorService, ProfessorService>();
         services.AddScoped<IResultadoAcademicoService, ResultadoAcademicoService>();
         services.AddScoped<IRecuperacaoFinalService, RecuperacaoFinalService>();

@@ -26,9 +26,6 @@ internal sealed class NotaRepositoryStub : INotaRepository
         CancellationToken cancellationToken = default) =>
         Task.FromResult(false);
 
-    public Task<bool> TemPendenciasAsync(Guid periodoLancamentoId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(false);
-
     public Task AddAsync(Nota nota, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     public Task UpdateAsync(Nota nota, CancellationToken cancellationToken = default) => Task.CompletedTask;

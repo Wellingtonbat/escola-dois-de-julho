@@ -159,22 +159,25 @@
                                             </button>
                                             @if (podeAbrirFecharPeriodo)
                                             {
-                                                <form method="post" asp-page-handler="@(estaAberto ? "Fechar" : "Abrir")"
-                                                      asp-route-id="@periodo.Id" class="m-0">
-                                                    <button type="submit" class="icon-btn toggle" title="@(estaAberto ? "Fechar" : "Abrir")"
-                                                            onclick="return confirm('Tem certeza que deseja @(estaAberto ? "fechar" : "abrir") este período?');">
-                                                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
-                                                    </button>
-                                                </form>
-                                            }
-                                            @if (User.PodeExcluirPeriodo())
-                                            {
-                                                <form method="post" asp-page-handler="Delete" asp-route-id="@periodo.Id" class="m-0">
-                                                    <button type="submit" class="icon-btn delete" title="Excluir"
-                                                            onclick="return confirm('Tem certeza que deseja excluir este período?');">
-                                                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" /><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" /></svg>
-                                                    </button>
-                                                </form>
+                                                @if (estaAberto)
+                                                {
+                                                    @* Fechar: o script abaixo consulta as pendências antes e decide o que perguntar. *@
+                                                    <form method="post" asp-page-handler="Fechar" asp-route-id="@periodo.Id" class="m-0"
+                                                          data-fechar-periodo data-id="@periodo.Id">
+                                                        <button type="submit" class="icon-btn toggle" title="Fechar">
+                                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <form method="post" asp-page-handler="Abrir" asp-route-id="@periodo.Id" class="m-0">
+                                                        <button type="submit" class="icon-btn toggle" title="Abrir"
+                                                                onclick="return confirm('Tem certeza que deseja abrir este período?');">
+                                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z" /><path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.854 7.146a.5.5 0 1 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z" /></svg>
+                                                        </button>
+                                                    </form>
+                                                }
                                             }
                                             <span class="row-chevron">
                                                 <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
@@ -321,8 +324,112 @@
         </div>
     </div>
 
+    <div class="modal fade" id="pendenciasModal" tabindex="-1" aria-labelledby="pendenciasModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pendenciasModalLabel">Ainda há lançamentos pendentes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">
+                        Os professores abaixo ainda têm notas a lançar em <strong data-pendencias-periodo></strong>.
+                        Se você fechar agora, eles não conseguirão mais lançar — só a Diretoria.
+                    </p>
+                    <p class="text-muted small mb-3">
+                        Sem nota: aluno sem nenhuma nota no trimestre · Incompleta: falta alguma das 3 avaliações ·
+                        Não finalizada: nota lançada que ainda não foi finalizada.
+                    </p>
+                    <div data-pendencias-lista></div>
+                </div>
+                <div class="modal-footer flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a class="btn btn-outline-primary" data-pendencias-pdf href="#">Baixar lista (PDF)</a>
+                    <button type="button" class="btn btn-danger" data-pendencias-confirmar>Fechar período mesmo assim</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @section Scripts {
         <script>
+            (() => {
+                const modalEl = document.getElementById("pendenciasModal");
+                if (!modalEl) {
+                    return;
+                }
+
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                const lista = modalEl.querySelector("[data-pendencias-lista]");
+                const periodoNome = modalEl.querySelector("[data-pendencias-periodo]");
+                const linkPdf = modalEl.querySelector("[data-pendencias-pdf]");
+                const botaoConfirmar = modalEl.querySelector("[data-pendencias-confirmar]");
+                let formularioAtual = null;
+
+                const escapar = (texto) => {
+                    const div = document.createElement("div");
+                    div.textContent = texto ?? "";
+                    return div.innerHTML;
+                };
+
+                function montarLista(itens) {
+                    const porProfessor = new Map();
+                    itens.forEach((item) => {
+                        if (!porProfessor.has(item.professorNome)) porProfessor.set(item.professorNome, []);
+                        porProfessor.get(item.professorNome).push(item);
+                    });
+
+                    return [...porProfessor.entries()].map(([professor, linhas]) => `
+                        <h6 class="mt-3 mb-2">${escapar(professor)}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead><tr><th>Disciplina</th><th>Turma</th><th class="text-center">Sem nota</th>
+                                    <th class="text-center">Incompleta</th><th class="text-center">Não finalizada</th></tr></thead>
+                                <tbody>${linhas.map((l) => `
+                                    <tr><td>${escapar(l.disciplinaNome)}</td><td>${escapar(l.turmaNome)}</td>
+                                        <td class="text-center">${l.semNota}</td><td class="text-center">${l.incompletas}</td>
+                                        <td class="text-center">${l.naoFinalizadas}</td></tr>`).join("")}
+                                </tbody>
+                            </table>
+                        </div>`).join("");
+                }
+
+                document.querySelectorAll("form[data-fechar-periodo]").forEach((form) => {
+                    form.addEventListener("submit", async (evento) => {
+                        evento.preventDefault();
+                        const id = form.dataset.id;
+
+                        let dados = null;
+                        try {
+                            const resposta = await fetch(`?handler=Pendencias&id=${encodeURIComponent(id)}`, {
+                                headers: { "X-Requested-With": "XMLHttpRequest" },
+                            });
+                            if (resposta.ok) dados = await resposta.json();
+                        } catch (erro) {
+                            console.error(erro);
+                        }
+
+                        if (!dados || !dados.temPendencias) {
+                            if (confirm("Tem certeza que deseja fechar este período?")) form.submit();
+                            return;
+                        }
+
+                        formularioAtual = form;
+                        periodoNome.textContent = dados.periodoNome;
+                        lista.innerHTML = montarLista(dados.itens);
+                        linkPdf.href = `?handler=PendenciasPdf&id=${encodeURIComponent(id)}`;
+                        modal.show();
+                    });
+                });
+
+                botaoConfirmar.addEventListener("click", () => {
+                    if (formularioAtual && confirm("Fechar o período mesmo com lançamentos pendentes?")) {
+                        // form.submit() não dispara o evento "submit" de novo, então não reabre esta janela.
+                        formularioAtual.submit();
+                    }
+                });
+            })();
+
             (() => {
                 const editModal = document.getElementById("editPeriodoModal");
                 if (!editModal) {

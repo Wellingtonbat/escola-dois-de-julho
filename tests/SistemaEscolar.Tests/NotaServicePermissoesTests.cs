@@ -206,9 +206,6 @@ public sealed class NotaServicePermissoesTests
             Task.FromResult(Notas.Any(x => !x.IsDeleted && x.Id != ignoreId && x.AlunoId == alunoId
                 && x.DisciplinaId == disciplinaId && x.PeriodoLancamentoId == periodoLancamentoId));
 
-        public Task<bool> TemPendenciasAsync(Guid periodoLancamentoId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(false);
-
         public Task AddAsync(Nota nota, CancellationToken cancellationToken = default)
         {
             Notas.Add(nota);
