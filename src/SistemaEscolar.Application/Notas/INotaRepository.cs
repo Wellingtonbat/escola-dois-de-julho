@@ -12,7 +12,6 @@ public interface INotaRepository
         Guid periodoLancamentoId,
         Guid? ignoreId = null,
         CancellationToken cancellationToken = default);
-    Task<bool> TemPendenciasAsync(Guid periodoLancamentoId, CancellationToken cancellationToken = default);
     Task AddAsync(Nota nota, CancellationToken cancellationToken = default);
     Task UpdateAsync(Nota nota, CancellationToken cancellationToken = default);
     Task SoftDeleteAsync(Nota nota, CancellationToken cancellationToken = default);

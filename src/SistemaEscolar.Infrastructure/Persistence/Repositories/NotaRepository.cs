@@ -135,17 +135,6 @@ public sealed class NotaRepository : INotaRepository
                 cancellationToken);
     }
 
-    public Task<bool> TemPendenciasAsync(Guid periodoLancamentoId, CancellationToken cancellationToken = default)
-    {
-        return _context.Notas
-            .AsNoTracking()
-            .AnyAsync(
-                x => !x.IsDeleted
-                     && x.PeriodoLancamentoId == periodoLancamentoId
-                     && !x.IsFinalizada,
-                cancellationToken);
-    }
-
     public async Task AddAsync(Nota nota, CancellationToken cancellationToken = default)
     {
         _context.Notas.Add(nota);

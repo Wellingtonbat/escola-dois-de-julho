@@ -209,6 +209,15 @@ public sealed class IndexModel : PageModel
                         "período (mostrados na foto abaixo). A Secretária consegue cadastrar e editar períodos, mas não consegue trocar o " +
                         "status de aberto/fechado — esses botões não aparecem para ela (ela só vê o aviso no Painel Inicial, caso exista).");
                     Print(column, imagens["periodos-diretor"], "Períodos visto pelo Diretor, Vice-Diretor ou Coordenador: repare nos botões \"Abrir\"/\"Fechar\".");
+                    Paragrafo(column,
+                        "E se alguém ainda não terminou de lançar quando você clica em \"Fechar\"? O sistema não impede o fechamento, mas " +
+                        "antes mostra uma lista de quem está devendo: separada por professor, com cada disciplina e turma e quantos alunos " +
+                        "estão sem nota, com a nota incompleta (faltando alguma das 3 avaliações) ou com a nota ainda não finalizada. " +
+                        "Nessa janela você escolhe: \"Baixar lista (PDF)\" para imprimir e cobrar os professores, \"Fechar período mesmo " +
+                        "assim\" ou \"Cancelar\". Se não houver nada pendente, aparece só a confirmação de sempre.");
+                    Paragrafo(column,
+                        "Depois de fechado, o professor não consegue mais lançar nem alterar notas daquele trimestre — só o Diretor e o " +
+                        "Vice-Diretor. Se precisar liberar de novo para um professor terminar, é só clicar em \"Abrir\".");
 
                     column.Item().PageBreak();
                     Titulo(column, "10. Notas");
