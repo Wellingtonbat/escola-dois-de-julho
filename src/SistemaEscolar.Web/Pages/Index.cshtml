@@ -4,6 +4,17 @@
     ViewData["Title"] = "Painel Inicial";
 }
 
+@if (Model.SemAcessoAoPainel)
+{
+    <section class="panel">
+        <div class="panel-body">
+            <h1 class="h5 mb-1">Bem-vindo(a), @(User.FindFirst(SistemaEscolar.Application.Abstractions.AppClaimTypes.FullName)?.Value ?? User.Identity?.Name)!</h1>
+            <p class="text-muted mb-0">Use o menu ao lado para abrir as telas liberadas para o seu perfil.</p>
+        </div>
+    </section>
+    return;
+}
+
 @if (Model.PeriodosAbertosComDataVencida.Count > 0)
 {
     <div class="alert alert-danger d-flex align-items-start gap-2 mb-3">

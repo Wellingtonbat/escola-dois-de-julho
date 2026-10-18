@@ -137,6 +137,18 @@ public sealed class PermissoesPerfilTests
     }
 
     [Theory]
+    [InlineData(Permissoes.NotasVer)]
+    [InlineData(Permissoes.NotasLancar)]
+    [InlineData(Permissoes.AvaliacaoFinalLancar)]
+    public void QuemLancaNotasOuAvaliacaoFinal_TambemAbreAsTelasDeNotas(string permissao)
+    {
+        Func<string, bool> temPermissao = p => p == permissao;
+
+        Assert.True(PermissoesPerfil.PodeAcessarNotas(temPermissao));
+        Assert.False(PermissoesPerfil.PodeAcessarNotas(p => p == Permissoes.BoletinsPdf));
+    }
+
+    [Theory]
     [InlineData(Perfis.Diretor)]
     [InlineData(Perfis.ViceDiretor)]
     [InlineData(Perfis.Coordenador)]

@@ -145,9 +145,12 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (podeGerenciar)
+                                    @* Editar exige "Cadastrar e editar períodos"; Abrir/Fechar exige "Abrir e fechar períodos". *@
+                                    @if (podeGerenciar || podeAbrirFecharPeriodo)
                                     {
                                         <div class="actions-cell">
+                                            @if (podeGerenciar)
+                                            {
                                             <button type="button" class="icon-btn edit btn-edit-periodo"
                                                     data-bs-toggle="modal" data-bs-target="#editPeriodoModal" data-id="@periodo.Id"
                                                     data-ano="@periodo.AnoLetivo" data-trimestre="@periodo.Trimestre"
@@ -157,6 +160,7 @@
                                                     title="Editar">
                                                 <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
                                             </button>
+                                            }
                                             @if (podeAbrirFecharPeriodo)
                                             {
                                                 @if (estaAberto)
@@ -198,8 +202,10 @@
     </div>
 </section>
 
-@if (User.PodeGerenciarPeriodos())
+@if (podeGerenciar || podeAbrirFecharPeriodo)
 {
+    if (podeGerenciar)
+    {
     <div class="modal fade" id="createPeriodoModal" tabindex="-1" aria-labelledby="createPeriodoModalLabel"
          aria-hidden="true">
         <div class="modal-dialog modal-tall">
@@ -323,6 +329,8 @@
             </div>
         </div>
     </div>
+
+    }
 
     <div class="modal fade" id="pendenciasModal" tabindex="-1" aria-labelledby="pendenciasModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
