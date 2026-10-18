@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Turmas";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Turmas" };
-    var podeGerenciar = User.EhGestao();
+    var podeGerenciar = User.PodeGerenciarTurmas();
 
     var serieSelecionadaNome = Model.SerieId.HasValue
         ? Model.Series.FirstOrDefault(s => s.Value == Model.SerieId.Value.ToString())?.Text
@@ -231,7 +231,7 @@
     </div>
 </section>
 
-@if (User.EhGestao())
+@if (User.PodeGerenciarTurmas())
 {
     <div class="modal fade" id="editTurmaModal" tabindex="-1" aria-labelledby="editTurmaModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-tall">

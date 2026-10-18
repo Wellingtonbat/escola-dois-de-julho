@@ -13,7 +13,7 @@
         </a>
         <h1 class="h5 mb-0">Boletim — @Model.Aluno?.NomeCompleto</h1>
     </div>
-    @if (User.EhGestao())
+    @if (User.PodeBaixarBoletimPdf())
     {
         <a asp-page="/Notas/Boletim" asp-page-handler="BaixarPdf" asp-route-AlunoId="@Model.AlunoId" asp-route-PeriodoId="@Model.PeriodoSelecionadoId"
            class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">

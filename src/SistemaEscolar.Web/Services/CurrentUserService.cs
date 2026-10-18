@@ -27,4 +27,7 @@ public sealed class CurrentUserService : ICurrentUserService
 
         return _httpContextAccessor.HttpContext?.User.IsInRole(role) == true;
     }
+
+    public bool TemPermissao(string permissao) =>
+        _httpContextAccessor.HttpContext?.User.HasClaim(Permissoes.ClaimType, permissao) == true;
 }

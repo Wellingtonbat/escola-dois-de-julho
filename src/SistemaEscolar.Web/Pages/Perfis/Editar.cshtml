@@ -1,0 +1,172 @@
+@page "{id:guid?}"
+@model SistemaEscolar.Web.Pages.Perfis.EditarModel
+@using SistemaEscolar.Application.Abstractions
+@{
+    var titulo = Model.EhNovo
+        ? "Novo Perfil"
+        : (Model.SomenteLeitura ? $"Perfil {Model.Perfil!.Perfil.NomeExibicao}" : $"Editar Perfil {Model.Perfil!.Perfil.NomeExibicao}");
+    ViewData["Title"] = titulo;
+    ViewData["Breadcrumb"] = new[] { "Administração", "Perfis e Permissões", Model.EhNovo ? "Novo" : Model.Perfil!.Perfil.NomeExibicao };
+    var selecionadas = Model.Permissoes.ToHashSet(StringComparer.Ordinal);
+    var modulos = Permissoes.Todas.GroupBy(x => x.Modulo).ToList();
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center gap-3">
+        <div>
+            <h1 class="h5 mb-1">@titulo</h1>
+            <p class="text-muted mb-0">
+                @if (Model.EhNovo)
+                {
+                    <text>Dê um nome ao perfil e marque o que ele pode fazer. Depois, atribua o perfil às contas na tela Usuários.</text>
+                }
+                else if (Model.Perfil!.Perfil.EhSomenteLeitura)
+                {
+                    <text>O perfil Diretor tem sempre todas as permissões e não pode ser alterado: assim a escola nunca fica sem alguém com acesso total.</text>
+                }
+                else if (Model.SomenteLeitura)
+                {
+                    <text>Este perfil tem permissões que o seu não tem; por isso, você pode consultá-lo, mas não alterá-lo.</text>
+                }
+                else
+                {
+                    <text>Marque ou desmarque as permissões e salve. Os usuários deste perfil passam a vê-las em até 1 minuto.</text>
+                }
+            </p>
+        </div>
+        <a asp-page="/Perfis/Index" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+    <div class="panel-body">
+        @if (Model.ErrorMessage is not null)
+        {
+            <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+        }
+
+        <form method="post" id="perfilForm">
+            <div class="row g-3 mb-3">
+                <div class="col-12 col-md-6">
+                    <label for="perfil-nome" class="form-label">Nome do perfil</label>
+                    @if (Model.NomeEditavel && !Model.SomenteLeitura)
+                    {
+                        <input id="perfil-nome" name="Nome" value="@Model.Nome" class="form-control" maxlength="40" required
+                               placeholder="Ex.: Auxiliar de Secretaria" />
+                    }
+                    else
+                    {
+                        <input id="perfil-nome" value="@Model.Nome" class="form-control" readonly />
+                        <input type="hidden" name="Nome" value="@Model.Nome" />
+                        @if (Model.Perfil?.Perfil.EhPadrao == true)
+                        {
+                            <small class="text-muted">Perfis que vêm com o sistema não podem ser renomeados.</small>
+                        }
+                    }
+                </div>
+                @if (Model.EhNovo)
+                {
+                    <div class="col-12 col-md-6">
+                        <label for="perfil-copiar" class="form-label">Começar com as permissões de</label>
+                        <select id="perfil-copiar" class="form-select" data-copiar-perfil>
+                            <option value="">Nenhum (começar do zero)</option>
+                            @foreach (var outro in Model.OutrosPerfis)
+                            {
+                                <option value="@outro.Id" selected="@(outro.Id == Model.CopiarDe)">@outro.NomeExibicao</option>
+                            }
+                        </select>
+                        <small class="text-muted">Depois é só ajustar o que for diferente.</small>
+                    </div>
+                }
+            </div>
+
+            <div class="row g-3">
+                @foreach (var modulo in modulos)
+                {
+                    <div class="col-12 col-lg-6">
+                        <div class="border rounded-3 p-3 h-100" data-modulo>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h2 class="h6 mb-0">@modulo.Key</h2>
+                                @if (!Model.SomenteLeitura)
+                                {
+                                    <div class="d-flex gap-2 small">
+                                        <a href="#" class="text-decoration-none" data-marcar="true">Marcar todas</a>
+                                        <span class="text-muted">·</span>
+                                        <a href="#" class="text-decoration-none" data-marcar="false">Desmarcar</a>
+                                    </div>
+                                }
+                            </div>
+                            @foreach (var permissao in modulo)
+                            {
+                                var marcada = selecionadas.Contains(permissao.Codigo);
+                                var bloqueio = Model.MotivoBloqueio(permissao.Codigo, marcada);
+                                var desabilitada = Model.SomenteLeitura || bloqueio is not null;
+                                var idCampo = "perm-" + permissao.Codigo.Replace(".", "-");
+                                <div class="form-check py-1">
+                                    <input class="form-check-input" type="checkbox" id="@idCampo" name="Permissoes" value="@permissao.Codigo"
+                                           checked="@marcada" disabled="@desabilitada" />
+                                    @if (desabilitada && marcada && !Model.SomenteLeitura)
+                                    {
+                                        // Campo desabilitado não é enviado: mantém a permissão marcada no envio.
+                                        <input type="hidden" name="Permissoes" value="@permissao.Codigo" />
+                                    }
+                                    <label class="form-check-label" for="@idCampo">
+                                        <span class="fw-semibold">@permissao.Nome</span>
+                                        <small class="d-block text-muted">@permissao.Descricao</small>
+                                        @if (bloqueio is not null)
+                                        {
+                                            <small class="d-block text-warning-emphasis">@bloqueio</small>
+                                        }
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (!Model.SomenteLeitura)
+            {
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">@(Model.EhNovo ? "Criar Perfil" : "Salvar Permissões")</button>
+                    <a asp-page="/Perfis/Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            }
+        </form>
+
+        @if (Model.Perfil is not null)
+        {
+            <hr class="my-4" />
+            <h2 class="h6">Usuários com este perfil (@Model.Perfil.Usuarios.Count)</h2>
+            @if (Model.Perfil.Usuarios.Count == 0)
+            {
+                <p class="text-muted mb-0">Nenhum usuário usa este perfil. Atribua-o na tela Usuários.</p>
+            }
+            else
+            {
+                <p class="mb-0">@string.Join(", ", Model.Perfil.Usuarios)</p>
+            }
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.querySelector("[data-copiar-perfil]")?.addEventListener("change", (event) => {
+            const url = new URL(window.location.href);
+            if (event.target.value) {
+                url.searchParams.set("copiarDe", event.target.value);
+            } else {
+                url.searchParams.delete("copiarDe");
+            }
+            window.location.href = url.toString();
+        });
+
+        document.querySelectorAll("[data-marcar]").forEach((link) => {
+            link.addEventListener("click", (event) => {
+                event.preventDefault();
+                const marcar = link.dataset.marcar === "true";
+                link.closest("[data-modulo]")
+                    .querySelectorAll("input[type=checkbox]:not(:disabled)")
+                    .forEach((caixa) => { caixa.checked = marcar; });
+            });
+        });
+    </script>
+}

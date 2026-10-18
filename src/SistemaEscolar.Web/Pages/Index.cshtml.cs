@@ -70,7 +70,7 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        EhApenasProfessor = User.EhApenasProfessor();
+        EhApenasProfessor = User.TemVisaoRestrita();
 
         var periodos = await _periodoService.ListarAsync(null, cancellationToken);
         if (!EhApenasProfessor)
@@ -134,5 +134,5 @@ public class IndexModel : PageModel
     }
 
     private bool PodeVerDashboard() =>
-        User.EhGestao() || User.IsInRole(Perfis.Professor);
+        User.PodeVerPainel();
 }

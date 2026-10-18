@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Séries";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Séries" };
-    var podeGerenciar = User.EhGestao();
+    var podeGerenciar = User.PodeGerenciarSeries();
 
     var statusLabel = Model.Status switch { "ativas" => "Apenas ativas", "inativas" => "Apenas inativas", _ => null };
     var filtrosAtivos = new List<(string Label, string Campo)>();
@@ -190,7 +190,7 @@
     </div>
 </section>
 
-@if (User.EhGestao())
+@if (User.PodeGerenciarSeries())
 {
     <div class="modal fade" id="editSerieModal" tabindex="-1" aria-labelledby="editSerieModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-tall">

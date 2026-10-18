@@ -14,14 +14,16 @@
     var disciplinasActive = StartsWith("/Disciplinas");
     var professoresActive = StartsWith("/Professores");
     var usuariosActive = StartsWith("/Usuarios");
+    var perfisActive = StartsWith("/Perfis");
     var auditoriaActive = StartsWith("/Auditoria");
 
-    var isProfessorOnly = User.EhApenasProfessor();
+    var isProfessorOnly = User.TemVisaoRestrita();
     var podeAcessarAtas = User.PodeAcessarAtas();
-    var podeGerenciarUsuarios = User.EhGestao();
+    var podeGerenciarUsuarios = User.PodeGerenciarUsuarios();
+    var podeGerenciarPerfis = User.PodeGerenciarPerfis();
     var podeVerAuditoria = User.PodeVerAuditoria();
     var cadastrosVisivel = !isProfessorOnly;
-    var administracaoVisivel = podeGerenciarUsuarios || podeVerAuditoria;
+    var administracaoVisivel = podeGerenciarUsuarios || podeGerenciarPerfis || podeVerAuditoria;
 
     var entryAssembly = System.Reflection.Assembly.GetEntryAssembly();
     var infoAttr = entryAssembly is null
@@ -133,6 +135,15 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                         </span>
                         <span class="sidebar-link-label">Usuários</span>
+                    </a>
+                }
+                @if (podeGerenciarPerfis)
+                {
+                    <a asp-page="/Perfis/Index" class="sidebar-link @(perfisActive ? "active" : null)">
+                        <span class="sidebar-link-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM5 21v-1a6 6 0 0 1 9-5.2M19 15v6M16 18h6" /></svg>
+                        </span>
+                        <span class="sidebar-link-label">Perfis e Permissões</span>
                     </a>
                 }
                 @if (podeVerAuditoria)

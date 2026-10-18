@@ -99,7 +99,7 @@ public sealed class PeriodoService : IPeriodoService
     {
         if (!PodeAbrirFechar())
         {
-            return PeriodoCreateResult.Fail("Somente Diretor, Vice-Diretor ou Coordenador podem abrir períodos.");
+            return PeriodoCreateResult.Fail("Seu perfil não tem permissão para abrir períodos.");
         }
 
         var periodo = await _periodoRepository.GetByIdAsync(id, cancellationToken);
@@ -120,7 +120,7 @@ public sealed class PeriodoService : IPeriodoService
     {
         if (!PodeAbrirFechar())
         {
-            return PeriodoCreateResult.Fail("Somente Diretor, Vice-Diretor ou Coordenador podem fechar períodos.");
+            return PeriodoCreateResult.Fail("Seu perfil não tem permissão para fechar períodos.");
         }
 
         var periodo = await _periodoRepository.GetByIdAsync(id, cancellationToken);
@@ -130,7 +130,7 @@ public sealed class PeriodoService : IPeriodoService
         }
 
         // Fechar é permitido mesmo com lançamentos pendentes: a tela mostra antes a lista do que falta
-        // (IPendenciasLancamentoService) e quem fecha decide. Fechado, só a Diretoria lança notas nele.
+        // (IPendenciasLancamentoService) e quem fecha decide. Fechado, só lança notas nele quem tem a permissão "Lançar notas com o período fechado".
         periodo.IsAberto = false;
         periodo.AbertoManualmente = false;
         await _periodoRepository.UpdateAsync(periodo, cancellationToken);
@@ -139,7 +139,7 @@ public sealed class PeriodoService : IPeriodoService
 
     public async Task<bool> ExcluirAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        if (!PermissoesPerfil.PodeExcluirPeriodo(_currentUserService.IsInRole))
+        if (!PermissoesPerfil.PodeExcluirPeriodo(_currentUserService.TemPermissao))
         {
             return false;
         }
@@ -189,7 +189,7 @@ public sealed class PeriodoService : IPeriodoService
         return PeriodoCreateResult.Success();
     }
 
-    private bool PodeAbrirFechar() => PermissoesPerfil.PodeAbrirFecharPeriodo(_currentUserService.IsInRole);
+    private bool PodeAbrirFechar() => PermissoesPerfil.PodeAbrirFecharPeriodo(_currentUserService.TemPermissao);
 
     private static PeriodoListItemDto Map(Domain.Entities.PeriodoLancamento periodo)
     {

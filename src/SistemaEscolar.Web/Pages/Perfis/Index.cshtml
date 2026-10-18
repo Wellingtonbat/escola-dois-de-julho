@@ -1,0 +1,104 @@
+@page
+@model SistemaEscolar.Web.Pages.Perfis.IndexModel
+@using SistemaEscolar.Application.Abstractions
+@{
+    ViewData["Title"] = "Perfis e Permissões";
+    ViewData["Breadcrumb"] = new[] { "Administração", "Perfis e Permissões" };
+    var totalPermissoes = Permissoes.Todas.Count;
+}
+
+<section class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center gap-3">
+        <div>
+            <h1 class="h5 mb-1">Perfis e Permissões</h1>
+            <p class="text-muted mb-0">
+                Escolha o que cada perfil pode fazer no sistema. As mudanças valem para todos os usuários do perfil em até 1 minuto,
+                sem precisar sair e entrar de novo. Para trocar o perfil de uma pessoa, use a tela Usuários.
+            </p>
+        </div>
+        <a asp-page="/Perfis/Editar" class="btn btn-primary btn-sm text-nowrap">Novo Perfil</a>
+    </div>
+    <div class="panel-body">
+        <div class="panel-table-wrap">
+            <table class="table-sneat">
+                <thead>
+                    <tr>
+                        <th>Perfil</th>
+                        <th>Tipo</th>
+                        <th>Usuários</th>
+                        <th>Permissões</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var perfil in Model.Perfis)
+                    {
+                        <tr class="row-clicavel" data-edit-trigger=".btn-abrir-perfil">
+                            <td class="fw-semibold">@perfil.NomeExibicao</td>
+                            <td>
+                                @if (perfil.EhSomenteLeitura)
+                                {
+                                    <span class="status-pill status-neutral" title="Tem sempre todas as permissões e não pode ser alterado.">Acesso total</span>
+                                }
+                                else if (perfil.EhPadrao)
+                                {
+                                    <span class="status-pill status-neutral">Padrão do sistema</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill status-open">Criado pela escola</span>
+                                }
+                            </td>
+                            <td>@perfil.TotalUsuarios</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2" style="min-width: 160px;">
+                                    <div class="progress flex-grow-1" style="height: 6px;" aria-hidden="true">
+                                        <div class="progress-bar" style="width: @(totalPermissoes == 0 ? 0 : perfil.Permissoes.Count * 100 / totalPermissoes)%;"></div>
+                                    </div>
+                                    <small class="text-muted text-nowrap">@perfil.Permissoes.Count de @totalPermissoes</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    <a asp-page="/Perfis/Editar" asp-route-id="@perfil.Id" class="icon-btn edit btn-abrir-perfil"
+                                       title="@(perfil.PodeEditar ? "Editar permissões" : "Ver permissões")">
+                                        @if (perfil.PodeEditar)
+                                        {
+                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10Z" /></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" /><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" /></svg>
+                                        }
+                                    </a>
+                                    <a asp-page="/Perfis/Editar" asp-route-copiarDe="@perfil.Id" class="icon-btn resetpw"
+                                       title="Criar um perfil novo a partir deste">
+                                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" /></svg>
+                                    </a>
+                                    @if (perfil.PodeExcluir)
+                                    {
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@perfil.Id" class="m-0">
+                                            <button type="submit" class="icon-btn delete" title="Excluir"
+                                                    onclick="return confirm('Tem certeza que deseja excluir o perfil @perfil.NomeExibicao?');">
+                                                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" /><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" /></svg>
+                                            </button>
+                                        </form>
+                                    }
+                                    <span class="row-chevron">
+                                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" /></svg>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-muted small mt-3 mb-0">
+            Por segurança: você só concede permissões que também tem, só altera perfis que não têm mais permissões que o seu
+            e não pode retirar de você mesmo o acesso a esta tela. O perfil Diretor tem sempre todas as permissões.
+            Toda alteração fica registrada na Auditoria.
+        </p>
+    </div>
+</section>

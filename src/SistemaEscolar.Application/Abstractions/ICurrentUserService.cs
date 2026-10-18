@@ -10,4 +10,7 @@ public interface ICurrentUserService
     string? FullName { get; }
 
     bool IsInRole(string role);
+
+    // Permissão vinda dos perfis do usuário (ver Permissoes e PermissoesPerfil).
+    bool TemPermissao(string permissao);
 }

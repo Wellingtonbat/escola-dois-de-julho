@@ -73,7 +73,7 @@ public sealed class PendenciasLancamentoService : IPendenciasLancamentoService
 
     public async Task<PendenciasPeriodoDto?> ListarAsync(Guid periodoId, CancellationToken cancellationToken = default)
     {
-        if (!PermissoesPerfil.PodeAbrirFecharPeriodo(_currentUserService.IsInRole))
+        if (!PermissoesPerfil.PodeAbrirFecharPeriodo(_currentUserService.TemPermissao))
         {
             return null;
         }

@@ -4,7 +4,7 @@
 @{
     ViewData["Title"] = "Períodos";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Períodos" };
-    var podeGerenciar = User.EhGestao();
+    var podeGerenciar = User.PodeGerenciarPeriodos();
     var podeAbrirFecharPeriodo = User.PodeAbrirFecharPeriodo();
     var hoje = DateTime.UtcNow;
 
@@ -198,7 +198,7 @@
     </div>
 </section>
 
-@if (User.EhGestao())
+@if (User.PodeGerenciarPeriodos())
 {
     <div class="modal fade" id="createPeriodoModal" tabindex="-1" aria-labelledby="createPeriodoModalLabel"
          aria-hidden="true">
@@ -334,7 +334,7 @@
                 <div class="modal-body">
                     <p class="mb-2">
                         Os professores abaixo ainda têm notas a lançar em <strong data-pendencias-periodo></strong>.
-                        Se você fechar agora, eles não conseguirão mais lançar — só a Diretoria.
+                        Se você fechar agora, eles não conseguirão mais lançar — só quem tem a permissão de lançar com o período fechado (por padrão, a Diretoria).
                     </p>
                     <p class="text-muted small mb-3">
                         Sem nota: aluno sem nenhuma nota no trimestre · Incompleta: falta alguma das 3 avaliações ·

@@ -1,71 +1,90 @@
 namespace SistemaEscolar.Application.Abstractions;
 
-// Fonte única das regras de permissão por perfil. Recebe uma função "isInRole" para poder ser usada
-// tanto pelas páginas (ClaimsPrincipal.IsInRole) quanto pelos serviços (ICurrentUserService.IsInRole).
-// Como os perfis se acumulam, toda regra é escrita em termos de "tem algum destes perfis".
+// Fonte única das regras de permissão. Recebe uma função "temPermissao" para poder ser usada tanto pelas
+// páginas (ClaimsPrincipal.TemPermissao) quanto pelos serviços (ICurrentUserService.TemPermissao).
+// As permissões de cada perfil são configuradas na tela "Perfis e Permissões" (ver Permissoes); como um
+// usuário pode acumular perfis, ele tem a soma das permissões de todos eles.
 public static class PermissoesPerfil
 {
-    // Diretor e Vice-Diretor têm exatamente as mesmas permissões.
-    public static bool EhDiretoria(Func<string, bool> isInRole) =>
-        isInRole(Perfis.Diretor) || isInRole(Perfis.ViceDiretor);
+    public static bool PodeVerPainel(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.PainelVer);
 
-    public static bool EhCoordenacao(Func<string, bool> isInRole) =>
-        isInRole(Perfis.Coordenador) || isInRole(Perfis.CoordenadorLegado);
+    // Visão restrita: o usuário só enxerga as turmas e disciplinas em que é professor e não vê os Cadastros.
+    // É o caso do Professor; quem acumula Professor + um perfil de gestão enxerga a escola inteira.
+    public static bool TemVisaoRestrita(Func<string, bool> temPermissao) =>
+        !temPermissao(Permissoes.EscolaVerTudo);
 
-    // Qualquer perfil administrativo (cadastros, painel completo, gestão de usuários...).
-    public static bool EhGestao(Func<string, bool> isInRole) =>
-        EhDiretoria(isInRole) || EhCoordenacao(isInRole) || isInRole(Perfis.Secretaria);
+    public static bool PodeGerenciarAlunos(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.AlunosGerenciar);
 
-    // Professor "puro": usuário que só tem o perfil Professor, sem nenhum perfil de gestão.
-    // Quem acumula Professor + gestão (ex.: professor que é vice-diretor) enxerga o sistema como gestão.
-    public static bool EhApenasProfessor(Func<string, bool> isInRole) =>
-        isInRole(Perfis.Professor) && !EhGestao(isInRole);
+    public static bool PodeGerenciarTurmas(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.TurmasGerenciar);
 
-    // Contas de Diretor e Vice-Diretor só podem ser criadas, alteradas ou removidas pela própria Diretoria.
-    // Sem isso, um perfil de gestão menor poderia se conceder (ou conceder a outro usuário) as permissões
-    // de Diretoria por meio da tela de Usuários ou do marcador de Vice-Diretor em Professores.
-    public static bool PodeGerenciarContaComPerfil(Func<string, bool> isInRole, string perfil) =>
-        perfil is Perfis.Diretor or Perfis.ViceDiretor
-            ? EhDiretoria(isInRole)
-            : EhGestao(isInRole);
+    public static bool PodeGerenciarSeries(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.SeriesGerenciar);
 
-    // Auditoria (quem alterou o quê) é restrita à Diretoria.
-    public static bool PodeVerAuditoria(Func<string, bool> isInRole) =>
-        EhDiretoria(isInRole);
+    public static bool PodeGerenciarDisciplinas(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.DisciplinasGerenciar);
 
-    public static bool PodeAbrirFecharPeriodo(Func<string, bool> isInRole) =>
-        EhDiretoria(isInRole) || EhCoordenacao(isInRole);
+    public static bool PodeGerenciarProfessores(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.ProfessoresGerenciar);
+
+    public static bool PodeGerenciarPeriodos(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.PeriodosGerenciar);
+
+    public static bool PodeAbrirFecharPeriodo(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.PeriodosAbrirFechar);
 
     // Exclusão de períodos desativada para todos os perfis: um período carrega as notas do trimestre, e a escola
     // passou a fechar o período (com a lista de pendências) em vez de excluí-lo.
-    public static bool PodeExcluirPeriodo(Func<string, bool> isInRole) => false;
+    public static bool PodeExcluirPeriodo(Func<string, bool> temPermissao) => false;
 
     // Ver a lista de notas, boletins e resultados (consulta).
-    public static bool PodeAcessarNotas(Func<string, bool> isInRole) =>
-        EhGestao(isInRole) || isInRole(Perfis.Professor);
+    public static bool PodeAcessarNotas(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.NotasVer);
 
-    // Lançar, editar, finalizar ou excluir notas. Diretoria em qualquer período; Professor apenas com
-    // o período aberto e nas suas turmas/disciplinas (isso é verificado à parte). Coordenador e
-    // Secretária têm acesso somente de consulta.
-    public static bool PodeAlterarNotas(Func<string, bool> isInRole) =>
-        EhDiretoria(isInRole) || isInRole(Perfis.Professor);
+    // Lançar, editar, finalizar ou excluir notas. Com o período fechado, só quem tem
+    // PodeLancarComPeriodoFechado; fora das próprias turmas, só quem tem "lançar notas de qualquer turma".
+    public static bool PodeAlterarNotas(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.NotasLancar);
 
-    // Quem altera notas como Professor fica restrito às próprias turmas e disciplinas, a não ser que
-    // também seja Diretoria. Vale mesmo para quem acumula Professor + Coordenador/Secretária, para que
-    // o perfil de gestão não sirva de atalho para editar notas de outros professores.
-    public static bool AlteracaoDeNotasRestritaAoEscopo(Func<string, bool> isInRole) =>
-        isInRole(Perfis.Professor) && !EhDiretoria(isInRole);
+    public static bool PodeLancarComPeriodoFechado(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.NotasLancarPeriodoFechado);
 
-    // Avaliação Final (antiga "Recuperação Final", lançada em Resultados): só a Diretoria lança.
-    public static bool PodeLancarAvaliacaoFinal(Func<string, bool> isInRole) =>
-        EhDiretoria(isInRole);
+    // Quem lança notas sem a permissão "lançar notas de qualquer turma" fica restrito às próprias turmas e
+    // disciplinas. Vale mesmo para quem acumula Professor + Coordenador/Secretária, para que o perfil de
+    // gestão não sirva de atalho para editar notas de outros professores.
+    public static bool AlteracaoDeNotasRestritaAoEscopo(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.NotasLancar) && !temPermissao(Permissoes.NotasLancarQualquerTurma);
 
-    // Ata de Resultados Finais: mesmo grupo que hoje baixa boletim em PDF acessa a lista, cria uma Ata
-    // e edita enquanto ela está em Rascunho.
-    public static bool PodeAcessarAtas(Func<string, bool> isInRole) =>
-        EhGestao(isInRole);
+    public static bool PodeBaixarBoletimPdf(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.BoletinsPdf);
 
-    // Depois que uma Ata é finalizada, só a Diretoria pode voltar a editá-la (via "Habilitar para Edição").
-    public static bool PodeEditarAtaFinalizada(Func<string, bool> isInRole) =>
-        EhDiretoria(isInRole);
+    // Avaliação Final (antiga "Recuperação Final", lançada em Resultados).
+    public static bool PodeLancarAvaliacaoFinal(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.AvaliacaoFinalLancar);
+
+    // Ata de Resultados Finais: acessar a lista, criar uma Ata, editar enquanto está em Rascunho e finalizar.
+    public static bool PodeAcessarAtas(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.AtasGerenciar);
+
+    // Depois que uma Ata é finalizada, voltar a editá-la (via "Habilitar para Edição").
+    public static bool PodeEditarAtaFinalizada(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.AtasEditarFinalizada);
+
+    public static bool PodeGerenciarUsuarios(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.UsuariosGerenciar);
+
+    public static bool PodeGerenciarPerfis(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.PerfisGerenciar);
+
+    // Auditoria (quem alterou o quê) expõe dados de todos os usuários.
+    public static bool PodeVerAuditoria(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.AuditoriaVer);
+
+    // Regra contra escalonamento de acesso: só se concede, altera ou administra o que você mesmo já tem.
+    // Usada para contas (não mexer na conta de quem tem mais permissões que você) e para perfis (não conceder
+    // uma permissão que você não tem).
+    public static bool CobrePermissoes(Func<string, bool> temPermissao, IEnumerable<string> permissoes) =>
+        permissoes.All(temPermissao);
 }

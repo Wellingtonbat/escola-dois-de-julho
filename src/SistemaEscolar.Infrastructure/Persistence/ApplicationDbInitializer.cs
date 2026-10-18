@@ -58,6 +58,8 @@ public sealed class ApplicationDbInitializer
             await _roleManager.CreateAsync(role);
         }
 
+        await SeedPermissoesDosPerfisAsync(cancellationToken);
+
         if (seedSampleData)
         {
             await SeedSeriesAsync(cancellationToken);
@@ -442,6 +444,48 @@ public sealed class ApplicationDbInitializer
         };
 
         _context.Notas.AddRange(notas);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    // Grava uma única vez as permissões padrão de cada perfil (as mesmas regras de antes da tela "Perfis e
+    // Permissões"); depois disso vale o que foi salvo na tela. O Diretor é a exceção: recebe sempre todas as
+    // permissões, inclusive as que forem criadas em versões futuras. Permissões que saíram do catálogo são removidas.
+    private async Task SeedPermissoesDosPerfisAsync(CancellationToken cancellationToken)
+    {
+        var perfis = await _context.Roles.AsNoTracking().ToListAsync(cancellationToken);
+        var claims = await _context.RoleClaims
+            .Where(x => x.ClaimType == Permissoes.ClaimType || x.ClaimType == Permissoes.ClaimTypeInicializado)
+            .ToListAsync(cancellationToken);
+
+        foreach (var perfil in perfis)
+        {
+            var nome = perfil.Name ?? string.Empty;
+            var doPerfil = claims.Where(x => x.RoleId == perfil.Id).ToList();
+            var permissoes = doPerfil.Where(x => x.ClaimType == Permissoes.ClaimType).ToList();
+            var inicializado = doPerfil.Any(x => x.ClaimType == Permissoes.ClaimTypeInicializado);
+
+            var desejadas = nome == Perfis.Diretor
+                ? Permissoes.Todas.Select(x => x.Codigo).ToHashSet()
+                : permissoes.Select(x => x.ClaimValue!).Where(Permissoes.Existe).ToHashSet();
+            if (!inicializado)
+            {
+                desejadas.UnionWith(Permissoes.PadraoDoPerfil(nome));
+                _context.RoleClaims.Add(new IdentityRoleClaim<Guid>
+                {
+                    RoleId = perfil.Id, ClaimType = Permissoes.ClaimTypeInicializado, ClaimValue = "1"
+                });
+            }
+
+            _context.RoleClaims.RemoveRange(permissoes.Where(x => !desejadas.Contains(x.ClaimValue!)));
+            foreach (var permissao in desejadas.Except(permissoes.Select(x => x.ClaimValue!)))
+            {
+                _context.RoleClaims.Add(new IdentityRoleClaim<Guid>
+                {
+                    RoleId = perfil.Id, ClaimType = Permissoes.ClaimType, ClaimValue = permissao
+                });
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 

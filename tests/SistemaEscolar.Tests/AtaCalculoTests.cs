@@ -115,7 +115,7 @@ public sealed class AtaCalculoTests
     [InlineData(Perfis.Secretaria, false)]
     public void AvaliacaoFinal_SoADiretoriaLanca(string perfil, bool podeLancar)
     {
-        Assert.Equal(podeLancar, PermissoesPerfil.PodeLancarAvaliacaoFinal(new FakeCurrentUserService(null, perfil).IsInRole));
+        Assert.Equal(podeLancar, PermissoesPerfil.PodeLancarAvaliacaoFinal(new FakeCurrentUserService(null, perfil).TemPermissao));
     }
 
     private static ResultadoAcademicoDto Resultado(AtaDisciplinaColunaDto disciplina, decimal resultadoFinal, string situacao, decimal? avaliacaoFinal = null) =>

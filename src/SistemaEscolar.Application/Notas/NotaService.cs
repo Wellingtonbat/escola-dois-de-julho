@@ -203,7 +203,7 @@ public sealed class NotaService : INotaService
         }
 
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !EhDiretoria())
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !PodeLancarComPeriodoFechado())
         {
             return false;
         }
@@ -232,7 +232,7 @@ public sealed class NotaService : INotaService
         }
 
         var periodo = await _periodoService.ObterPorIdAsync(nota.PeriodoLancamentoId, cancellationToken);
-        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !EhDiretoria())
+        if (periodo is not null && !PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !PodeLancarComPeriodoFechado())
         {
             return false;
         }
@@ -316,7 +316,7 @@ public sealed class NotaService : INotaService
             return NotaCreateResult.Fail("Não há período de lançamento configurado com este identificador.");
         }
 
-        if (!PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !EhDiretoria())
+        if (!PeriodoDisponibilidade.EstaAberto(periodo, HorarioBrasilia.Agora) && !PodeLancarComPeriodoFechado())
         {
             return NotaCreateResult.Fail(PeriodoDisponibilidade.ObterMotivoFechado(periodo, HorarioBrasilia.Agora));
         }
@@ -360,17 +360,17 @@ public sealed class NotaService : INotaService
 
     private const string MensagemSomenteConsulta = "Seu perfil tem acesso somente de consulta às notas.";
 
-    private bool EhDiretoria() => PermissoesPerfil.EhDiretoria(_currentUserService.IsInRole);
+    private bool PodeLancarComPeriodoFechado() => PermissoesPerfil.PodeLancarComPeriodoFechado(_currentUserService.TemPermissao);
 
-    private bool PodeAlterarNotas() => PermissoesPerfil.PodeAlterarNotas(_currentUserService.IsInRole);
+    private bool PodeAlterarNotas() => PermissoesPerfil.PodeAlterarNotas(_currentUserService.TemPermissao);
 
     // Visibilidade da lista: só o Professor "puro" enxerga apenas os próprios lançamentos.
-    private bool IsProfessorOnly() => PermissoesPerfil.EhApenasProfessor(_currentUserService.IsInRole);
+    private bool IsProfessorOnly() => PermissoesPerfil.TemVisaoRestrita(_currentUserService.TemPermissao);
 
     // Alteração de notas: quem edita como Professor fica restrito às suas turmas/disciplinas, mesmo que
     // também tenha um perfil de gestão que não seja Diretoria (ver PermissoesPerfil).
     private bool AlteracaoRestritaAoEscopo() =>
-        PermissoesPerfil.AlteracaoDeNotasRestritaAoEscopo(_currentUserService.IsInRole);
+        PermissoesPerfil.AlteracaoDeNotasRestritaAoEscopo(_currentUserService.TemPermissao);
 
     private async Task<(NotaCreateResult Result, NotaCreateRequest Request)> AplicarEscopoDoProfessorAsync(NotaCreateRequest request, CancellationToken cancellationToken)
     {

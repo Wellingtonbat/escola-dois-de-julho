@@ -29,9 +29,9 @@ public sealed class RecuperacaoFinalService : IRecuperacaoFinalService
     public async Task<RecuperacaoFinalSaveResult> SalvarAsync(RecuperacaoFinalSaveRequest request, CancellationToken cancellationToken = default)
     {
         // A Avaliação Final (nome usado na escola para a Recuperação Final anual) é lançada só pela Diretoria.
-        if (!PermissoesPerfil.PodeLancarAvaliacaoFinal(_currentUserService.IsInRole))
+        if (!PermissoesPerfil.PodeLancarAvaliacaoFinal(_currentUserService.TemPermissao))
         {
-            return RecuperacaoFinalSaveResult.Fail("Somente Diretor ou Vice-Diretor podem lançar a Avaliação Final.");
+            return RecuperacaoFinalSaveResult.Fail("Seu perfil não tem permissão para lançar a Avaliação Final.");
         }
 
         if (request.Valor < 0m || request.Valor > 10m)

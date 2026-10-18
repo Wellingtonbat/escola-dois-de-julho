@@ -320,9 +320,9 @@ public sealed class IndexModel : PageModel
     }
 
     private bool CanManageAlunos() =>
-        User.EhGestao();
+        User.PodeGerenciarAlunos();
 
-    private bool IsProfessorOnly() => User.EhApenasProfessor();
+    private bool IsProfessorOnly() => User.TemVisaoRestrita();
 
     private async Task LoadSeriesAsync(CancellationToken cancellationToken)
     {

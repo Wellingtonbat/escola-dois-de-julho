@@ -74,7 +74,7 @@ public sealed class IndexModel : PageModel
                     Titulo(column, "3. Quem pode fazer o quê? (Perfis de acesso)");
                     Paragrafo(column,
                         "Cada pessoa que usa o sistema tem um \"crachá\" chamado perfil. O crachá decide quais portas (telas) essa " +
-                        "pessoa pode abrir. Existem 5 crachás diferentes:");
+                        "pessoa pode abrir. O sistema já vem com 5 crachás (abaixo, o que cada um faz no padrão):");
                     Bullet(column, "Diretor(a) — o crachá mais completo. Pode fazer absolutamente tudo no sistema, inclusive coisas que mais ninguém pode, como alterar notas com o trimestre fechado.");
                     Bullet(column, "Vice-Diretor(a) — tem exatamente as mesmas permissões do Diretor. Na escola, costuma ser um professor: ele continua com as turmas e disciplinas dele, como qualquer professor, mas enxerga e faz tudo o que o Diretor faz. Quem marca um professor como Vice-Diretor é o Diretor (ou outro Vice-Diretor), na tela de Professores.");
                     Bullet(column, "Coordenador(a) — cuida do dia a dia acadêmico (alunos, turmas, professores) e pode abrir e fechar trimestres. As notas são só de consulta: o Coordenador vê tudo, mas não altera nenhuma nota.");
@@ -85,6 +85,9 @@ public sealed class IndexModel : PageModel
                         "Já o Professor enxerga um sistema bem mais enxuto, com menos botões — isso é de propósito, para simplificar o dia a dia dele. " +
                         "Sobre notas: quem altera são o Diretor, o Vice-Diretor (em qualquer período) e o Professor (só com o trimestre aberto, nas suas turmas). " +
                         "Coordenador e Secretária apenas consultam.");
+                    Paragrafo(column,
+                        "Isso é o padrão. A escola pode mudar o que cada crachá faz, ou criar crachás novos (por exemplo, \"Auxiliar de " +
+                        "Secretaria\"), na tela Perfis e Permissões, sem precisar chamar o suporte. Veja como na seção 14.");
 
                     Titulo(column, "4. O Painel Inicial (Dashboard)");
                     Paragrafo(column,
@@ -154,7 +157,7 @@ public sealed class IndexModel : PageModel
                         "E o Professor? Ele vê esses mesmos gráficos, mas no lugar do filtro de Professor aparece o campo \"Visão\", com " +
                         "duas opções: \"Minhas turmas\" (o padrão), que mostra só as turmas e disciplinas dele, e \"Escola inteira\", " +
                         "para ele comparar o desempenho das suas turmas com o da escola. Ele não consegue escolher outro professor. Mais " +
-                        "detalhes na seção 15.");
+                        "detalhes na seção 16.");
                     Print(column, imagens["dash-visao-professor"], "Filtros vistos pelo Professor: no lugar de \"Professor\" aparece o campo \"Visão\".");
                     Paragrafo(column,
                         "Uma dica final: se algum número parecer estranho, confira primeiro os filtros (a frase acima dos cartões mostra " +
@@ -319,19 +322,50 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["resultados-diretor"], "Tela de Resultados vista pelo Diretor: todos os alunos da escola.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "13. Usuários (só para Diretor, Vice-Diretor, Coordenador e Secretária)");
+                    Titulo(column, "13. Usuários");
                     Paragrafo(column,
-                        "Essa tela serve para criar os logins de Diretor, Vice-Diretor, Coordenador e Secretária (os logins de Professor são criados " +
+                        "Essa tela serve para criar os logins da equipe (Diretor, Vice-Diretor, Coordenador, Secretária e os perfis criados " +
+                        "pela escola) e escolher o perfil de cada um (os logins de Professor são criados " +
                         "automaticamente lá na tela de Professores). Quem cria um usuário novo escolhe uma senha padrão, e o sistema obriga " +
                         "a pessoa a trocar essa senha assim que ela entrar pela primeira vez — é uma proteção extra.");
                     Paragrafo(column,
-                        "Por segurança, as contas de Diretor e de Vice-Diretor só podem ser criadas, editadas, ativadas/desativadas, excluídas " +
-                        "ou ter a senha redefinida por outro Diretor ou Vice-Diretor. Para Coordenador e Secretária essas opções aparecem para " +
-                        "todos os perfis administrativos.");
+                        "Por segurança, você só cria, edita, ativa/desativa, exclui ou redefine a senha de contas cujo perfil não tenha mais " +
+                        "permissões do que o seu. Na prática: as contas de Diretor e Vice-Diretor só são gerenciadas por eles, e quem não pode " +
+                        "abrir e fechar períodos (como a Secretária, no padrão) não mexe na conta de um Coordenador. Nas contas que você não " +
+                        "pode gerenciar, a coluna Ações mostra \"Sem permissão\".");
                     Print(column, imagens["usuarios"], "Tela de Usuários: cadastro de Diretor, Vice-Diretor, Coordenador e Secretária.");
                     Print(column, imagens["trocar-senha"], "Tela mostrada automaticamente no primeiro acesso, obrigando a criar uma nova senha.");
 
-                    Titulo(column, "14. Auditoria (só para Diretor e Vice-Diretor)");
+                    column.Item().PageBreak();
+                    Titulo(column, "14. Perfis e Permissões");
+                    Paragrafo(column,
+                        "Aqui a escola decide o que cada perfil pode fazer, sem precisar pedir ao suporte. No padrão, só o Diretor e o " +
+                        "Vice-Diretor veem esta tela (no menu Administração). A lista mostra cada perfil, quantas pessoas o usam e quantas " +
+                        "permissões ele tem.");
+                    Print(column, imagens["perfis-lista"], "Tela Perfis e Permissões: os perfis que vêm com o sistema e os criados pela escola.");
+                    Paragrafo(column, "Para mudar o que um perfil pode fazer:");
+                    Bullet(column, "Passo 1 — Clique no lápis do perfil (ou em qualquer lugar da linha).");
+                    Bullet(column, "Passo 2 — Marque ou desmarque as permissões. Elas estão agrupadas por assunto (Notas, Períodos, Atas, Cadastros...), e cada uma tem uma explicação curta embaixo. \"Marcar todas\" e \"Desmarcar\" valem para o grupo inteiro.");
+                    Bullet(column, "Passo 3 — Clique em \"Salvar Permissões\". Quem usa aquele perfil passa a ver a mudança em até 1 minuto, sem precisar sair e entrar de novo.");
+                    Print(column, imagens["perfis-editar"], "Exemplo: editando o perfil Coordenador. Aqui, \"Abrir e fechar períodos\" foi desmarcado.");
+                    Paragrafo(column,
+                        "Para criar um perfil novo, clique em \"Novo Perfil\", dê um nome e marque as permissões. O jeito mais rápido é " +
+                        "escolher em \"Começar com as permissões de\" um perfil parecido e só ajustar o que for diferente (o botão de copiar, " +
+                        "na lista, faz a mesma coisa). Depois de criado, o perfil aparece na tela Usuários para ser escolhido nas contas.");
+                    PrintMenor(column, imagens["perfis-novo"], "Criando um perfil a partir das permissões de outro.");
+                    Paragrafo(column, "Algumas permissões merecem atenção:");
+                    Bullet(column, "\"Ver a escola inteira\" — sem ela, a pessoa só enxerga as turmas e disciplinas em que é professora, e o menu Cadastros some. É o que acontece com o Professor.");
+                    Bullet(column, "\"Lançar notas de qualquer turma\" — sem ela, quem lança notas fica preso às próprias turmas e disciplinas.");
+                    Bullet(column, "\"Cadastrar e editar períodos\" — mudar as datas de um período também abre ou fecha o lançamento. Para tirar de alguém o controle dos trimestres, desmarque também esta, além de \"Abrir e fechar períodos\".");
+                    Paragrafo(column, "Regras de segurança (valem para todos, sempre):");
+                    Bullet(column, "Você só concede permissões que também tem. As que você não tem aparecem bloqueadas.");
+                    Bullet(column, "Você só altera um perfil que não tenha mais permissões do que o seu. Os demais você apenas consulta.");
+                    Bullet(column, "O perfil Diretor tem sempre todas as permissões e não pode ser alterado, para que a escola nunca fique sem alguém com acesso total.");
+                    Bullet(column, "Você não consegue retirar a permissão \"Gerenciar perfis e permissões\" de um perfil que você mesmo usa.");
+                    Bullet(column, "Os perfis que vêm com o sistema não podem ser renomeados nem excluídos. Um perfil criado pela escola só pode ser excluído quando ninguém o usa.");
+                    Bullet(column, "Toda mudança de permissão fica registrada na Auditoria (\"Permissões de perfil\": Concedida ou Retirada), com quem fez e quando.");
+
+                    Titulo(column, "15. Auditoria");
                     Paragrafo(column,
                         "A tela de Auditoria responde a pergunta \"quem mexeu nisso e quando?\". Toda vez que alguém cadastra, altera ou exclui " +
                         "algo no sistema (uma nota, um aluno, um período, um usuário, o perfil de alguém...), fica um registro com o dia e a hora " +
@@ -339,10 +373,10 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "Filtros — período (por padrão, os últimos 30 dias), usuário (por nome ou CPF), o que foi alterado (notas, alunos, professores, usuários...) e o tipo de ação (criado, alterado ou excluído).");
                     Bullet(column, "Detalhes — clique em \"campo(s)\" na última coluna para ver, campo a campo, o que mudou. Por exemplo: 1ª avaliação: 5,5 → 7,25.");
                     Bullet(column, "Privacidade — senhas nunca aparecem: uma troca de senha é registrada apenas como \"Senha: alterada\". Logins e tentativas de login não entram na lista.");
-                    Bullet(column, "Acesso — somente Diretor e Vice-Diretor veem esta tela; para os demais perfis o menu \"Auditoria\" nem aparece. Registros anteriores a esta função podem aparecer como \"Sistema / não identificado\", pois na época o sistema ainda não guardava quem fez a ação.");
+                    Bullet(column, "Acesso — no padrão, somente Diretor e Vice-Diretor veem esta tela; para os demais perfis o menu \"Auditoria\" nem aparece. Registros anteriores a esta função podem aparecer como \"Sistema / não identificado\", pois na época o sistema ainda não guardava quem fez a ação.");
 
                     column.Item().PageBreak();
-                    Titulo(column, "15. O que o Professor enxerga");
+                    Titulo(column, "16. O que o Professor enxerga");
                     Paragrafo(column,
                         "Quando um Professor entra no sistema, o menu lateral aparece bem mais curto: só Dashboard, Notas, Resultados e o botão " +
                         "para baixar este manual. Ele não vê Alunos, Disciplinas, Turmas, Séries, Períodos nem Usuários — essas telas ficam " +
@@ -360,22 +394,25 @@ public sealed class IndexModel : PageModel
                     Print(column, imagens["resultados-professor"], "Resultados vista por um Professor: aparecem só os alunos dele mesmo.");
                     Paragrafo(column,
                         "Atenção: essa visão simplificada vale só para quem é apenas Professor. Um professor que também é Vice-Diretor " +
-                        "vê o sistema completo, como o Diretor.");
+                        "vê o sistema completo, como o Diretor. (Essa visão simplificada vem da falta da permissão \"Ver a escola inteira\" no perfil Professor.)");
 
                     column.Item().PageBreak();
-                    Titulo(column, "16. Resumo: o que cada perfil pode fazer");
-                    Paragrafo(column, "Uma tabela rápida para consultar sempre que tiver dúvida sobre alguma permissão:");
+                    Titulo(column, "17. Resumo: o que cada perfil pode fazer (padrão)");
+                    Paragrafo(column,
+                        "Uma tabela rápida com as permissões com que cada perfil vem no sistema. Se a escola mudou algum perfil em " +
+                        "Perfis e Permissões, vale o que está lá.");
                     TabelaPermissoes(column);
 
                     column.Item().PageBreak();
-                    Titulo(column, "17. Problemas comuns e como resolver");
+                    Titulo(column, "18. Problemas comuns e como resolver");
                     Bullet(column, "\"Não consigo lançar nota\": confira se já existe um Período cadastrado para aquele ano/trimestre, e se ele está Aberto.");
-                    Bullet(column, "\"O botão de editar a nota sumiu\": o período dela provavelmente está Fechado — só o Diretor ou o Vice-Diretor podem editar a nota (ou o Diretor, Vice-Diretor ou Coordenador podem reabrir o período). Se o seu perfil é Coordenador ou Secretária, as notas são somente de consulta.");
+                    Bullet(column, "\"O botão de editar a nota sumiu\": o período dela provavelmente está Fechado — só quem tem a permissão \"Lançar notas com o período fechado\" (no padrão, Diretor e Vice-Diretor) edita a nota, ou quem tem \"Abrir e fechar períodos\" pode reabrir o período. Se o seu perfil só consulta notas (no padrão, Coordenador e Secretária), o botão não aparece.");
                     Bullet(column, "\"CPF ou senha inválidos\": confira se digitou o CPF certo e a senha corretamente (maiúsculas/minúsculas importam). Se persistir, peça para o Diretor redefinir sua senha.");
-                    Bullet(column, "\"Esqueci a senha\": qualquer Diretor, Vice-Diretor, Coordenador ou Secretária pode redefinir a sua senha na tela de Usuários (ou de Professores, se você for professor). Contas de Diretor e Vice-Diretor só podem ser redefinidas por outro Diretor ou Vice-Diretor.");
+                    Bullet(column, "\"Esqueci a senha\": quem gerencia usuários (no padrão, Diretor, Vice-Diretor, Coordenador e Secretária) pode redefinir a sua senha na tela de Usuários (ou de Professores, se você for professor), desde que o seu perfil não tenha mais permissões que o dela. Contas de Diretor e Vice-Diretor só são redefinidas por outro Diretor ou Vice-Diretor.");
+                    Bullet(column, "\"Sumiu um botão ou uma tela do meu menu\": o seu perfil pode ter sido alterado em Perfis e Permissões. Fale com quem gerencia os perfis na escola.");
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
-                    Titulo(column, "18. Controle de versão");
+                    Titulo(column, "19. Controle de versão");
                     Paragrafo(column, $"Este manual acompanha a versão {appVersion} do sistema da Escola Dois de Julho, desenvolvido por Well Tech.");
                 });
 
@@ -475,10 +512,12 @@ public sealed class IndexModel : PageModel
             Linha("Lançar a Avaliação Final", "Sim", "Não", "Não", "Não");
             Linha("Baixar o Boletim do Aluno em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Baixar os Boletins de uma Turma em PDF", "Sim", "Sim", "Sim", "Não");
-            Linha("Gerenciar Usuários (Coord./Secretária)", "Sim", "Sim", "Sim", "Não");
+            Linha("Gerenciar Usuários (Coordenador)", "Sim", "Sim", "Não", "Não");
+            Linha("Gerenciar Usuários (Secretária)", "Sim", "Sim", "Sim", "Não");
             Linha("Gerenciar contas de Diretor e Vice-Diretor", "Sim", "Não", "Não", "Não");
             Linha("Marcar um Professor como Vice-Diretor", "Sim", "Não", "Não", "Não");
             Linha("Consultar a Auditoria", "Sim", "Não", "Não", "Não");
+            Linha("Gerenciar Perfis e Permissões", "Sim", "Não", "Não", "Não");
             Linha("Baixar este Manual", "Sim", "Sim", "Sim", "Sim");
         });
     }
@@ -492,7 +531,7 @@ public sealed class IndexModel : PageModel
             "periodos-diretor", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
             "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
             "dash-filtros", "dash-cartoes", "dash-media-disciplina", "dash-rosca", "dash-evolucao", "dash-ranking", "dash-mapa",
-            "dash-visao-professor", "avf-filtro", "avf-tabela",
+            "dash-visao-professor", "avf-filtro", "avf-tabela", "perfis-lista", "perfis-editar", "perfis-novo",
         };
 
         return nomes.ToDictionary(nome => nome, nome => System.IO.File.ReadAllBytes(Path.Combine(pasta, $"{nome}.png")));

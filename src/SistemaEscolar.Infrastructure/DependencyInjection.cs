@@ -11,6 +11,7 @@ using SistemaEscolar.Application.Notas;
 using SistemaEscolar.Application.Periodos;
 using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Resultados;
+using SistemaEscolar.Application.Seguranca;
 using SistemaEscolar.Application.Series;
 using SistemaEscolar.Application.Turmas;
 using SistemaEscolar.Application.Usuarios;
@@ -47,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IAlunoImportService, AlunoImportService>();
         services.AddScoped<IAccountProvisioner, AccountProvisioner>();
         services.AddScoped<IUsuarioService, UsuarioService>();
+        services.AddScoped<IPerfilService, PerfilService>();
 
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
         {
@@ -79,14 +81,9 @@ public static class DependencyInjection
             options.AccessDeniedPath = "/AccessDenied";
         });
 
-        services.AddAuthorization(options =>
-        {
-            // Diretor e Vice-Diretor têm as mesmas permissões (ver PermissoesPerfil).
-            options.AddPolicy("DiretorOnly", policy => policy.RequireRole(Perfis.Diretor, Perfis.ViceDiretor));
-            options.AddPolicy("DiretorOrCoordenador", policy => policy.RequireRole(
-                Perfis.Diretor, Perfis.ViceDiretor, Perfis.Coordenador, Perfis.CoordenadorLegado, Perfis.Secretaria));
-            options.AddPolicy("ProfessorOrDiretor", policy => policy.RequireRole(Perfis.Professor, Perfis.Diretor, Perfis.ViceDiretor));
-        });
+        // As permissões de cada tela vêm dos perfis (tela "Perfis e Permissões") e são verificadas por
+        // PermissoesPerfil nas páginas e nos serviços.
+        services.AddAuthorization();
 
         return services;
     }

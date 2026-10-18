@@ -142,7 +142,7 @@ public sealed class DashboardService : IDashboardService
     // trocado pelo dele, para que ele não consiga ver o recorte individual de um colega.
     private async Task<DashboardFiltroDto> AplicarEscopoDoProfessorAsync(DashboardFiltroDto filtro, CancellationToken cancellationToken)
     {
-        if (filtro.ProfessorId is null || !PermissoesPerfil.EhApenasProfessor(_currentUserService.IsInRole))
+        if (filtro.ProfessorId is null || !PermissoesPerfil.TemVisaoRestrita(_currentUserService.TemPermissao))
         {
             return filtro;
         }

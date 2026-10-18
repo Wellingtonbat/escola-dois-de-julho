@@ -151,7 +151,7 @@ public sealed class IndexModel : PageModel
         });
     }
 
-    // Só a Diretoria lança a Avaliação Final; os demais perfis apenas consultam.
+    // Só quem tem a permissão "Lançar a Avaliação Final" lança; os demais apenas consultam.
     private bool CanLancarRecuperacao() =>
         User.PodeLancarAvaliacaoFinal();
 

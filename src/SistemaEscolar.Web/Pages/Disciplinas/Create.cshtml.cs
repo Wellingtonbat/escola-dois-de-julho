@@ -89,7 +89,7 @@ public sealed class CreateModel : PageModel
     }
 
     private bool CanManageDisciplinas() =>
-        User.EhGestao();
+        User.PodeGerenciarDisciplinas();
 
     public sealed class InputModel
     {

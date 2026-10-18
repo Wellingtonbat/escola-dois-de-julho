@@ -230,5 +230,5 @@ public sealed class IndexModel : PageModel
     }
 
     private bool IsProfessorOnly() =>
-        User.EhApenasProfessor();
+        User.TemVisaoRestrita();
 }
