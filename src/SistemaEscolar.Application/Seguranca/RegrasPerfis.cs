@@ -18,9 +18,11 @@ public static class RegrasPerfis
 
     public static bool EhPadrao(string nome) => PerfisPadrao.Contains(nome);
 
-    // Diretor fica sempre com todas as permissões e não é editável: a escola nunca perde o acesso total.
+    // Diretor e Vice-Diretor ficam sempre com todas as permissões (acesso total) e não são editáveis: a escola
+    // nunca perde o acesso total, e permissões criadas em versões futuras chegam a eles automaticamente.
     public static bool EhSomenteLeitura(string nome) =>
-        string.Equals(nome, Perfis.Diretor, StringComparison.OrdinalIgnoreCase);
+        string.Equals(nome, Perfis.Diretor, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(nome, Perfis.ViceDiretor, StringComparison.OrdinalIgnoreCase);
 
     // Ordem na lista: perfis padrão primeiro, na hierarquia da escola; depois os criados, em ordem alfabética.
     public static int Ordem(string nome) => nome switch
@@ -87,7 +89,7 @@ public static class RegrasPerfis
 
         if (EhSomenteLeitura(nome))
         {
-            return "O perfil Diretor tem sempre todas as permissões e não pode ser alterado.";
+            return "Os perfis Diretor e Vice-Diretor têm sempre todas as permissões e não podem ser alterados.";
         }
 
         if (!PermissoesPerfil.CobrePermissoes(temPermissao, atuais))

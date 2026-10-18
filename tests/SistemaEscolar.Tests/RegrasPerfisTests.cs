@@ -63,10 +63,24 @@ public sealed class RegrasPerfisTests
     [Fact]
     public void NaoRetiraGerenciarPerfisDoProprioPerfil()
     {
-        var novas = Padrao(Perfis.ViceDiretor).Where(x => x != Permissoes.PerfisGerenciar).ToList();
+        var atuais = new[] { Permissoes.PerfisGerenciar, Permissoes.NotasVer };
+        var novas = new[] { Permissoes.NotasVer };
 
-        Assert.NotNull(RegrasPerfis.ValidarAlteracao(Perfil(Perfis.ViceDiretor), Perfis.ViceDiretor, Padrao(Perfis.ViceDiretor), novas, usuarioPertenceAoPerfil: true));
-        Assert.Null(RegrasPerfis.ValidarAlteracao(Perfil(Perfis.Diretor), Perfis.ViceDiretor, Padrao(Perfis.ViceDiretor), novas, usuarioPertenceAoPerfil: false));
+        Assert.NotNull(RegrasPerfis.ValidarAlteracao(CoordenadorQueGerenciaPerfis, "Gestor", atuais, novas, usuarioPertenceAoPerfil: true));
+        Assert.Null(RegrasPerfis.ValidarAlteracao(Perfil(Perfis.Diretor), "Gestor", atuais, novas, usuarioPertenceAoPerfil: false));
+    }
+
+    [Theory]
+    [InlineData(Perfis.Diretor)]
+    [InlineData(Perfis.ViceDiretor)]
+    public void DiretorEViceDiretor_TemAcessoTotalENaoSaoEditaveis(string perfil)
+    {
+        Assert.True(RegrasPerfis.EhSomenteLeitura(perfil));
+        Assert.Equal(Permissoes.Todas.Count, Padrao(perfil).Count);
+        // Nem o próprio Diretor consegue retirar algo do Vice-Diretor (ou de si mesmo).
+        var novas = Padrao(perfil).Where(x => x != Permissoes.AuditoriaVer).ToList();
+        Assert.NotNull(RegrasPerfis.ValidarAlteracao(Perfil(Perfis.Diretor), perfil, Padrao(perfil), novas, usuarioPertenceAoPerfil: false));
+        Assert.False(RegrasPerfis.PodeEditar(Perfil(Perfis.Diretor), perfil, Padrao(perfil)));
     }
 
     [Fact]

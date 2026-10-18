@@ -16,12 +16,12 @@ edita essa lista na tela **Administração > Perfis e Permissões** (`/Perfis`),
   uma mudança de permissão chega a quem está logado em até 1 minuto, sem novo login.
 - **Carga inicial**: na primeira inicialização após a atualização, `ApplicationDbInitializer` grava as permissões
   padrão (iguais às regras anteriores) em cada perfil e marca o perfil como inicializado; depois disso vale o que
-  for salvo na tela. O perfil **Diretor** recebe sempre todas as permissões.
+  for salvo na tela. Os perfis **Diretor** e **Vice-Diretor** recebem sempre todas as permissões (acesso total).
 - **Visão restrita**: sem a permissão "Ver a escola inteira" (`Escola.VerTudo`), o usuário só enxerga as turmas e
   disciplinas em que é professor e não vê os Cadastros (é o caso do perfil Professor).
 - **Anti-escalonamento** (`RegrasPerfis` e `PermissoesPerfil.CobrePermissoes`): só se concede uma permissão que se
   tem; só se altera/exclui um perfil, ou se gerencia uma conta, cujo perfil não tenha mais permissões que as suas;
-  o Diretor não é editável; ninguém retira "Gerenciar perfis e permissões" do próprio perfil; perfis do sistema
+  Diretor e Vice-Diretor não são editáveis; ninguém retira "Gerenciar perfis e permissões" do próprio perfil; perfis do sistema
   não são renomeados nem excluídos; perfil criado só é excluído sem usuários.
 - **Auditoria**: alterações em `AspNetRoles` (perfis) e `AspNetRoleClaims` (permissões: Concedida/Retirada) são
   registradas; a carga inicial feita pelo sistema não.

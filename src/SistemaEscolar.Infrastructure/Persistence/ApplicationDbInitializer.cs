@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Alunos;
+using SistemaEscolar.Application.Seguranca;
 using SistemaEscolar.Infrastructure.Identity;
 
 namespace SistemaEscolar.Infrastructure.Persistence;
@@ -448,8 +449,8 @@ public sealed class ApplicationDbInitializer
     }
 
     // Grava uma única vez as permissões padrão de cada perfil (as mesmas regras de antes da tela "Perfis e
-    // Permissões"); depois disso vale o que foi salvo na tela. O Diretor é a exceção: recebe sempre todas as
-    // permissões, inclusive as que forem criadas em versões futuras. Permissões que saíram do catálogo são removidas.
+    // Permissões"); depois disso vale o que foi salvo na tela. Diretor e Vice-Diretor são a exceção: recebem sempre
+    // todas as permissões, inclusive as que forem criadas em versões futuras. Permissões que saíram do catálogo são removidas.
     private async Task SeedPermissoesDosPerfisAsync(CancellationToken cancellationToken)
     {
         var perfis = await _context.Roles.AsNoTracking().ToListAsync(cancellationToken);
@@ -464,7 +465,7 @@ public sealed class ApplicationDbInitializer
             var permissoes = doPerfil.Where(x => x.ClaimType == Permissoes.ClaimType).ToList();
             var inicializado = doPerfil.Any(x => x.ClaimType == Permissoes.ClaimTypeInicializado);
 
-            var desejadas = nome == Perfis.Diretor
+            var desejadas = RegrasPerfis.EhSomenteLeitura(nome)
                 ? Permissoes.Todas.Select(x => x.Codigo).ToHashSet()
                 : permissoes.Select(x => x.ClaimValue!).Where(Permissoes.Existe).ToHashSet();
             if (!inicializado)

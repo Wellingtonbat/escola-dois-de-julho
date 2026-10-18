@@ -360,7 +360,7 @@ public sealed class IndexModel : PageModel
                     Paragrafo(column, "Regras de segurança (valem para todos, sempre):");
                     Bullet(column, "Você só concede permissões que também tem. As que você não tem aparecem bloqueadas.");
                     Bullet(column, "Você só altera um perfil que não tenha mais permissões do que o seu. Os demais você apenas consulta.");
-                    Bullet(column, "O perfil Diretor tem sempre todas as permissões e não pode ser alterado, para que a escola nunca fique sem alguém com acesso total.");
+                    Bullet(column, "Diretor e Vice-Diretor têm sempre todas as permissões (acesso total) e não podem ser alterados, para que a escola nunca fique sem alguém com acesso total.");
                     Bullet(column, "Você não consegue retirar a permissão \"Gerenciar perfis e permissões\" de um perfil que você mesmo usa.");
                     Bullet(column, "Os perfis que vêm com o sistema não podem ser renomeados nem excluídos. Um perfil criado pela escola só pode ser excluído quando ninguém o usa.");
                     Bullet(column, "Toda mudança de permissão fica registrada na Auditoria (\"Permissões de perfil\": Concedida ou Retirada), com quem fez e quando.");
