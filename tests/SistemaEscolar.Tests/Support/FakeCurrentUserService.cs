@@ -22,4 +22,8 @@ internal sealed class FakeCurrentUserService : ICurrentUserService
     {
         return _roles.Contains(role);
     }
+
+    // Permissões padrão de cada perfil, como gravadas na primeira inicialização.
+    public bool TemPermissao(string permissao) =>
+        _roles.Any(perfil => Permissoes.PadraoDoPerfil(perfil).Contains(permissao));
 }

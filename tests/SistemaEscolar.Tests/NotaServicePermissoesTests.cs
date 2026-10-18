@@ -307,5 +307,6 @@ public sealed class NotaServicePermissoesTests
         public Task<bool> ExcluirAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<ProfessorCreateResult> RedefinirSenhaAsync(Guid id, string novaSenha, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlySet<string>> ListarCpfsViceDiretoresAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> PodeGerenciarDiretoriaAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

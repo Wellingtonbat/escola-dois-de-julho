@@ -53,6 +53,9 @@ public class IndexModel : PageModel
     // "Minhas turmas" (o próprio ProfessorId, padrão) e "Escola inteira" (sem professor).
     public bool EhApenasProfessor { get; private set; }
 
+    // Perfil sem "Ver o Dashboard": a página inicial mostra só as boas-vindas (é para cá que o login leva).
+    public bool SemAcessoAoPainel { get; private set; }
+
     public Guid? ProfessorLogadoId { get; private set; }
 
     public IReadOnlyList<int> AnosDisponiveis { get; private set; } = Array.Empty<int>();
@@ -70,7 +73,13 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        EhApenasProfessor = User.EhApenasProfessor();
+        if (!PodeVerDashboard())
+        {
+            SemAcessoAoPainel = true;
+            return;
+        }
+
+        EhApenasProfessor = User.TemVisaoRestrita();
 
         var periodos = await _periodoService.ListarAsync(null, cancellationToken);
         if (!EhApenasProfessor)
@@ -134,5 +143,5 @@ public class IndexModel : PageModel
     }
 
     private bool PodeVerDashboard() =>
-        User.EhGestao() || User.IsInRole(Perfis.Professor);
+        User.PodeVerPainel();
 }

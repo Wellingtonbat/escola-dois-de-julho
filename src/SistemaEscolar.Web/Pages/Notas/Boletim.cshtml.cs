@@ -111,9 +111,9 @@ public sealed class BoletimModel : PageModel
         PeriodoSelecionadoId = periodoSelecionado.Id;
         PeriodoSelecionadoAberto = PeriodoDisponibilidade.EstaAberto(periodoSelecionado, hoje);
         // Só quem pode alterar notas edita (Coordenador e Secretária apenas consultam); fora do período
-        // aberto, somente a Diretoria (Diretor ou Vice-Diretor).
+        // aberto, somente quem tem a permissão "Lançar notas com o período fechado".
         PodeAlterarNotas = User.PodeAlterarNotas();
-        PodeEditar = PodeAlterarNotas && (PeriodoSelecionadoAberto || User.EhDiretoria());
+        PodeEditar = PodeAlterarNotas && (PeriodoSelecionadoAberto || User.PodeLancarComPeriodoFechado());
 
         Tabs = periodosDoAno
             .Select(x => new PeriodoTabVm(x.Id, x.Trimestre, $"{x.Trimestre}º Trimestre", x.Id == periodoSelecionado.Id))
@@ -312,7 +312,7 @@ public sealed class BoletimModel : PageModel
     {
         if (!PodeGerarBoletimPdf())
         {
-            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor, Coordenador ou Secretaria podem baixar o boletim em PDF.";
+            TempData["ErrorMessage"] = "Seu perfil não tem permissão para baixar boletins em PDF.";
             return RedirectToPage("/Notas/Boletim", new { AlunoId, PeriodoId });
         }
 
@@ -362,7 +362,7 @@ public sealed class BoletimModel : PageModel
     {
         if (!PodeGerarBoletimPdf())
         {
-            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor, Coordenador ou Secretaria podem baixar boletins em PDF.";
+            TempData["ErrorMessage"] = "Seu perfil não tem permissão para baixar boletins em PDF.";
             return RedirectToPage("/Notas/Index");
         }
 
@@ -647,7 +647,7 @@ public sealed class BoletimModel : PageModel
     };
 
     private bool PodeGerarBoletimPdf() =>
-        User.EhGestao();
+        User.PodeBaixarBoletimPdf();
 
     public sealed record BoletimTrimestreVm(string Av1, string Av2, string Av3, string ResUnidade, string RecParalela, string ResFinal);
 
@@ -668,7 +668,7 @@ public sealed class BoletimModel : PageModel
         User.PodeAlterarNotas();
 
     private bool IsProfessorOnly() =>
-        User.EhApenasProfessor();
+        User.TemVisaoRestrita();
 
     private static NotaCalculo.Resultado Calcular(NotaListItemDto? nota) => NotaCalculo.Calcular(nota);
 

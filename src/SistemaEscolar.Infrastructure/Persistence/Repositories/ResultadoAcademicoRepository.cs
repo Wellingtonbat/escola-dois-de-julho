@@ -64,7 +64,7 @@ public sealed class ResultadoAcademicoRepository : IResultadoAcademicoRepository
 
         // Só o Professor "puro" enxerga apenas os próprios lançamentos. Quem acumula Professor + gestão
         // (ex.: professor que também é Vice-Diretor) enxerga os resultados de todos.
-        if (PermissoesPerfil.EhApenasProfessor(_currentUserService.IsInRole))
+        if (PermissoesPerfil.TemVisaoRestrita(_currentUserService.TemPermissao))
         {
             var cpf = NormalizeCpf(_currentUserService.UserName);
             if (string.IsNullOrWhiteSpace(cpf))

@@ -78,7 +78,7 @@ public sealed class CreateModel : PageModel
     }
 
     private bool CanManageTurmas() =>
-        User.EhGestao();
+        User.PodeGerenciarTurmas();
 
     public sealed class InputModel
     {

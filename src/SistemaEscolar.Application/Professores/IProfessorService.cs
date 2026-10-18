@@ -13,4 +13,7 @@ public interface IProfessorService
 
     // CPFs dos professores que também têm o perfil de Vice-Diretor (para sinalizar na listagem).
     Task<IReadOnlySet<string>> ListarCpfsViceDiretoresAsync(CancellationToken cancellationToken = default);
+
+    // Pode marcar um professor como Vice-Diretor e mexer em contas da Diretoria.
+    Task<bool> PodeGerenciarDiretoriaAsync(CancellationToken cancellationToken = default);
 }

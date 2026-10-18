@@ -7,7 +7,7 @@
     // Secretária só consultam; Diretor/Vice-Diretor e Professor também alteram.
     var podeGerenciar = User.PodeAcessarNotas();
     var podeAlterar = User.PodeAlterarNotas();
-    var podeGerarBoletimTurma = User.EhGestao();
+    var podeGerarBoletimTurma = User.PodeBaixarBoletimPdf();
 
     var turmaSelecionadaNome = Model.TurmaId.HasValue
         ? Model.TurmasParaFiltro.FirstOrDefault(t => t.Value == Model.TurmaId.Value.ToString())?.Text

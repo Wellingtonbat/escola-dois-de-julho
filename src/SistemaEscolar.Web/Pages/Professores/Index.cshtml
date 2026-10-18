@@ -3,9 +3,10 @@
 @{
     ViewData["Title"] = "Professores";
     ViewData["Breadcrumb"] = new[] { "Acadêmico", "Professores" };
-    var podeGerenciar = User.EhGestao();
-    // Só a Diretoria concede/revoga o perfil de Vice-Diretor e mexe na conta (senha, exclusão) de quem o tem.
-    var podeDefinirViceDiretor = User.EhDiretoria();
+    var podeGerenciar = User.PodeGerenciarProfessores();
+    // Só quem tem todas as permissões da Diretoria concede/revoga o perfil de Vice-Diretor e mexe na conta
+    // (senha, exclusão) de quem o tem.
+    var podeDefinirViceDiretor = Model.PodeDefinirViceDiretor;
 
     var statusLabel = Model.Status switch { "ativos" => "Apenas ativos", "inativos" => "Apenas inativos", _ => null };
     var filtrosAtivos = new List<(string Label, string Campo)>();
@@ -271,7 +272,7 @@
     </div>
 </section>
 
-@if (User.EhGestao())
+@if (User.PodeGerenciarProfessores())
 {
     <div class="modal fade" id="createProfessorModal" tabindex="-1" aria-labelledby="createProfessorModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-tall modal-xl">

@@ -49,7 +49,7 @@ public sealed class IndexModel : PageModel
     {
         if (!User.PodeVerAuditoria())
         {
-            TempData["ErrorMessage"] = "Somente Diretor ou Vice-Diretor podem consultar a auditoria.";
+            TempData["ErrorMessage"] = "Seu perfil não tem permissão para consultar a auditoria.";
             return RedirectToPage("/Index");
         }
 

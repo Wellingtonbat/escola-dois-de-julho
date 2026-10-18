@@ -5,7 +5,8 @@ using SistemaEscolar.Application.Abstractions;
 
 namespace SistemaEscolar.Infrastructure.Identity;
 
-// Acrescenta o nome completo aos claims do login (usado pela auditoria).
+// Acrescenta o nome completo aos claims do login (usado pela auditoria). A classe base já inclui os claims
+// dos perfis (as permissões de cada um, gravadas em AspNetRoleClaims); só a marca interna de inicialização sai.
 public sealed class ApplicationUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<ApplicationUser, ApplicationRole>
 {
     public ApplicationUserClaimsPrincipalFactory(
@@ -19,6 +20,11 @@ public sealed class ApplicationUserClaimsPrincipalFactory : UserClaimsPrincipalF
     protected override async Task<ClaimsIdentity> GenerateClaimsAsync(ApplicationUser user)
     {
         var identity = await base.GenerateClaimsAsync(user);
+
+        foreach (var marca in identity.FindAll(Permissoes.ClaimTypeInicializado).ToList())
+        {
+            identity.RemoveClaim(marca);
+        }
 
         if (!string.IsNullOrWhiteSpace(user.FullName))
         {

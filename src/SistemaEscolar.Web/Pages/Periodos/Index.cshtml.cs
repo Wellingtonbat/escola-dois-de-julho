@@ -109,7 +109,7 @@ public sealed class IndexModel : PageModel
     {
         if (!CanAbrirFecharPeriodo())
         {
-            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor ou Coordenador podem abrir períodos.";
+            TempData["ErrorMessage"] = "Seu perfil não tem permissão para abrir períodos.";
             return RedirectToPage();
         }
 
@@ -124,7 +124,7 @@ public sealed class IndexModel : PageModel
     {
         if (!CanAbrirFecharPeriodo())
         {
-            TempData["ErrorMessage"] = "Somente Diretor, Vice-Diretor ou Coordenador podem fechar períodos.";
+            TempData["ErrorMessage"] = "Seu perfil não tem permissão para fechar períodos.";
             return RedirectToPage();
         }
 
@@ -258,9 +258,9 @@ public sealed class IndexModel : PageModel
         }).GeneratePdf();
     }
 
-    private bool CanManagePeriodos() => User.EhGestao();
+    private bool CanManagePeriodos() => User.PodeGerenciarPeriodos();
 
     private bool CanAbrirFecharPeriodo() => User.PodeAbrirFecharPeriodo();
 
-    private bool IsProfessorOnly() => User.EhApenasProfessor();
+    private bool IsProfessorOnly() => User.TemVisaoRestrita();
 }

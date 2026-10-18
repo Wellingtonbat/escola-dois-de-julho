@@ -350,7 +350,7 @@ public sealed class ResultadoAcademicoRepositoryTests
 
         await context.SaveChangesAsync();
 
-        var currentUser = new FakeCurrentUserService(null);
+        var currentUser = new FakeCurrentUserService(null, "Diretor");
         var repository = new ResultadoAcademicoRepository(context, currentUser);
 
         var result = await repository.ListarAsync(new ResultadoAcademicoFilter(2026, "8o Ano A", "8o Ano", "Aprovado"));

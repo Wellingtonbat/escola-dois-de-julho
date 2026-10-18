@@ -1,3 +1,4 @@
+using SistemaEscolar.Application.Seguranca;
 using SistemaEscolar.Application.Abstractions;
 using SistemaEscolar.Application.Disciplinas;
 using SistemaEscolar.Application.Series;
@@ -14,8 +15,9 @@ public sealed class ProfessorService : IProfessorService
     private readonly ISerieRepository _serieRepository;
     private readonly IAccountProvisioner _accountProvisioner;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IPerfilService _perfilService;
 
-    private const string MensagemSomenteDiretoria = "Somente Diretor ou Vice-Diretor podem gerenciar o perfil e o acesso de um Vice-Diretor.";
+    private const string MensagemSomenteDiretoria = "Somente quem tem todas as permissões da Diretoria pode gerenciar o perfil e o acesso de um Diretor ou Vice-Diretor.";
 
     public ProfessorService(
         IProfessorRepository professorRepository,
@@ -24,7 +26,8 @@ public sealed class ProfessorService : IProfessorService
         IDisciplinaRepository disciplinaRepository,
         ISerieRepository serieRepository,
         IAccountProvisioner accountProvisioner,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IPerfilService perfilService)
     {
         _professorRepository = professorRepository;
         _atribuicaoRepository = atribuicaoRepository;
@@ -33,6 +36,7 @@ public sealed class ProfessorService : IProfessorService
         _serieRepository = serieRepository;
         _accountProvisioner = accountProvisioner;
         _currentUserService = currentUserService;
+        _perfilService = perfilService;
     }
 
     public async Task<IReadOnlyList<ProfessorListItemDto>> ListarAsync(ProfessorListFilter? filter = null, CancellationToken cancellationToken = default)
@@ -86,14 +90,14 @@ public sealed class ProfessorService : IProfessorService
             return ProfessorCreateResult.Fail("Defina a senha padrão do professor.");
         }
 
-        if (request.IsViceDiretor == true && !EhDiretoria())
+        if (request.IsViceDiretor == true && !await PodeGerenciarDiretoriaAsync(cancellationToken))
         {
             return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
         }
 
         // Criar o professor reaproveita (e redefine a senha de) uma conta que já exista para o CPF.
-        // Se essa conta for de Diretor ou Vice-Diretor, só a Diretoria pode fazer isso.
-        if (!EhDiretoria() && await ContaTemPerfilDeDiretoriaAsync(validation.UsuarioCpf, cancellationToken))
+        // Se essa conta for de Diretor ou Vice-Diretor, só quem tem todas as permissões deles pode fazer isso.
+        if (!await PodeGerenciarDiretoriaAsync(cancellationToken) && await ContaTemPerfilDeDiretoriaAsync(validation.UsuarioCpf, cancellationToken))
         {
             return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
         }
@@ -152,7 +156,7 @@ public sealed class ProfessorService : IProfessorService
             && request.IsViceDiretor.Value != (await _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.ViceDiretor, cancellationToken))
                 .Contains(cpfDaConta);
 
-        if (definirViceDiretor && !EhDiretoria())
+        if (definirViceDiretor && !await PodeGerenciarDiretoriaAsync(cancellationToken))
         {
             return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
         }
@@ -204,7 +208,7 @@ public sealed class ProfessorService : IProfessorService
         // Excluir um Vice-Diretor revoga as permissões de Diretoria dele, então é ação da Diretoria.
         var ehViceDiretor = (await _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.ViceDiretor, cancellationToken))
             .Contains(professor.UsuarioCpf);
-        if (ehViceDiretor && !EhDiretoria())
+        if (ehViceDiretor && !await PodeGerenciarDiretoriaAsync(cancellationToken))
         {
             return false;
         }
@@ -234,7 +238,7 @@ public sealed class ProfessorService : IProfessorService
         }
 
         // Redefinir a senha de quem tem permissões de Diretoria daria acesso a essas permissões.
-        if (!EhDiretoria() && await ContaTemPerfilDeDiretoriaAsync(professor.UsuarioCpf, cancellationToken))
+        if (!await PodeGerenciarDiretoriaAsync(cancellationToken) && await ContaTemPerfilDeDiretoriaAsync(professor.UsuarioCpf, cancellationToken))
         {
             return ProfessorCreateResult.Fail(MensagemSomenteDiretoria);
         }
@@ -253,7 +257,10 @@ public sealed class ProfessorService : IProfessorService
     public Task<IReadOnlySet<string>> ListarCpfsViceDiretoresAsync(CancellationToken cancellationToken = default) =>
         _accountProvisioner.ListarCpfsPorPerfilAsync(Perfis.ViceDiretor, cancellationToken);
 
-    private bool EhDiretoria() => PermissoesPerfil.EhDiretoria(_currentUserService.IsInRole);
+    // Conceder o perfil de Vice-Diretor ou mexer na conta de alguém da Diretoria exige ter todas as permissões
+    // desses perfis (regra contra escalonamento, ver PermissoesPerfil.CobrePermissoes).
+    public Task<bool> PodeGerenciarDiretoriaAsync(CancellationToken cancellationToken = default) =>
+        _perfilService.UsuarioAtualCobrePerfisAsync(new[] { Perfis.Diretor, Perfis.ViceDiretor }, cancellationToken);
 
     private async Task<bool> ContaTemPerfilDeDiretoriaAsync(string cpf, CancellationToken cancellationToken)
     {

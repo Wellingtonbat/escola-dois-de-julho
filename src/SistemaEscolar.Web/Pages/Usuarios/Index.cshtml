@@ -14,7 +14,7 @@
     <div class="panel-header d-flex justify-content-between align-items-center">
         <div>
             <h1 class="h5 mb-1">Gestão de Usuários</h1>
-            <p class="text-muted mb-0">Cadastro de Diretor, Vice-Diretor, Coordenador e Secretária. Professores são cadastrados em Professores (lá também se define quem é Vice-Diretor).</p>
+            <p class="text-muted mb-0">Contas da equipe administrativa e o perfil de cada uma. Os perfis e suas permissões são configurados em Perfis e Permissões. Professores são cadastrados em Professores (lá também se define quem é Vice-Diretor).</p>
         </div>
         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createUsuarioModal">
             Novo Usuário
@@ -99,8 +99,8 @@
                         @foreach (var usuario in Model.Usuarios)
                         {
                             var perfilExibicao = SistemaEscolar.Application.Abstractions.Perfis.Descrever(usuario.Perfil);
-                            // Contas de Diretor e Vice-Diretor só são gerenciadas pela Diretoria.
-                            var podeAgir = User.PodeGerenciarContaComPerfil(usuario.Perfil);
+                            // Só se mexe em contas cujo perfil não tem mais permissões que o seu.
+                            var podeAgir = Model.PerfisGerenciaveis.Contains(usuario.Perfil);
                             <tr class="@(podeAgir ? "row-clicavel" : null)" data-edit-trigger=".btn-edit-usuario">
                                 <td>@usuario.NomeCompleto</td>
                                 <td>@usuario.Email</td>
@@ -114,7 +114,7 @@
                                 <td>
                                     @if (!podeAgir)
                                     {
-                                        <span class="text-muted">Somente Diretoria</span>
+                                        <span class="text-muted" title="Este perfil tem permissões que o seu não tem.">Sem permissão</span>
                                     }
                                     else
                                     {

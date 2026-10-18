@@ -35,6 +35,10 @@ public sealed class IndexModel : PageModel
     public IReadOnlyList<TurmaListItemDto> TurmasAtivas { get; private set; } = Array.Empty<TurmaListItemDto>();
     public IReadOnlySet<string> ViceDiretorCpfs { get; private set; } = new HashSet<string>();
 
+    // Marcar um professor como Vice-Diretor (e mexer em contas da Diretoria) exige ter todas as permissões
+    // da Diretoria.
+    public bool PodeDefinirViceDiretor { get; private set; }
+
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
 
@@ -61,6 +65,7 @@ public sealed class IndexModel : PageModel
         await LoadDisciplinasAsync(cancellationToken);
         await LoadTurmasAsync(cancellationToken);
         ViceDiretorCpfs = await _professorService.ListarCpfsViceDiretoresAsync(cancellationToken);
+        PodeDefinirViceDiretor = await _professorService.PodeGerenciarDiretoriaAsync(cancellationToken);
 
         bool? statusFilter = Status switch
         {
@@ -112,7 +117,7 @@ public sealed class IndexModel : PageModel
                 MapearAtribuicoes(atribuicoes),
                 isAtivo,
                 senha,
-                ObterViceDiretorInformado(isViceDiretor)),
+                await ObterViceDiretorInformadoAsync(isViceDiretor, cancellationToken)),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -153,7 +158,7 @@ public sealed class IndexModel : PageModel
                 usuarioCpf,
                 MapearAtribuicoes(atribuicoes),
                 isAtivo,
-                IsViceDiretor: ObterViceDiretorInformado(isViceDiretor)),
+                IsViceDiretor: await ObterViceDiretorInformadoAsync(isViceDiretor, cancellationToken)),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -243,13 +248,14 @@ public sealed class IndexModel : PageModel
     }
 
     private bool CanManageProfessores() =>
-        User.EhGestao();
+        User.PodeGerenciarProfessores();
 
-    private bool IsProfessorOnly() => User.EhApenasProfessor();
+    private bool IsProfessorOnly() => User.TemVisaoRestrita();
 
-    // O marcador de Vice-Diretor só é enviado por quem pode defini-lo (Diretoria). Para os demais o
-    // valor fica nulo ("não alterar"), para que editar um professor nunca revogue esse perfil sem querer.
-    private bool? ObterViceDiretorInformado(bool? isViceDiretor) => User.EhDiretoria() ? isViceDiretor : null;
+    // O marcador de Vice-Diretor só é enviado por quem pode defini-lo. Para os demais o valor fica nulo
+    // ("não alterar"), para que editar um professor nunca revogue esse perfil sem querer.
+    private async Task<bool?> ObterViceDiretorInformadoAsync(bool? isViceDiretor, CancellationToken cancellationToken) =>
+        await _professorService.PodeGerenciarDiretoriaAsync(cancellationToken) ? isViceDiretor : null;
 
     private static List<ProfessorAtribuicaoInput> MapearAtribuicoes(List<AtribuicaoInputModel>? atribuicoes) =>
         (atribuicoes ?? new List<AtribuicaoInputModel>())

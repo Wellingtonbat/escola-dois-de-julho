@@ -2,7 +2,8 @@ namespace SistemaEscolar.Application.Usuarios;
 
 public interface IUsuarioService
 {
-    IReadOnlyList<string> PerfisDisponiveis { get; }
+    // Perfis que o usuário atual pode atribuir (só os que não têm mais permissões que os dele).
+    Task<IReadOnlyList<string>> ListarPerfisDisponiveisAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<UsuarioListItemDto>> ListarAsync(CancellationToken cancellationToken = default);
     Task<UsuarioListItemDto?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default);

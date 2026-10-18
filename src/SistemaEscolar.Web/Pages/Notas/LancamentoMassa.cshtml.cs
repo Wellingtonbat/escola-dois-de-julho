@@ -123,8 +123,8 @@ public sealed class LancamentoMassaModel : PageModel
             .FirstOrDefault();
 
         var hoje = HorarioBrasilia.Agora;
-        // Fora do período aberto, somente a Diretoria (Diretor ou Vice-Diretor) altera notas.
-        PodeEditar = PeriodoDisponibilidade.EstaAberto(periodo, hoje) || User.EhDiretoria();
+        // Fora do período aberto, só altera notas quem tem a permissão "Lançar notas com o período fechado".
+        PodeEditar = PeriodoDisponibilidade.EstaAberto(periodo, hoje) || User.PodeLancarComPeriodoFechado();
 
         var alunosDaTurma = (await _alunoService.ListarAsync(new AlunoListFilter(null, null, TurmaId, true), cancellationToken))
             .OrderBy(x => x.NomeCompleto)
@@ -238,7 +238,7 @@ public sealed class LancamentoMassaModel : PageModel
         User.PodeAlterarNotas();
 
     private bool IsProfessorOnly() =>
-        User.EhApenasProfessor();
+        User.TemVisaoRestrita();
 
     private static string FormatarEntrada(decimal? valor) =>
         valor.HasValue ? valor.Value.ToString("0.##", PtBr) : string.Empty;

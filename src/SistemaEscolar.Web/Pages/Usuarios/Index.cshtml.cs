@@ -20,6 +20,9 @@ public sealed class IndexModel : PageModel
     public IReadOnlyList<UsuarioListItemDto> Usuarios { get; private set; } = Array.Empty<UsuarioListItemDto>();
     public IReadOnlyList<SelectListItem> Perfis { get; private set; } = Array.Empty<SelectListItem>();
 
+    // Perfis que o usuário atual pode atribuir; contas com outros perfis aparecem sem ações.
+    public IReadOnlySet<string> PerfisGerenciaveis { get; private set; } = new HashSet<string>();
+
     [BindProperty(SupportsGet = true)]
     public string? Busca { get; set; }
 
@@ -42,7 +45,9 @@ public sealed class IndexModel : PageModel
             return RedirectToPage("/Index");
         }
 
-        Perfis = _usuarioService.PerfisDisponiveis
+        var perfisDisponiveis = await _usuarioService.ListarPerfisDisponiveisAsync(cancellationToken);
+        PerfisGerenciaveis = perfisDisponiveis.ToHashSet(StringComparer.Ordinal);
+        Perfis = perfisDisponiveis
             .Select(x => new SelectListItem(TraduzirPerfil(x), x))
             .ToList();
 
@@ -168,7 +173,7 @@ public sealed class IndexModel : PageModel
         var updated = await _usuarioService.AlternarStatusAsync(id, cancellationToken);
         if (!updated)
         {
-            TempData["ErrorMessage"] = "Usuário não encontrado para atualização de status, ou conta de Diretor/Vice-Diretor (somente a Diretoria gerencia).";
+            TempData["ErrorMessage"] = "Usuário não encontrado para atualização de status, ou conta com perfil que tem mais permissões que o seu.";
             return RedirectToPage("/Usuarios/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
         }
 
@@ -199,7 +204,7 @@ public sealed class IndexModel : PageModel
         var deleted = await _usuarioService.ExcluirAsync(id, cancellationToken);
         if (!deleted)
         {
-            TempData["ErrorMessage"] = "Usuário não encontrado para exclusão, ou conta de Diretor/Vice-Diretor (somente a Diretoria gerencia).";
+            TempData["ErrorMessage"] = "Usuário não encontrado para exclusão, ou conta com perfil que tem mais permissões que o seu.";
             return RedirectToPage("/Usuarios/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
         }
 
@@ -234,7 +239,7 @@ public sealed class IndexModel : PageModel
     }
 
     private bool CanManageUsuarios() =>
-        User.EhGestao();
+        User.PodeGerenciarUsuarios();
 
     private bool EhUsuarioAtual(Guid id)
     {

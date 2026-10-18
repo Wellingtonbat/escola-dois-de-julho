@@ -39,4 +39,7 @@ internal sealed class ProfessorServiceStub : IProfessorService
 
     public Task<IReadOnlySet<string>> ListarCpfsViceDiretoresAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
+
+    public Task<bool> PodeGerenciarDiretoriaAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
 }

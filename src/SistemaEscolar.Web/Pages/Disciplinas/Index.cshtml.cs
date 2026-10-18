@@ -168,11 +168,11 @@ public sealed class IndexModel : PageModel
 
     private bool CanManageDisciplinas()
     {
-        return User.EhGestao();
+        return User.PodeGerenciarDisciplinas();
     }
 
     private bool IsProfessorOnly() =>
-        User.EhApenasProfessor();
+        User.TemVisaoRestrita();
 
     private async Task LoadSeriesAsync(CancellationToken cancellationToken)
     {

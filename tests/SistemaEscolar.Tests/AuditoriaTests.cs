@@ -20,6 +20,7 @@ public sealed class AuditoriaTests
         public string? UserName => "02545277525";
         public string? FullName => "Maria Diretora";
         public bool IsInRole(string role) => false;
+        public bool TemPermissao(string permissao) => false;
     }
 
     private static async Task<(SqliteConnection Conexao, ApplicationDbContext Contexto)> CriarContextoAsync()

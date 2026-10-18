@@ -53,7 +53,7 @@ public sealed class CreateModel : PageModel
         return RedirectToPage("/Series/Index");
     }
 
-    private bool CanManageSeries() => User.EhGestao();
+    private bool CanManageSeries() => User.PodeGerenciarSeries();
 
     public sealed class InputModel
     {

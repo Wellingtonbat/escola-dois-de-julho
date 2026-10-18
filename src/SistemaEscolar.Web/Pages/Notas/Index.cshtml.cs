@@ -13,6 +13,16 @@ namespace SistemaEscolar.Web.Pages.Notas;
 
 public sealed class IndexModel : PageModel
 {
+    // Todas as ações desta tela (consulta, exportações e lançamentos) exigem "Consultar notas e resultados".
+    public override void OnPageHandlerExecuting(Microsoft.AspNetCore.Mvc.Filters.PageHandlerExecutingContext context)
+    {
+        if (!User.PodeAcessarNotas())
+        {
+            TempData["ErrorMessage"] = "Seu perfil não tem acesso a esta tela.";
+            context.Result = RedirectToPage("/Index");
+        }
+    }
+
     private const int PageSizeFixo = 50;
     private readonly INotaService _notaService;
     private readonly IAlunoService _alunoService;
@@ -230,5 +240,5 @@ public sealed class IndexModel : PageModel
     }
 
     private bool IsProfessorOnly() =>
-        User.EhApenasProfessor();
+        User.TemVisaoRestrita();
 }

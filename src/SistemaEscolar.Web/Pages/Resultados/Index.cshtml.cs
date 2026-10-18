@@ -18,6 +18,16 @@ namespace SistemaEscolar.Web.Pages.Resultados;
 
 public sealed class IndexModel : PageModel
 {
+    // Todas as ações desta tela (consulta, exportações e lançamentos) exigem "Consultar notas e resultados".
+    public override void OnPageHandlerExecuting(Microsoft.AspNetCore.Mvc.Filters.PageHandlerExecutingContext context)
+    {
+        if (!User.PodeAcessarNotas())
+        {
+            TempData["ErrorMessage"] = "Seu perfil não tem acesso a esta tela.";
+            context.Result = RedirectToPage("/Index");
+        }
+    }
+
     private const int PageSizeFixo = 50;
     private readonly IResultadoAcademicoService _resultadoService;
     private readonly IRecuperacaoFinalService _recuperacaoFinalService;
@@ -151,7 +161,7 @@ public sealed class IndexModel : PageModel
         });
     }
 
-    // Só a Diretoria lança a Avaliação Final; os demais perfis apenas consultam.
+    // Só quem tem a permissão "Lançar a Avaliação Final" lança; os demais apenas consultam.
     private bool CanLancarRecuperacao() =>
         User.PodeLancarAvaliacaoFinal();
 

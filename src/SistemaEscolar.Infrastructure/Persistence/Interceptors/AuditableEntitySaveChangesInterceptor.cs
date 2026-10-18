@@ -10,11 +10,12 @@ namespace SistemaEscolar.Infrastructure.Persistence.Interceptors;
 
 public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
 {
-    // Tabelas do Identity que só geram ruído (tokens, logins externos, claims e cadastro de perfis).
-    // Ficam registradas as tabelas AspNetUsers (contas) e AspNetUserRoles (perfis de cada conta).
+    // Tabelas do Identity que só geram ruído (tokens, logins externos, claims de usuário). Ficam registradas
+    // AspNetUsers (contas), AspNetUserRoles (perfis de cada conta), AspNetRoles (perfis) e AspNetRoleClaims
+    // (permissões de cada perfil, alteradas na tela "Perfis e Permissões").
     private static readonly HashSet<string> TabelasIgnoradas = new(StringComparer.Ordinal)
     {
-        "AspNetUserTokens", "AspNetUserLogins", "AspNetUserClaims", "AspNetRoleClaims", "AspNetRoles"
+        "AspNetUserTokens", "AspNetUserLogins", "AspNetUserClaims"
     };
 
     // Campos técnicos: mudam em toda gravação e não representam uma alteração de negócio.
@@ -28,7 +29,7 @@ public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesIntercept
     // um login bem-sucedido ou falho os altera e encheria a auditoria de eventos sem valor.
     private static readonly HashSet<string> CamposIgnoradosDoIdentity = new(StringComparer.Ordinal)
     {
-        "SecurityStamp", "ConcurrencyStamp", "AccessFailedCount", "LockoutEnd", "LockoutEnabled",
+        "SecurityStamp", "ConcurrencyStamp", "NormalizedName", "AccessFailedCount", "LockoutEnd", "LockoutEnabled",
         // Derivados ou sem valor de auditoria: normalizações de login/e-mail e confirmações padrão da conta.
         "NormalizedUserName", "NormalizedEmail", "EmailConfirmed", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled"
     };
@@ -113,7 +114,7 @@ public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesIntercept
         foreach (var entry in trackedEntries)
         {
             var tableName = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name;
-            if (TabelasIgnoradas.Contains(tableName))
+            if (TabelasIgnoradas.Contains(tableName) || EhMarcaInternaDoPerfil(entry) || EhCargaInicialDePermissoes(entry, userId))
             {
                 continue;
             }
@@ -143,6 +144,16 @@ public sealed class AuditableEntitySaveChangesInterceptor : SaveChangesIntercept
             changeTracker.Context?.Set<AuditLog>().Add(audit);
         }
     }
+
+    // A marca de "permissões padrão já gravadas" é controle interno, não uma permissão.
+    private static bool EhMarcaInternaDoPerfil(EntityEntry entry) =>
+        entry.Entity is Microsoft.AspNetCore.Identity.IdentityRoleClaim<Guid> claim
+        && claim.ClaimType != Permissoes.ClaimType;
+
+    // As permissões padrão gravadas na inicialização do sistema (sem usuário logado) não são uma alteração de
+    // alguém; registrá-las encheria a auditoria de dezenas de linhas "Sistema" no dia da atualização.
+    private static bool EhCargaInicialDePermissoes(EntityEntry entry, string? userId) =>
+        userId is null && entry.Entity is Microsoft.AspNetCore.Identity.IdentityRoleClaim<Guid>;
 
     // Nomes das propriedades cujo valor realmente mudou, sem contar campos técnicos nem de controle do Identity.
     private static HashSet<string> GetChangedProperties(EntityEntry entry)

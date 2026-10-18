@@ -11,7 +11,7 @@ namespace SistemaEscolar.Application.Atas;
 
 public sealed class AtaService : IAtaService
 {
-    private const string MensagemSomenteDiretoria = "Somente Diretor ou Vice-Diretor podem editar uma Ata já finalizada.";
+    private const string MensagemSomenteDiretoria = "Seu perfil não tem permissão para editar uma Ata já finalizada.";
     private const string MensagemSemPermissao = "Você não tem permissão para gerenciar Atas.";
 
     private readonly IAtaRepository _ataRepository;
@@ -98,7 +98,7 @@ public sealed class AtaService : IAtaService
 
     public async Task<(AtaResult Result, Guid? AtaId)> CriarParaTurmaAsync(Guid turmaId, CancellationToken cancellationToken = default)
     {
-        if (!PermissoesPerfil.PodeAcessarAtas(_currentUserService.IsInRole))
+        if (!PermissoesPerfil.PodeAcessarAtas(_currentUserService.TemPermissao))
         {
             return (AtaResult.Fail(MensagemSemPermissao), null);
         }
@@ -167,8 +167,8 @@ public sealed class AtaService : IAtaService
             .ToList();
 
         var podeEditar = ata.Status == AtaConstantes.StatusRascunho
-            ? PermissoesPerfil.PodeAcessarAtas(_currentUserService.IsInRole)
-            : PermissoesPerfil.PodeEditarAtaFinalizada(_currentUserService.IsInRole);
+            ? PermissoesPerfil.PodeAcessarAtas(_currentUserService.TemPermissao)
+            : PermissoesPerfil.PodeEditarAtaFinalizada(_currentUserService.TemPermissao);
 
         var diretorNome = await ObterDiretorNomeAsync(cancellationToken);
 
@@ -374,7 +374,7 @@ public sealed class AtaService : IAtaService
 
     public async Task<AtaResult> FinalizarAsync(Guid ataId, CancellationToken cancellationToken = default)
     {
-        if (!PermissoesPerfil.PodeAcessarAtas(_currentUserService.IsInRole))
+        if (!PermissoesPerfil.PodeAcessarAtas(_currentUserService.TemPermissao))
         {
             return AtaResult.Fail(MensagemSemPermissao);
         }
@@ -426,7 +426,7 @@ public sealed class AtaService : IAtaService
 
     public async Task<AtaResult> HabilitarEdicaoAsync(Guid ataId, CancellationToken cancellationToken = default)
     {
-        if (!PermissoesPerfil.PodeEditarAtaFinalizada(_currentUserService.IsInRole))
+        if (!PermissoesPerfil.PodeEditarAtaFinalizada(_currentUserService.TemPermissao))
         {
             return AtaResult.Fail(MensagemSomenteDiretoria);
         }
@@ -463,8 +463,8 @@ public sealed class AtaService : IAtaService
         }
 
         var podeEditar = ata.Status == AtaConstantes.StatusRascunho
-            ? PermissoesPerfil.PodeAcessarAtas(_currentUserService.IsInRole)
-            : PermissoesPerfil.PodeEditarAtaFinalizada(_currentUserService.IsInRole);
+            ? PermissoesPerfil.PodeAcessarAtas(_currentUserService.TemPermissao)
+            : PermissoesPerfil.PodeEditarAtaFinalizada(_currentUserService.TemPermissao);
 
         if (!podeEditar)
         {

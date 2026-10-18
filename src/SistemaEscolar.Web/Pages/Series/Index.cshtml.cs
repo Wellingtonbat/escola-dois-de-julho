@@ -123,7 +123,7 @@ public sealed class IndexModel : PageModel
         return RedirectToPage("/Series/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
     }
 
-    private bool CanManageSeries() => User.EhGestao();
+    private bool CanManageSeries() => User.PodeGerenciarSeries();
 
-    private bool IsProfessorOnly() => User.EhApenasProfessor();
+    private bool IsProfessorOnly() => User.TemVisaoRestrita();
 }

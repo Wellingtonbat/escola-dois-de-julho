@@ -26,6 +26,8 @@ public sealed class AuditoriaService : IAuditoriaService
         new AuditoriaEntidadeDto("PeriodosLancamento", "Períodos de lançamento"),
         new AuditoriaEntidadeDto("AspNetUsers", "Usuários (contas)"),
         new AuditoriaEntidadeDto("AspNetUserRoles", "Perfis de usuário"),
+        new AuditoriaEntidadeDto("AspNetRoles", "Perfis"),
+        new AuditoriaEntidadeDto("AspNetRoleClaims", "Permissões de perfil"),
     };
 
     private static readonly IReadOnlyDictionary<string, string> RotulosDeCampos = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -73,6 +75,7 @@ public sealed class AuditoriaService : IAuditoriaService
         ["SerieId"] = "Série",
         ["UserId"] = "Usuário",
         ["RoleId"] = "Perfil",
+        ["ClaimValue"] = "Permissão",
     };
 
     // Campos que não interessam a quem lê a auditoria (técnicos ou derivados de outros campos).
@@ -81,7 +84,9 @@ public sealed class AuditoriaService : IAuditoriaService
         "CreatedAtUtc", "CreatedBy", "UpdatedAtUtc", "UpdatedBy", "NormalizedUserName", "NormalizedEmail",
         // Controle interno do Identity (contadores de login, carimbos de segurança, confirmações padrão).
         "ConcurrencyStamp", "SecurityStamp", "AccessFailedCount", "LockoutEnd", "LockoutEnabled",
-        "EmailConfirmed", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled"
+        "EmailConfirmed", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled",
+        // Perfis e permissões: o nome normalizado repete o nome, e o tipo do claim é sempre "permissão".
+        "NormalizedName", "ClaimType"
     };
 
     // Campos que apontam para outro registro (o valor é um Id que pode ser trocado pelo nome).
@@ -103,10 +108,10 @@ public sealed class AuditoriaService : IAuditoriaService
 
     public async Task<AuditoriaListResult> ListarAsync(AuditoriaFiltro filtro, CancellationToken cancellationToken = default)
     {
-        // A auditoria expõe dados de todos os usuários: só a Diretoria acessa, também aqui no servidor.
-        if (!PermissoesPerfil.PodeVerAuditoria(_currentUserService.IsInRole))
+        // A auditoria expõe dados de todos os usuários: a permissão é verificada também aqui no servidor.
+        if (!PermissoesPerfil.PodeVerAuditoria(_currentUserService.TemPermissao))
         {
-            return AuditoriaListResult.Fail("Somente Diretor ou Vice-Diretor podem consultar a auditoria.");
+            return AuditoriaListResult.Fail("Seu perfil não tem permissão para consultar a auditoria.");
         }
 
         var tamanho = Math.Clamp(filtro.TamanhoPagina, 1, TamanhoPaginaMaximo);
@@ -251,6 +256,18 @@ public sealed class AuditoriaService : IAuditoriaService
 
     private static (string Rotulo, string Classe) ClassificarAcao(Analisado analisado)
     {
+        // Uma linha de AspNetRoleClaims é uma permissão do perfil: criar é conceder, excluir é retirar.
+        if (analisado.Registro.TableName == "AspNetRoleClaims")
+        {
+            switch (analisado.Registro.Action)
+            {
+                case "ADDED":
+                    return ("Concedida", "status-open");
+                case "DELETED":
+                    return ("Retirada", "status-danger");
+            }
+        }
+
         switch (analisado.Registro.Action)
         {
             case "ADDED":
@@ -352,6 +369,10 @@ public sealed class AuditoriaService : IAuditoriaService
             "AspNetUserRoles" => Junta(
                 LerReferencia(analisado, "UserId", nomes),
                 LerReferencia(analisado, "RoleId", nomes)),
+            "AspNetRoles" => LerTexto(analisado, "Name") is { } perfil ? Perfis.Descrever(perfil) : null,
+            "AspNetRoleClaims" => Junta(
+                LerReferencia(analisado, "RoleId", nomes),
+                LerTexto(analisado, "ClaimValue") is { } permissao ? Permissoes.Descrever(permissao) : null),
             _ => null
         };
 
@@ -470,6 +491,11 @@ public sealed class AuditoriaService : IAuditoriaService
                 if (campo == "PasswordHash")
                 {
                     return texto == "[alterado]" ? texto : "[oculto]";
+                }
+
+                if (campo == "ClaimValue")
+                {
+                    return Permissoes.Descrever(texto);
                 }
 
                 if (Guid.TryParse(texto, out var id))
