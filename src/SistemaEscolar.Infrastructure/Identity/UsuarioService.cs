@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SistemaEscolar.Application.Abstractions;
+using SistemaEscolar.Application.Professores;
 using SistemaEscolar.Application.Seguranca;
 using SistemaEscolar.Application.Usuarios;
 
@@ -22,17 +23,20 @@ public sealed class UsuarioService : IUsuarioService
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPerfilService _perfilService;
+    private readonly IProfessorRepository _professorRepository;
 
     public UsuarioService(
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
         ICurrentUserService currentUserService,
-        IPerfilService perfilService)
+        IPerfilService perfilService,
+        IProfessorRepository professorRepository)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _currentUserService = currentUserService;
         _perfilService = perfilService;
+        _professorRepository = professorRepository;
     }
 
     // Só oferece os perfis que o usuário atual pode conceder.
@@ -125,9 +129,10 @@ public sealed class UsuarioService : IUsuarioService
             return UsuarioCreateResult.Fail("Defina a senha padrão do usuário.");
         }
 
-        if (await _userManager.FindByNameAsync(cpf) is not null)
+        var contaExistente = await _userManager.FindByNameAsync(cpf);
+        if (contaExistente is not null)
         {
-            return UsuarioCreateResult.Fail("Já existe um usuário cadastrado com este CPF.");
+            return await ReaproveitarContaDeProfessorAsync(contaExistente, nome, email, perfil, request, cancellationToken);
         }
 
         if (await _userManager.FindByEmailAsync(email) is not null)
@@ -303,6 +308,71 @@ public sealed class UsuarioService : IUsuarioService
         await _userManager.UpdateAsync(usuario);
 
         return UsuarioCreateResult.Success();
+    }
+
+    // Inativar ou excluir um professor não apaga o login dele (o CPF continua em uso). Quando essa pessoa passa a
+    // ter outra função na escola (ex.: professora que vira coordenadora), a conta é reaproveitada: perde o perfil
+    // Professor, recebe o perfil escolhido, os dados e a senha novos. O cadastro de professor continua inativo,
+    // com o histórico de notas intacto.
+    private async Task<UsuarioCreateResult> ReaproveitarContaDeProfessorAsync(
+        ApplicationUser conta, string nome, string email, string perfil, UsuarioCreateRequest request, CancellationToken cancellationToken)
+    {
+        var perfisAtuais = await _userManager.GetRolesAsync(conta);
+        if (!perfisAtuais.Contains(Perfis.Professor))
+        {
+            return UsuarioCreateResult.Fail("Já existe um usuário cadastrado com este CPF.");
+        }
+
+        var professor = await _professorRepository.GetByUsuarioCpfAsync(conta.UserName!, cancellationToken);
+        if (professor is { IsAtivo: true })
+        {
+            return UsuarioCreateResult.Fail(
+                $"Este CPF é de um professor ativo ({professor.NomeCompleto}). Para transformar a conta em outro perfil, " +
+                "inative primeiro o cadastro dele na tela Professores.");
+        }
+
+        if (!await _perfilService.UsuarioAtualCobrePerfisAsync(perfisAtuais, cancellationToken))
+        {
+            return UsuarioCreateResult.Fail(MensagemSomenteDiretoria);
+        }
+
+        var contaComMesmoEmail = await _userManager.FindByEmailAsync(email);
+        if (contaComMesmoEmail is not null && contaComMesmoEmail.Id != conta.Id)
+        {
+            return UsuarioCreateResult.Fail("Já existe um usuário cadastrado com este e-mail.");
+        }
+
+        // A senha vem primeiro: se ela for recusada, nada na conta é alterado.
+        var token = await _userManager.GeneratePasswordResetTokenAsync(conta);
+        var senhaResult = await _userManager.ResetPasswordAsync(conta, token, request.Senha!);
+        if (!senhaResult.Succeeded)
+        {
+            return UsuarioCreateResult.Fail(DescreverErros(senhaResult));
+        }
+
+        var emailResult = await _userManager.SetEmailAsync(conta, email);
+        if (!emailResult.Succeeded)
+        {
+            return UsuarioCreateResult.Fail(DescreverErros(emailResult));
+        }
+
+        conta.FullName = nome;
+        conta.IsActive = request.IsAtivo;
+        conta.EmailConfirmed = true;
+        conta.MustChangePassword = true;
+        await _userManager.UpdateAsync(conta);
+
+        await _userManager.RemoveFromRolesAsync(conta, perfisAtuais);
+        var perfilResult = await _userManager.AddToRoleAsync(conta, perfil);
+        if (!perfilResult.Succeeded)
+        {
+            return UsuarioCreateResult.Fail(DescreverErros(perfilResult));
+        }
+
+        await _userManager.UpdateSecurityStampAsync(conta);
+        return UsuarioCreateResult.Success(
+            $"Este CPF já tinha um acesso de professor (inativo). A conta foi reaproveitada com o perfil {Perfis.Descrever(perfil)}; " +
+            "a pessoa deverá trocar a senha padrão no primeiro acesso.");
     }
 
     // Perfil administrativo da conta, ou null se ela não é gerenciada nesta tela (não tem perfil
