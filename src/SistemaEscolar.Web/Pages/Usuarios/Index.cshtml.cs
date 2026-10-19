@@ -112,7 +112,7 @@ public sealed class IndexModel : PageModel
             return RedirectToPage("/Usuarios/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
         }
 
-        TempData["SuccessMessage"] = "Usuário cadastrado com sucesso. Ele deverá trocar a senha padrão no primeiro acesso.";
+        TempData["SuccessMessage"] = result.SuccessMessage ?? "Usuário cadastrado com sucesso. Ele deverá trocar a senha padrão no primeiro acesso.";
         return RedirectToPage("/Usuarios/Index", new { Busca = busca, Status = status, PageNumber = pageNumber, PageSize = pageSize });
     }
 
