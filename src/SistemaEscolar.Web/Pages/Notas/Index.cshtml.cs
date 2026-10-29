@@ -25,6 +25,7 @@ public sealed class IndexModel : PageModel
 
     private const int PageSizeFixo = 50;
     private readonly INotaService _notaService;
+    private readonly IMapaTurmaService _mapaTurmaService;
     private readonly IAlunoService _alunoService;
     private readonly IProfessorService _professorService;
     private readonly IPeriodoService _periodoService;
@@ -37,8 +38,10 @@ public sealed class IndexModel : PageModel
         IProfessorService professorService,
         IPeriodoService periodoService,
         ITurmaService turmaService,
-        IDisciplinaService disciplinaService)
+        IDisciplinaService disciplinaService,
+        IMapaTurmaService mapaTurmaService)
     {
+        _mapaTurmaService = mapaTurmaService;
         _notaService = notaService;
         _alunoService = alunoService;
         _professorService = professorService;
@@ -53,6 +56,9 @@ public sealed class IndexModel : PageModel
     public IReadOnlyList<int> AnosDisponiveis { get; private set; } = Array.Empty<int>();
     public LancamentoMassaModalVm LancamentoMassaModal { get; private set; } = new();
     public IReadOnlyList<SelectListItem> TurmasParaBoletim { get; private set; } = Array.Empty<SelectListItem>();
+
+    // Turmas oferecidas no Mapa da Turma: todas as ativas, ou só as do professor quando a visão é restrita.
+    public IReadOnlyList<SelectListItem> TurmasParaMapa { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> TurmasParaFiltro { get; private set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> DisciplinasParaFiltro { get; private set; } = Array.Empty<SelectListItem>();
 
@@ -164,6 +170,24 @@ public sealed class IndexModel : PageModel
         return RedirectToPage("/Notas/Index", new { Busca = busca, Status = status, AnoLetivo = anoLetivo, Trimestre = trimestre, TurmaId = turmaId, DisciplinaId = disciplinaId, PageNumber = pageNumber, PageSize = pageSize });
     }
 
+    // Mapa da Turma: notas dos três trimestres de todos os alunos da turma, em Excel ou PDF.
+    public async Task<IActionResult> OnGetMapaTurmaAsync(Guid turmaId, string? formato, CancellationToken cancellationToken)
+    {
+        var resultado = await _mapaTurmaService.GerarAsync(turmaId, cancellationToken);
+        if (!resultado.Succeeded || resultado.Mapa is null)
+        {
+            TempData["ErrorMessage"] = resultado.ErrorMessage ?? "Não foi possível gerar o mapa da turma.";
+            return RedirectToPage("/Notas/Index");
+        }
+
+        var mapa = resultado.Mapa;
+        return string.Equals(formato, "pdf", StringComparison.OrdinalIgnoreCase)
+            ? File(MapaTurmaArquivos.GerarPdf(mapa), "application/pdf", MapaTurmaArquivos.NomeArquivo(mapa, "pdf"))
+            : File(MapaTurmaArquivos.GerarExcel(mapa),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                MapaTurmaArquivos.NomeArquivo(mapa, "xlsx"));
+    }
+
     private async Task LoadSelectOptionsAsync(CancellationToken cancellationToken)
     {
         var escopo = IsProfessorOnly()
@@ -186,6 +210,15 @@ public sealed class IndexModel : PageModel
         var turmasFiltroVisiveis = escopo is not null
             ? turmasFiltro.Where(t => escopo.TurmaIds.Contains(t.Id))
             : turmasFiltro;
+        if (User.PodeGerarMapaTurma())
+        {
+            TurmasParaMapa = turmasFiltroVisiveis
+                .Where(t => t.IsAtiva)
+                .OrderByDescending(t => t.AnoLetivo)
+                .ThenBy(t => t.Nome, StringComparer.CurrentCultureIgnoreCase)
+                .Select(t => new SelectListItem($"{t.Nome} ({t.SerieNome}) — {t.AnoLetivo}", t.Id.ToString()))
+                .ToList();
+        }
         TurmasParaFiltro = turmasFiltroVisiveis
             .OrderBy(t => t.Nome)
             .Select(t => new SelectListItem($"{t.Nome} ({t.SerieNome})", t.Id.ToString()))

@@ -265,6 +265,27 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "O Professor só enxerga, também aqui, as turmas e disciplinas que ele mesmo leciona — a mesma regra de sempre.");
                     Print(column, imagens["notas-lancamento-massa"], "Lançamento em Massa: uma planilha com todos os alunos da turma, notas salvando sozinhas.");
 
+                    Paragrafo(column, "Mapa da Turma (Excel ou PDF)");
+                    Paragrafo(column,
+                        "Para ver a turma inteira de uma vez, use o botão \"Mapa da Turma\" na tela Notas. Ele gera um arquivo com uma linha " +
+                        "por aluno e, para cada disciplina, as notas do 1º, 2º e 3º trimestre e a média até agora. É ideal para o fim de cada " +
+                        "trimestre: os números são sempre os do momento em que o arquivo é gerado.");
+                    Bullet(column, "Passo 1 — Em Notas, clique em \"Mapa da Turma\".");
+                    Bullet(column, "Passo 2 — Escolha a turma e o formato: Excel (para filtrar e fazer contas) ou PDF (para imprimir).");
+                    Bullet(column, "Passo 3 — Clique em \"Gerar arquivo\". O download começa na hora.");
+                    PrintMenor(column, imagens["mapa-turma-modal"], "Escolha da turma e do formato.");
+                    Paragrafo(column, "Como ler o mapa:");
+                    Bullet(column, "Em vermelho — nota ou média abaixo de 5,0.");
+                    Bullet(column, "\"—\" — nota que ainda não foi lançada num trimestre que já começou. Em branco — trimestre que ainda não começou.");
+                    Bullet(column, "Com asterisco (*) — lançamento incompleto (falta alguma avaliação). Essa nota fica fora das médias até ser completada.");
+                    Bullet(column, "Coluna Situação — resume o aluno: em quais disciplinas está abaixo da média e quantas notas faltam. Alunos inativos aparecem como Transferido(a), sem notas.");
+                    Bullet(column, "Rodapé — para cada disciplina: média da turma, quantos alunos estão abaixo da média e quantas notas faltam lançar.");
+                    Print(column, imagens["mapa-turma-pdf"], "Mapa da Turma em PDF (o Excel traz as mesmas informações, com a matrícula de cada aluno).");
+                    Paragrafo(column,
+                        "Quem gera o mapa: no padrão, Diretor, Vice-Diretor e Coordenador (permissão \"Gerar o mapa da turma\", que pode ser dada " +
+                        "a outros perfis em Perfis e Permissões). Se a permissão for dada a um professor, ele só gera o mapa das turmas e " +
+                        "disciplinas em que leciona.");
+
                     column.Item().PageBreak();
                     Titulo(column, "12. Resultados");
                     Paragrafo(column,
@@ -512,6 +533,7 @@ public sealed class IndexModel : PageModel
             Linha("Lançar a Avaliação Final", "Sim", "Não", "Não", "Não");
             Linha("Baixar o Boletim do Aluno em PDF", "Sim", "Sim", "Sim", "Não");
             Linha("Baixar os Boletins de uma Turma em PDF", "Sim", "Sim", "Sim", "Não");
+            Linha("Gerar o Mapa da Turma (Excel/PDF)", "Sim", "Sim", "Não", "Não");
             Linha("Gerenciar Usuários (Coordenador)", "Sim", "Sim", "Não", "Não");
             Linha("Gerenciar Usuários (Secretária)", "Sim", "Sim", "Sim", "Não");
             Linha("Gerenciar contas de Diretor e Vice-Diretor", "Sim", "Não", "Não", "Não");
@@ -531,7 +553,7 @@ public sealed class IndexModel : PageModel
             "periodos-diretor", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
             "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
             "dash-filtros", "dash-cartoes", "dash-media-disciplina", "dash-rosca", "dash-evolucao", "dash-ranking", "dash-mapa",
-            "dash-visao-professor", "avf-filtro", "avf-tabela", "perfis-lista", "perfis-editar", "perfis-novo",
+            "dash-visao-professor", "avf-filtro", "avf-tabela", "perfis-lista", "perfis-editar", "perfis-novo", "mapa-turma-modal", "mapa-turma-pdf",
         };
 
         return nomes.ToDictionary(nome => nome, nome => System.IO.File.ReadAllBytes(Path.Combine(pasta, $"{nome}.png")));

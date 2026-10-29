@@ -11,8 +11,12 @@ public static class Permissoes
     public const string ClaimType = "sistemaescolar:permissao";
 
     // Marca, no próprio perfil, que as permissões padrão já foram gravadas. Sem ela, um perfil que o usuário
-    // deixou sem nenhuma permissão voltaria a receber as padrão a cada inicialização do sistema.
+    // deixou sem nenhuma permissão voltaria a receber as padrão a cada inicialização do sistema. O valor é a
+    // versão do catálogo já aplicada ao perfil (ver VersaoAtual).
     public const string ClaimTypeInicializado = "sistemaescolar:permissoes-inicializadas";
+
+    // Sobe a cada permissão nova que deve chegar já marcada em perfis padrão existentes (ver NovasPorVersao).
+    public const int VersaoAtual = 2;
 
     public const string PainelVer = "Painel.Ver";
     public const string EscolaVerTudo = "Escola.VerTudo";
@@ -22,6 +26,7 @@ public static class Permissoes
     public const string NotasLancarQualquerTurma = "Notas.LancarQualquerTurma";
     public const string NotasLancarPeriodoFechado = "Notas.LancarPeriodoFechado";
     public const string BoletinsPdf = "Boletins.Pdf";
+    public const string NotasMapaTurma = "Notas.MapaTurma";
     public const string AvaliacaoFinalLancar = "AvaliacaoFinal.Lancar";
 
     public const string PeriodosGerenciar = "Periodos.Gerenciar";
@@ -57,6 +62,8 @@ public static class Permissoes
             "Permite lançar e corrigir notas mesmo depois que o período foi fechado."),
         new(BoletinsPdf, "Notas e resultados", "Baixar boletins em PDF",
             "Gera o boletim do aluno e o boletim da turma em PDF."),
+        new(NotasMapaTurma, "Notas e resultados", "Gerar o mapa da turma",
+            "Baixa, na tela Notas, o Excel ou o PDF com as notas de todos os alunos da turma nos três trimestres."),
         new(AvaliacaoFinalLancar, "Notas e resultados", "Lançar a Avaliação Final",
             "Lança a nota da Avaliação Final na tela de Resultados."),
 
@@ -106,9 +113,28 @@ public static class Permissoes
     public static IReadOnlyList<string> PadraoDoPerfil(string perfil) => perfil switch
     {
         Perfis.Diretor or Perfis.ViceDiretor => Todas.Select(x => x.Codigo).ToList(),
-        Perfis.Coordenador or Perfis.CoordenadorLegado => Gestao.Append(PeriodosAbrirFechar).ToList(),
+        Perfis.Coordenador or Perfis.CoordenadorLegado => Gestao.Append(PeriodosAbrirFechar).Append(NotasMapaTurma).ToList(),
         Perfis.Secretaria => Gestao,
         Perfis.Professor => new[] { PainelVer, NotasVer, NotasLancar },
         _ => Array.Empty<string>()
     };
+
+    // Permissões criadas depois da primeira versão e os perfis padrão que já as recebem marcadas. Na
+    // inicialização, um perfil que está numa versão anterior ganha só estas, sem perder o que foi configurado na
+    // tela. Diretor e Vice-Diretor não precisam constar: têm sempre todas.
+    private static readonly Dictionary<int, Dictionary<string, string[]>> NovasPorVersao = new()
+    {
+        [2] = new(StringComparer.Ordinal)
+        {
+            [Perfis.Coordenador] = new[] { NotasMapaTurma },
+            [Perfis.CoordenadorLegado] = new[] { NotasMapaTurma },
+        },
+    };
+
+    public static IReadOnlyList<string> NovasDesdeVersao(int versaoDoPerfil, string perfil) =>
+        NovasPorVersao
+            .Where(x => x.Key > versaoDoPerfil)
+            .SelectMany(x => x.Value.GetValueOrDefault(perfil) ?? Array.Empty<string>())
+            .Distinct()
+            .ToList();
 }
