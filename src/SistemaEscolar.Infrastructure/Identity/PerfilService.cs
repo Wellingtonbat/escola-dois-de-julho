@@ -78,7 +78,8 @@ public sealed class PerfilService : IPerfilService
 
         _context.RoleClaims.Add(new IdentityRoleClaim<Guid>
         {
-            RoleId = perfil.Id, ClaimType = Permissoes.ClaimTypeInicializado, ClaimValue = "1"
+            RoleId = perfil.Id, ClaimType = Permissoes.ClaimTypeInicializado,
+            ClaimValue = Permissoes.VersaoAtual.ToString(System.Globalization.CultureInfo.InvariantCulture)
         });
         foreach (var permissao in novas)
         {

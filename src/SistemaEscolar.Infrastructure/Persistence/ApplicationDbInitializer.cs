@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -463,18 +464,29 @@ public sealed class ApplicationDbInitializer
             var nome = perfil.Name ?? string.Empty;
             var doPerfil = claims.Where(x => x.RoleId == perfil.Id).ToList();
             var permissoes = doPerfil.Where(x => x.ClaimType == Permissoes.ClaimType).ToList();
-            var inicializado = doPerfil.Any(x => x.ClaimType == Permissoes.ClaimTypeInicializado);
+            var marca = doPerfil.FirstOrDefault(x => x.ClaimType == Permissoes.ClaimTypeInicializado);
 
             var desejadas = RegrasPerfis.EhSomenteLeitura(nome)
                 ? Permissoes.Todas.Select(x => x.Codigo).ToHashSet()
                 : permissoes.Select(x => x.ClaimValue!).Where(Permissoes.Existe).ToHashSet();
-            if (!inicializado)
+            if (marca is null)
             {
                 desejadas.UnionWith(Permissoes.PadraoDoPerfil(nome));
                 _context.RoleClaims.Add(new IdentityRoleClaim<Guid>
                 {
-                    RoleId = perfil.Id, ClaimType = Permissoes.ClaimTypeInicializado, ClaimValue = "1"
+                    RoleId = perfil.Id, ClaimType = Permissoes.ClaimTypeInicializado,
+                    ClaimValue = Permissoes.VersaoAtual.ToString(CultureInfo.InvariantCulture)
                 });
+            }
+            else
+            {
+                // Perfil já configurado numa versão anterior: recebe só as permissões criadas depois dela.
+                var versao = int.TryParse(marca.ClaimValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : 1;
+                if (versao < Permissoes.VersaoAtual)
+                {
+                    desejadas.UnionWith(Permissoes.NovasDesdeVersao(versao, nome));
+                    marca.ClaimValue = Permissoes.VersaoAtual.ToString(CultureInfo.InvariantCulture);
+                }
             }
 
             _context.RoleClaims.RemoveRange(permissoes.Where(x => !desejadas.Contains(x.ClaimValue!)));

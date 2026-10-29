@@ -8,6 +8,7 @@
     var podeGerenciar = User.PodeAcessarNotas();
     var podeAlterar = User.PodeAlterarNotas();
     var podeGerarBoletimTurma = User.PodeBaixarBoletimPdf();
+    var podeGerarMapaTurma = User.PodeGerarMapaTurma();
 
     var turmaSelecionadaNome = Model.TurmaId.HasValue
         ? Model.TurmasParaFiltro.FirstOrDefault(t => t.Value == Model.TurmaId.Value.ToString())?.Text
@@ -43,6 +44,12 @@
                 {
                     <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#boletimTurmaModal">
                         Baixar Boletins da Turma
+                    </button>
+                }
+                @if (podeGerarMapaTurma)
+                {
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#mapaTurmaModal">
+                        Mapa da Turma
                     </button>
                 }
                 @if (podeAlterar)
@@ -376,6 +383,60 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Baixar PDF</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (podeGerarMapaTurma)
+    {
+        <div class="modal fade" id="mapaTurmaModal" tabindex="-1" aria-labelledby="mapaTurmaModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="modal-header-icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z" /></svg>
+                            </span>
+                            <h5 class="modal-title" id="mapaTurmaModalLabel">Mapa da Turma</h5>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <form method="get" asp-page="/Notas/Index" id="mapaTurmaForm">
+                        <input type="hidden" name="handler" value="MapaTurma" />
+                        <div class="modal-body">
+                            <p class="small text-muted">
+                                Notas de todos os alunos da turma no 1º, 2º e 3º trimestre, com a média até agora. Destaca notas abaixo da
+                                média, notas que faltam lançar e traz o resumo de cada disciplina. Os números são os do momento em que o
+                                arquivo é gerado.
+                            </p>
+                            <div class="mb-3">
+                                <label for="mapa-turma-id" class="form-label">Turma</label>
+                                <select id="mapa-turma-id" name="turmaId" class="form-select" required>
+                                    <option value="">Selecione...</option>
+                                    @foreach (var turma in Model.TurmasParaMapa)
+                                    {
+                                        <option value="@turma.Value">@turma.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <label class="form-label d-block">Formato</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="formato" id="mapa-formato-xlsx" value="xlsx" checked />
+                                    <label class="form-check-label" for="mapa-formato-xlsx">Excel (.xlsx)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="formato" id="mapa-formato-pdf" value="pdf" />
+                                    <label class="form-check-label" for="mapa-formato-pdf">PDF</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Gerar arquivo</button>
                         </div>
                     </form>
                 </div>

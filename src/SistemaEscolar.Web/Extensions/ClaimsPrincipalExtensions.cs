@@ -40,6 +40,8 @@ public static class ClaimsPrincipalExtensions
 
     public static bool PodeBaixarBoletimPdf(this ClaimsPrincipal user) => PermissoesPerfil.PodeBaixarBoletimPdf(Verificador(user));
 
+    public static bool PodeGerarMapaTurma(this ClaimsPrincipal user) => PermissoesPerfil.PodeGerarMapaTurma(Verificador(user));
+
     public static bool PodeLancarAvaliacaoFinal(this ClaimsPrincipal user) => PermissoesPerfil.PodeLancarAvaliacaoFinal(Verificador(user));
 
     public static bool PodeAcessarAtas(this ClaimsPrincipal user) => PermissoesPerfil.PodeAcessarAtas(Verificador(user));

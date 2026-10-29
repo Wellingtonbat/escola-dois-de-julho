@@ -39,12 +39,13 @@ public static class PermissoesPerfil
     // passou a fechar o período (com a lista de pendências) em vez de excluí-lo.
     public static bool PodeExcluirPeriodo(Func<string, bool> temPermissao) => false;
 
-    // Abrir as telas de Notas, Boletim e Resultados. Quem lança notas ou a Avaliação Final precisa dessas telas
-    // para trabalhar, então essas permissões também dão acesso de consulta.
+    // Abrir as telas de Notas, Boletim e Resultados. Quem lança notas, lança a Avaliação Final ou gera o mapa
+    // da turma precisa dessas telas para trabalhar, então essas permissões também dão acesso de consulta.
     public static bool PodeAcessarNotas(Func<string, bool> temPermissao) =>
         temPermissao(Permissoes.NotasVer)
         || temPermissao(Permissoes.NotasLancar)
-        || temPermissao(Permissoes.AvaliacaoFinalLancar);
+        || temPermissao(Permissoes.AvaliacaoFinalLancar)
+        || temPermissao(Permissoes.NotasMapaTurma);
 
     // Lançar, editar, finalizar ou excluir notas. Com o período fechado, só quem tem
     // PodeLancarComPeriodoFechado; fora das próprias turmas, só quem tem "lançar notas de qualquer turma".
@@ -62,6 +63,11 @@ public static class PermissoesPerfil
 
     public static bool PodeBaixarBoletimPdf(Func<string, bool> temPermissao) =>
         temPermissao(Permissoes.BoletinsPdf);
+
+    // Mapa de notas da turma (Excel/PDF) na tela Notas. Quem tem visão restrita só gera das próprias turmas e
+    // disciplinas.
+    public static bool PodeGerarMapaTurma(Func<string, bool> temPermissao) =>
+        temPermissao(Permissoes.NotasMapaTurma);
 
     // Avaliação Final (antiga "Recuperação Final", lançada em Resultados).
     public static bool PodeLancarAvaliacaoFinal(Func<string, bool> temPermissao) =>
