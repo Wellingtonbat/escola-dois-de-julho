@@ -433,7 +433,19 @@ public sealed class IndexModel : PageModel
                     Bullet(column, "\"Sumiu um botão ou uma tela do meu menu\": o seu perfil pode ter sido alterado em Perfis e Permissões. Fale com quem gerencia os perfis na escola.");
                     Bullet(column, "\"Aluno aparece como Pendente nos Resultados\": significa que falta lançar alguma nota dele em algum trimestre daquele ano letivo.");
 
-                    Titulo(column, "19. Controle de versão");
+                    Titulo(column, "19. Elson, o assistente");
+                    Paragrafo(column,
+                        "Em todas as telas, no canto de baixo à direita, fica o botão \"Dúvidas?\". Ele abre o Elson, o assistente do " +
+                        "sistema: você escreve o que quer fazer, do seu jeito (\"como fecho o trimestre?\", \"esqueci minha senha\"), e ele " +
+                        "responde com o passo a passo, um botão que leva direto à tela certa e a seção deste manual que fala do assunto.");
+                    Bullet(column, "Perguntas frequentes — ao abrir, o Elson mostra algumas perguntas prontas; é só clicar.");
+                    Bullet(column, "Ele conhece o seu perfil — se a ação depende de uma permissão que o seu perfil não tem, ele avisa em amarelo e diz a quem pedir.");
+                    Bullet(column, "Ele não consulta notas nem dados de alunos — para isso, ele ensina o caminho na tela (por exemplo, abrir o boletim do aluno).");
+                    Bullet(column, "Não entendeu a pergunta? Ele avisa que não encontrou e sugere outros assuntos. Tente com outras palavras.");
+                    Bullet(column, "A conversa continua aberta quando você troca de tela e é apagada quando você fecha o navegador.");
+                    PrintMenor(column, imagens["assistente-elson"], "O Elson respondendo a uma Coordenadora: passo a passo e aviso de permissão.");
+
+                    Titulo(column, "20. Controle de versão");
                     Paragrafo(column, $"Este manual acompanha a versão {appVersion} do sistema da Escola Dois de Julho, desenvolvido por Well Tech.");
                 });
 
@@ -553,7 +565,7 @@ public sealed class IndexModel : PageModel
             "periodos-diretor", "notas-diretor", "boletim-aluno", "notas-lancamento-massa",
             "resultados-diretor", "usuarios", "trocar-senha", "dashboard-professor", "notas-professor", "resultados-professor",
             "dash-filtros", "dash-cartoes", "dash-media-disciplina", "dash-rosca", "dash-evolucao", "dash-ranking", "dash-mapa",
-            "dash-visao-professor", "avf-filtro", "avf-tabela", "perfis-lista", "perfis-editar", "perfis-novo", "mapa-turma-modal", "mapa-turma-pdf",
+            "dash-visao-professor", "avf-filtro", "avf-tabela", "perfis-lista", "perfis-editar", "perfis-novo", "mapa-turma-modal", "mapa-turma-pdf", "assistente-elson",
         };
 
         return nomes.ToDictionary(nome => nome, nome => System.IO.File.ReadAllBytes(Path.Combine(pasta, $"{nome}.png")));
