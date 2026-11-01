@@ -1,3 +1,4 @@
+using SistemaEscolar.Application.Assistente;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using SistemaEscolar.Application;
@@ -23,6 +24,10 @@ builder.Services
 builder.Services.AddHealthChecks();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+// Assistente da tela (busca no manual, sem IA). O nome pode ser trocado em appsettings: "Assistente:Nome".
+builder.Services.AddScoped<IAssistenteService>(sp => new AssistenteService(
+    sp.GetRequiredService<ICurrentUserService>(),
+    builder.Configuration["Assistente:Nome"] ?? "Elson"));
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 

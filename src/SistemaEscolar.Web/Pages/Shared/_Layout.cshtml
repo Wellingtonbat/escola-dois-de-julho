@@ -13,6 +13,10 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
 
     var successMessage = TempData["SuccessMessage"]?.ToString();
     var errorMessage = TempData["ErrorMessage"]?.ToString();
+
+    // Assistente (Elson) em todas as telas de quem está logado, menos na troca de senha obrigatória.
+    var mostrarAssistente = User.Identity?.IsAuthenticated == true
+        && !Context.Request.Path.StartsWithSegments("/TrocarSenha");
 }
 
 <!DOCTYPE html>
@@ -47,10 +51,18 @@ System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection
     <div class="app-overlay d-lg-none" id="appOverlay"></div>
 
     <partial name="_SystemModals" />
+    @if (mostrarAssistente)
+    {
+        <partial name="_Assistente" />
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (mostrarAssistente)
+    {
+        <script src="~/js/assistente.js" asp-append-version="true"></script>
+    }
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

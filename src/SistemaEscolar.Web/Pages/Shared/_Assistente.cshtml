@@ -1,0 +1,31 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Assistente da tela (busca no manual, sem IA). O nome vem de appsettings: "Assistente:Nome".
+    var nome = Configuration["Assistente:Nome"] ?? "Elson";
+    // A conversa fica no navegador, separada por usuário (quem entrar depois no mesmo navegador não vê a anterior).
+    var usuario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonimo";
+}
+<div class="assistente" id="assistente" data-endpoint="@Url.Page("/Assistente/Index")" data-nome="@nome" data-usuario="@usuario">
+    <section class="assistente-painel" id="assistentePainel" role="dialog" aria-labelledby="assistenteTitulo" hidden>
+        <header class="assistente-cabecalho">
+            <span class="assistente-avatar" aria-hidden="true">@nome[..1]</span>
+            <div>
+                <strong id="assistenteTitulo">@nome</strong>
+                <small>Seu assistente • respostas com base no manual</small>
+            </div>
+            <button type="button" class="assistente-fechar" data-assistente-fechar aria-label="Fechar o assistente">&times;</button>
+        </header>
+        <div class="assistente-corpo" id="assistenteCorpo" aria-live="polite"></div>
+        <form class="assistente-entrada" id="assistenteForm" autocomplete="off">
+            <input type="text" id="assistentePergunta" maxlength="300" placeholder="Digite sua dúvida… ex.: como fecho o trimestre?" aria-label="Sua dúvida" />
+            <button type="submit" aria-label="Enviar">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576zm6.787-8.201L1.591 6.602l4.339 2.76z" /></svg>
+            </button>
+        </form>
+        <p class="assistente-nota">Não consulto notas nem dados de alunos: só explico como usar o sistema.</p>
+    </section>
+    <button type="button" class="assistente-botao" id="assistenteBotao" aria-controls="assistentePainel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+        <span>Dúvidas?</span>
+    </button>
+</div>

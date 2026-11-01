@@ -2366,3 +2366,243 @@ table.grade-sheet {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Assistente (Elson): janela de dúvidas no canto da tela ---------- */
+.assistente-botao {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1035;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 18px 11px 14px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(15, 29, 64, 0.28);
+}
+
+.assistente-botao:hover {
+  background: var(--brand-hover);
+}
+
+.assistente-botao svg {
+  width: 20px;
+  height: 20px;
+}
+
+.assistente-painel {
+  position: fixed;
+  right: 24px;
+  bottom: 84px;
+  z-index: 1035;
+  width: 390px;
+  height: min(600px, calc(100vh - 120px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(15, 29, 64, 0.3);
+}
+
+.assistente-painel[hidden] {
+  display: none;
+}
+
+.assistente-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--sidebar-bg);
+  color: #fff;
+}
+
+.assistente-cabecalho strong {
+  display: block;
+  font-size: 0.98rem;
+}
+
+.assistente-cabecalho small {
+  color: var(--sidebar-item-text);
+  font-size: 0.74rem;
+}
+
+.assistente-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.assistente-fechar {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--sidebar-item-text);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.assistente-corpo {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--app-bg);
+}
+
+.assistente-msg {
+  max-width: 90%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.assistente-msg ol {
+  margin: 6px 0 2px;
+  padding-left: 18px;
+}
+
+.assistente-msg li {
+  margin-bottom: 3px;
+}
+
+.assistente-msg-usuario {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  background: var(--brand);
+  color: #fff;
+}
+
+.assistente-msg-elson {
+  align-self: flex-start;
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+  background: var(--surface);
+  color: var(--text-main);
+}
+
+.assistente-obs {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.assistente-aviso {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid #f2d39b;
+  border-radius: 8px;
+  background: #fff7e6;
+  color: #7a4b00;
+  font-size: 0.8rem;
+}
+
+.assistente-rotulo {
+  margin: 4px 2px 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.assistente-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.assistente-chip {
+  border: 1px solid var(--border-field);
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: var(--surface);
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: left;
+}
+
+.assistente-chip:hover {
+  border-color: var(--brand);
+  color: var(--brand-hover);
+}
+
+.assistente-chip-principal {
+  border-color: var(--brand-soft);
+  background: var(--brand-soft);
+}
+
+.assistente-digitando {
+  color: var(--text-muted);
+  letter-spacing: 2px;
+}
+
+.assistente-entrada {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface);
+}
+
+.assistente-entrada input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-field);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.86rem;
+}
+
+.assistente-entrada button {
+  width: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+}
+
+.assistente-entrada button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.assistente-nota {
+  margin: 0;
+  padding: 0 10px 8px;
+  background: var(--surface);
+  color: var(--sidebar-group-label);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+@media (max-width: 575.98px) {
+  .assistente-botao {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .assistente-painel {
+    right: 8px;
+    left: 8px;
+    bottom: 68px;
+    width: auto;
+    height: calc(100vh - 90px);
+  }
+}
